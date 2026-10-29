@@ -29,4 +29,4 @@ Requirements & Installation
 
 Contributing
 =======
-Contributions, bug reports, and feature requests are welcome! Please check out the (ill put this later) to report bugs or suggest new modules. If you'd like to submit a pull request, feel free to open one.
+Contributions, bug reports, and feature requests are welcome! Please check out the [Issues tracker/Feature requests link](https://github.com/TheXTrunner/praeteritum_futurum/issues) to report bugs or suggest new modules. If you'd like to submit a pull request, feel free to open one.
