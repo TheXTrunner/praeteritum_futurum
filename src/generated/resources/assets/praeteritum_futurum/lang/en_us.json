@@ -1,0 +1,18 @@
+{
+  "block.praeteritum_futurum.advanced_salvage": "Advanced Salvage",
+  "block.praeteritum_futurum.machine_framework": "Machine Framework",
+  "block.praeteritum_futurum.salvage_framing": "Salvage Framing",
+  "item.praeteritum_futurum.composter_module": "Composter Module",
+  "item.praeteritum_futurum.filter_module": "Filter Module",
+  "item.praeteritum_futurum.inventory_module": "Inventory Module",
+  "item.praeteritum_futurum.io_module": "IO Module",
+  "item.praeteritum_futurum.refined_scrap": "Refined Scrap",
+  "item.praeteritum_futurum.salvage_cutter": "Salvage Cutter",
+  "item.praeteritum_futurum.salvage_scrap": "Salvage Scrap",
+  "item.praeteritum_futurum.smelting_module": "Smelting Module",
+  "item.praeteritum_futurum.stonecutter_module": "Stonecutter Module",
+  "item.praeteritum_futurum.strange_artifact": "Strange Artifact",
+  "item.praeteritum_futurum.yool": "Yool",
+  "itemGroup.praeteritum_futurum.praeteritum_tab": "Praeteritum Futurum",
+  "screen.praeteritum_futurum.io_config": "IO Configuration"
+}

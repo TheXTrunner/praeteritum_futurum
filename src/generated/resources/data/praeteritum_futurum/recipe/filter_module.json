@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "I": {
+      "item": "minecraft:iron_bars"
+    },
+    "R": {
+      "item": "praeteritum_futurum:refined_scrap"
+    }
+  },
+  "pattern": [
+    " R ",
+    "RIR",
+    " R "
+  ],
+  "result": {
+    "count": 1,
+    "id": "praeteritum_futurum:filter_module"
+  }
+}

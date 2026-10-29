@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "P": {
+      "item": "minecraft:diamond_sword"
+    },
+    "S": {
+      "item": "praeteritum_futurum:salvage_scrap"
+    }
+  },
+  "pattern": [
+    "S S",
+    " P ",
+    "S S"
+  ],
+  "result": {
+    "count": 1,
+    "id": "praeteritum_futurum:salvage_cutter"
+  }
+}

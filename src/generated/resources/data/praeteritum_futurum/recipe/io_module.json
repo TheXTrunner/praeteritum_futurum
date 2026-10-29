@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "H": {
+      "item": "minecraft:hopper"
+    },
+    "S": {
+      "item": "praeteritum_futurum:salvage_scrap"
+    }
+  },
+  "pattern": [
+    " S ",
+    "SHS",
+    " S "
+  ],
+  "result": {
+    "count": 1,
+    "id": "praeteritum_futurum:io_module"
+  }
+}

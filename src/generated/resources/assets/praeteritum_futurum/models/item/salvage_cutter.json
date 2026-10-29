@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/handheld",
+  "textures": {
+    "layer0": "praeteritum_futurum:item/salvage_cutter"
+  }
+}

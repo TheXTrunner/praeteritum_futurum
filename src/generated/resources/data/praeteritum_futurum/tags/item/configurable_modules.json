@@ -1,0 +1,9 @@
+{
+  "values": [
+    "praeteritum_futurum:io_module",
+    "praeteritum_futurum:filter_module",
+    "praeteritum_futurum:smelting_module",
+    "praeteritum_futurum:stonecutter_module",
+    "praeteritum_futurum:composter_module"
+  ]
+}
