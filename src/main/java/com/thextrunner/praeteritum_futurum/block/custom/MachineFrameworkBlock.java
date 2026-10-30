@@ -53,14 +53,12 @@ public class MachineFrameworkBlock extends BaseEntityBlock {
         if (!level.isClientSide && player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof MachineFrameworkBlockEntity frameworkEntity) {
-                // If holding the Yool tool, open the Module Config Menu
                 if (stack.is(ModItems.YOOL.get())) {
                     level.playSound(null, pos, SoundEvents.LEVER_CLICK, net.minecraft.sounds.SoundSource.BLOCKS, 1.0F, 1.0F);
                     serverPlayer.openMenu(frameworkEntity, buf -> buf.writeBlockPos(pos));
                     return ItemInteractionResult.SUCCESS;
                 }
 
-                // Otherwise, open the Machine Info Menu (Machine Mode UI)
                 serverPlayer.openMenu(new MenuProvider() {
                     @Override
                     public net.minecraft.network.chat.@NotNull Component getDisplayName() {

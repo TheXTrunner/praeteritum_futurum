@@ -23,5 +23,14 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 ModBlocks.SALVAGE_FRAMING.get(),
                 ModBlocks.ADVANCED_SALVAGE.get()
         );
+
+        // Only register the Machine Framework for pickaxe mining so it handles tool checks correctly
+        this.tag(net.minecraft.tags.BlockTags.MINEABLE_WITH_PICKAXE).add(
+                ModBlocks.MACHINE_FRAMEWORK.get()
+        );
+
+        this.tag(net.minecraft.tags.BlockTags.NEEDS_IRON_TOOL).add(
+                ModBlocks.MACHINE_FRAMEWORK.get()
+        );
     }
 }

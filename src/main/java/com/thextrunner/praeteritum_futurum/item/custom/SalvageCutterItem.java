@@ -23,4 +23,12 @@ public class SalvageCutterItem extends Item {
         }
         return 1.0f;
     }
+
+    @Override
+    public boolean mineBlock(@NotNull ItemStack stack, @NotNull net.minecraft.world.level.Level level, @NotNull BlockState state, @NotNull net.minecraft.core.BlockPos pos, @NotNull net.minecraft.world.entity.LivingEntity miningEntity) {
+        if (!level.isClientSide && state.getDestroySpeed(level, pos) != 0.0F) {
+            stack.hurtAndBreak(1, miningEntity, net.minecraft.world.entity.EquipmentSlot.MAINHAND);
+        }
+        return true;
+    }
 }

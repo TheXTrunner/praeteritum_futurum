@@ -1,17 +1,12 @@
 package com.thextrunner.praeteritum_futurum.datagen;
 
 import com.thextrunner.praeteritum_futurum.ModItems;
-import com.thextrunner.praeteritum_futurum.ModTags;
-import com.thextrunner.praeteritum_futurum.PraeteritumFuturumMod;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.recipes.RecipeCategory;
 import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.data.recipes.RecipeProvider;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
-import net.minecraft.data.recipes.ShapelessRecipeBuilder;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.common.conditions.IConditionBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -25,6 +20,18 @@ public class ModRecipeProvider extends RecipeProvider implements IConditionBuild
 
     @Override
     protected void buildRecipes(@NotNull RecipeOutput recipeOutput) {
+        // Anomaly Compass: Resonates with ancient tech signals.
+        // Lore: Quartz acts as a frequency conductor, while Amethyst focuses and amplifies subtle energy signatures.
+        ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, ModItems.ANOMALY_COMPASS.get())
+                .define('C', Items.COMPASS)
+                .define('Q', Items.QUARTZ)
+                .define('A', Items.AMETHYST_SHARD)
+                .pattern("QAQ")
+                .pattern("ACA")
+                .pattern("QAQ")
+                .unlockedBy("has_compass", has(Items.COMPASS))
+                .save(recipeOutput);
+
         // Yool (Wrench): Y-shape made of salvage scrap
         ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, ModItems.YOOL.get())
                 .define('S', ModItems.SALVAGE_SCRAP.get())
@@ -45,8 +52,8 @@ public class ModRecipeProvider extends RecipeProvider implements IConditionBuild
                 .unlockedBy("has_strange_artifact", has(ModItems.STRANGE_ARTIFACT.get()))
                 .save(recipeOutput);
 
-        // Inventory Module: Chest surrounded by salvage scrap
-        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.INVENTORY_MODULE.get())
+        // Inventory Module: Chest surrounded by salvage scrap (outputs 27)
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.INVENTORY_MODULE.get(), 27)
                 .define('S', ModItems.SALVAGE_SCRAP.get())
                 .define('C', Items.CHEST)
                 .pattern("SSS")

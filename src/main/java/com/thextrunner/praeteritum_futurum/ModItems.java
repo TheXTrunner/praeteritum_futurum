@@ -1,6 +1,7 @@
 package com.thextrunner.praeteritum_futurum;
 //again not sure what this does exactly
 
+import com.thextrunner.praeteritum_futurum.item.AnomalyCompassItem;
 import com.thextrunner.praeteritum_futurum.item.custom.*;
 import net.minecraft.world.item.*;
 import net.neoforged.bus.api.IEventBus;
@@ -14,25 +15,35 @@ public class ModItems {
     //this does... something
 
     // and this registers the item itself
+    public static final DeferredItem<Item> ANOMALY_COMPASS = ITEMS.registerItem("anomaly_compass",
+            properties -> new AnomalyCompassItem(properties.stacksTo(1))
+    );
+
     public static final DeferredItem<BlockItem> SALVAGE_FRAMING_ITEM =
-            ITEMS.registerSimpleBlockItem("salvage_framing", ModBlocks.SALVAGE_FRAMING);
+            ITEMS.registerSimpleBlockItem("salvage_framing",
+                    ModBlocks.SALVAGE_FRAMING
+            );
     //wait does that mean I have to do this for every single item I add to this mod????
     public static final DeferredItem<Item> SALVAGE_SCRAP =
             ITEMS.registerSimpleItem("salvage_scrap",
-                    new Item.Properties());
-    public static final DeferredItem<Item> SALVAGE_CUTTER = ITEMS.registerItem(
-            "salvage_cutter",
+                    new Item.Properties()
+
+            );
+    public static final DeferredItem<Item> SALVAGE_CUTTER =
+            ITEMS.registerItem("salvage_cutter",
             properties -> new SalvageCutterItem(properties.durability(250))
     );
     public static final DeferredItem<Item> REFINED_SCRAP = ITEMS.registerSimpleItem(
             "refined_scrap",
-            new Item.Properties().rarity(Rarity.COMMON)
+            new Item.Properties()
+                    .rarity(Rarity.UNCOMMON)
     );
     public static final DeferredItem<BlockItem> ADVANCED_SALVAGE_ITEM =
-            ITEMS.registerSimpleBlockItem("advanced_salvage", ModBlocks.ADVANCED_SALVAGE);
+            ITEMS.registerSimpleBlockItem("advanced_salvage",
+                    ModBlocks.ADVANCED_SALVAGE);
     //seems like I do need to add one of these lines for every new block/item
-    public static final DeferredItem<Item> STRANGE_ARTIFACT = ITEMS.registerSimpleItem(
-            "strange_artifact",
+    public static final DeferredItem<Item> STRANGE_ARTIFACT =
+            ITEMS.registerSimpleItem("strange_artifact",
             new Item.Properties()
                     .rarity(Rarity.RARE)
                     .component(net.minecraft.core.component.DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true)
@@ -48,8 +59,8 @@ public class ModItems {
             );
 
     public static final DeferredItem<Item> YOOL =
-            ITEMS.registerSimpleItem("yool",
-                    new Item.Properties().stacksTo(1)
+            ITEMS.registerItem("yool",
+                    properties -> new YoolItem(properties.stacksTo(1))
             );
 
     public static final DeferredItem<InventoryModuleItem> INVENTORY_MODULE =

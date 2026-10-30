@@ -25,7 +25,6 @@ public class ModBlocks {
                             BlockBehaviour.Properties.of()
                                     .mapColor(MapColor.METAL)
                                     .destroyTime(2.5f)//breaking time
-                                    .requiresCorrectToolForDrops()
                             //and these are like how the block is treated, I guess the properties of how hard it is, color and whatnot
                             //I guess for this initial test we want something super basic and this is as basic as it gets
                     )
@@ -38,7 +37,6 @@ public class ModBlocks {
                             BlockBehaviour.Properties.of()
                                     .mapColor(MapColor.METAL)
                                     .destroyTime(0.9f) // this is to adjust the break time, check timer
-                                    .requiresCorrectToolForDrops()
                     )
             );
 

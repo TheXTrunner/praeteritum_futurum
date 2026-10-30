@@ -20,6 +20,7 @@ public class ModCreativeTabs {
                     .displayItems((parameters, output) -> {
                         // so apparently the items and blocks have to be manually added here on the creative tab
                         // tests have shown me the order the items show up is respected!
+                        output.accept(ModItems.ANOMALY_COMPASS.get());
                         output.accept(ModItems.SALVAGE_CUTTER.get());
                         output.accept(ModItems.YOOL.get());
                         output.accept(ModItems.SALVAGE_FRAMING_ITEM.get());

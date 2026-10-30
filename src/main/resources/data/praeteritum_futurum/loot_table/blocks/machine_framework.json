@@ -3,17 +3,24 @@
   "pools": [
     {
       "rolls": 1.0,
-      "conditions": [
-        {
-          "condition": "minecraft:survives_explosion"
-        }
-      ],
       "entries": [
         {
-          "type": "minecraft:item",
-          "name": "praeteritum_futurum:machine_framework"
+          "type": "minecraft:alternatives",
+          "children": [
+            {
+              "comment": "1. Silk Touch or standard pickaxe drops the Machine Framework block",
+              "type": "minecraft:item",
+              "name": "praeteritum_futurum:machine_framework",
+              "conditions": [
+                {
+                  "condition": "minecraft:survives_explosion"
+                }
+              ]
+            }
+          ]
         }
       ]
     }
-  ]
+  ],
+  "random_sequence": "praeteritum_futurum:blocks/machine_framework"
 }

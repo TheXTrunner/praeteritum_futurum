@@ -14,6 +14,7 @@ public class ModLanguageProvider extends LanguageProvider {
     @Override
     protected void addTranslations() {
         // Items
+        addItem(ModItems.ANOMALY_COMPASS, "Anomaly Compass");
         addItem(ModItems.SALVAGE_SCRAP, "Salvage Scrap");
         addItem(ModItems.REFINED_SCRAP, "Refined Scrap");
         addItem(ModItems.STRANGE_ARTIFACT, "Strange Artifact");
