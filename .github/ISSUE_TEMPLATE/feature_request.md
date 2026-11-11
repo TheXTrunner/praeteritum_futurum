@@ -15,7 +15,7 @@ A clear and concise description of the new machine module, wrench mechanic, or f
 Select which area of Praeteritum Futurum this target belongs to:
 - [ ] Modular Machine Framework
 - [ ] Wrench (Yool) Mechanics
-- [ ] IO / Filtering Modules
+- [ ] Logistic Modules
 - [ ] Automated Processing Modules
 - [ ] Visuals / UI / Tooltips
 - [ ] Other
