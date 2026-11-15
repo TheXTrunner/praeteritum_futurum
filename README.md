@@ -46,10 +46,6 @@ The mod also includes exploration elements: discover **Ruined Outpost** structur
 - **Yool rotation toggle:** enable/disable Yool wrench rotation behavior
 - **IO transfer tick rate:** adjust how frequently IO modules transfer items
 - **Anvil max repair cost:** override the "Too Expensive" limit for Anvil module (0 = no limit)
-- **Block Manipulator tick rate:** adjust how often the module attempts to place or break blocks
-- **Block break time:** set how many ticks it takes to break a block (1 = instant)
-- **Allow floating blocks:** permit placing blocks without supporting blocks (creative builds)
-- **Redstone evaluation tick rate:** adjust how often Redstone Module evaluates signals
 - **Debug logging:** enable verbose console logging for troubleshooting
 - **Structure spawn rate:** control how often Ruined Outposts appear
 
