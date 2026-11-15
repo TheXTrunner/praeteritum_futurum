@@ -119,7 +119,7 @@ void openConfiguration(ServerPlayer player, ItemStack moduleStack, int slotIndex
 ```
 
 ### `IModuleMenuProvider`
-For modules using `GenericModuleConfigMenu` with custom slots (like FilterModule's 27 filter slots or RedstoneModule's 54-slot circuit grid).
+For modules using `GenericModuleConfigMenu` with custom slots (like FilterModule's 27 filter slots).
 
 ```java
 AbstractContainerMenu createMenu(int id, Inventory playerInventory, ItemStack moduleStack, BlockPos blockPos)
