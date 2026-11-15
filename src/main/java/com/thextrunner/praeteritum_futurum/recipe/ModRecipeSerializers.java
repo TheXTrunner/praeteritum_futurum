@@ -9,13 +9,29 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 
 import java.util.function.Supplier;
 
+/**
+ * Registers custom recipe serializers for the mod.
+ * <p>
+ * Each custom recipe type needs a serializer so Minecraft can read the recipe JSON files
+ * and reconstruct the recipe objects at runtime. The serializer name ("data_cleaning")
+ * becomes the "type" field in recipe JSON files: {"type": "praeteritum_futurum:data_cleaning"}.
+ */
 public class ModRecipeSerializers {
     public static final DeferredRegister<RecipeSerializer<?>> SERIALIZERS =
             DeferredRegister.create(Registries.RECIPE_SERIALIZER, PraeteritumFuturumMod.MODID);
 
-    public static final Supplier<RecipeSerializer<ModuleCleaningRecipe>> MODULE_CLEANING =
-            SERIALIZERS.register("module_cleaning", () -> new SimpleCraftingRecipeSerializer<>(ModuleCleaningRecipe::new));
+    /**
+     * Data Cleaning recipe — used to clean or refine items in the mod's processing system.
+     * Uses SimpleCraftingRecipeSerializer, which means the recipe JSON has a simple
+     * ingredient/result structure without complex conditions.
+     */
+    public static final Supplier<RecipeSerializer<DataCleaningRecipe>> DATA_CLEANING =
+            SERIALIZERS.register("data_cleaning", () -> new SimpleCraftingRecipeSerializer<>(DataCleaningRecipe::new));
 
+    /**
+     * Registers this DeferredRegister with the mod's event bus.
+     * Called from PraeteritumFuturumMod's constructor.
+     */
     public static void register(IEventBus eventBus) {
         SERIALIZERS.register(eventBus);
     }

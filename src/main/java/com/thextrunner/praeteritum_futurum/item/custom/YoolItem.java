@@ -1,6 +1,6 @@
 package com.thextrunner.praeteritum_futurum.item.custom;
 
-import com.thextrunner.praeteritum_futurum.ModBlocks;
+import com.thextrunner.praeteritum_futurum.block.ModBlocks;
 import com.thextrunner.praeteritum_futurum.block.entity.MachineFrameworkBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundEvents;
@@ -19,11 +19,15 @@ public class YoolItem extends Item {
         super(properties);
     }
 
+    /**
+     * Handles tool interactions when right-clicking blocks in the world.
+     */
     @Override
     public @NotNull InteractionResult useOn(@NotNull UseOnContext context) {
         Level level = context.getLevel();
         BlockPos pos = context.getClickedPos();
 
+        // Breaks and drops the machine block when sneaking and right-clicking
         if (context.getPlayer() != null && context.getPlayer().isShiftKeyDown()) {
             if (!level.isClientSide) {
                 BlockEntity blockEntity = level.getBlockEntity(pos);
@@ -37,6 +41,7 @@ public class YoolItem extends Item {
             return InteractionResult.SUCCESS;
         }
 
+        // Passes normal right clicks through so the block interaction opens the configuration menu
         return super.useOn(context);
     }
 }

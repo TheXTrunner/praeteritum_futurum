@@ -43,6 +43,16 @@ public class ComposterModuleItem extends ProcessingModuleItem {
     }
 
     @Override
+    public int getMaxInputs() {
+        return 3;
+    }
+
+    @Override
+    public int getMaxOutputs() {
+        return 1;
+    }
+
+    @Override
     public float getProgressPercent(ItemStack stack, MachineFrameworkBlockEntity blockEntity, int slotIndex) {
         int currentLevel = blockEntity.getModuleData(slotIndex, 0);
         return (float) currentLevel / (float) MAX_COMPOST_LEVEL;
@@ -124,6 +134,28 @@ public class ComposterModuleItem extends ProcessingModuleItem {
                 break;
             }
         }
-        return allowedModes[(currentIndex + 1) % allowedModes.length];
+
+        for (int i = 1; i <= allowedModes.length; i++) {
+            int nextIndex = (currentIndex + i) % allowedModes.length;
+            SlotMode next = allowedModes[nextIndex];
+
+            if (next == SlotMode.DISABLED) {
+                return SlotMode.DISABLED;
+            }
+
+            // If current mode is the same as next, don't count the clicked direction toward the limit
+            int currentCount = countSlotMode(stack, next);
+            if (current == next) {
+                currentCount--; // exclude the clicked direction itself
+            }
+
+            int max = (next == SlotMode.INPUT) ? getMaxInputs() : getMaxOutputs();
+            if (currentCount >= max) {
+                continue; // skip this mode, limit reached
+            }
+
+            return next;
+        }
+        return SlotMode.DISABLED;
     }
 }

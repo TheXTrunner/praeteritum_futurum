@@ -1,5 +1,6 @@
 package com.thextrunner.praeteritum_futurum.block;
 
+import com.thextrunner.praeteritum_futurum.PraeteritumFuturumMod;
 import com.thextrunner.praeteritum_futurum.block.custom.MachineFrameworkBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -23,12 +24,6 @@ public class ModBlocks {
     // It's tied to our mod ID so all registered blocks get the "praeteritum_futurum:" prefix.
     public static final DeferredRegister.Blocks BLOCKS =
             DeferredRegister.createBlocks(PraeteritumFuturumMod.MODID);
-
-    // ITEMS register is kept here alongside BLOCKS for convenience — block items
-    // (the pickable forms of blocks) are registered in ModItems, but they reference
-    // the DeferredBlock handles defined here.
-    public static final DeferredRegister.Items ITEMS =
-            DeferredRegister.createItems(PraeteritumFuturumMod.MODID);
 
     /**
      * Salvage Framing — a basic decorative/structural block that drops the resource.

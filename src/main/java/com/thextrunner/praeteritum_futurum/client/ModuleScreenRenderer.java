@@ -9,7 +9,7 @@ import net.minecraft.world.item.ItemStack;
 
 public class ModuleScreenRenderer {
 
-    public static void renderModuleOverlay(GuiGraphics graphics, Slot slot, ItemStack moduleStack, MachineFrameworkBlockEntity blockEntity, Font font) {
+    public static void renderModuleOverlay(GuiGraphics graphics, Slot slot, ItemStack moduleStack, MachineFrameworkBlockEntity blockEntity, Font font) { //font may be used later
         if (moduleStack.isEmpty()) {
             renderHatchLid(graphics, slot.x, slot.y);
         } else if (moduleStack.getItem() instanceof BaseModuleItem baseModule) {

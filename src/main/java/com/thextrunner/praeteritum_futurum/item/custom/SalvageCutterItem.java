@@ -19,7 +19,7 @@ public class SalvageCutterItem extends Item {
     @Override
     public float getDestroySpeed(@NotNull ItemStack stack, BlockState state) {
         if (state.is(ModTags.Blocks.SALVAGE_BLOCKS)) {
-            return 1.5f;
+            return 1.8f;
         }
         return 1.0f;
     }

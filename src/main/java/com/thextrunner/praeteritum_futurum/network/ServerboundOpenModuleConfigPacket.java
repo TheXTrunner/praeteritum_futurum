@@ -1,5 +1,6 @@
 package com.thextrunner.praeteritum_futurum.network;
 
+import com.thextrunner.praeteritum_futurum.PraeteritumFuturumMod;
 import com.thextrunner.praeteritum_futurum.api.module.IConfigurableModule;
 import com.thextrunner.praeteritum_futurum.block.entity.MachineFrameworkBlockEntity;
 import net.minecraft.core.BlockPos;
@@ -13,6 +14,15 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Packet sent when the player opens a module's configuration screen.
+ * <p>
+ * Flow: Player right-clicks a module in the machine menu → client sends this packet
+ * → server checks if the module implements IConfigurableModule and opens the appropriate screen.
+ * <p>
+ * This is the generic entry point for all module config screens — the module itself
+ * decides what screen to open via its IConfigurableModule.openConfiguration() method.
+ */
 public record ServerboundOpenModuleConfigPacket(int slotIndex, BlockPos blockPos) implements CustomPacketPayload {
     public static final Type<ServerboundOpenModuleConfigPacket> TYPE =
             new Type<>(ResourceLocation.fromNamespaceAndPath("praeteritum_futurum", "open_module_config"));
@@ -33,6 +43,10 @@ public record ServerboundOpenModuleConfigPacket(int slotIndex, BlockPos blockPos
     public static void handle(ServerboundOpenModuleConfigPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer serverPlayer) {
+                if (serverPlayer.distanceToSqr(packet.blockPos().getX() + 0.5, packet.blockPos().getY() + 0.5, packet.blockPos().getZ() + 0.5) > 64.0) {
+                    PraeteritumFuturumMod.LOGGER.warn("Player {} tried to open module config from too far away at {}", serverPlayer.getName().getString(), packet.blockPos());
+                    return;
+                }
                 if (serverPlayer.level().getBlockEntity(packet.blockPos()) instanceof MachineFrameworkBlockEntity be) {
                     ItemStack moduleStack = be.getModuleHandler().getStackInSlot(packet.slotIndex);
                     if (moduleStack.getItem() instanceof IConfigurableModule configurable) {

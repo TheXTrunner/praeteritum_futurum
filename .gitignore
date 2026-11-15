@@ -32,6 +32,12 @@ bin/
 ### Mac OS ###
 .DS_Store
 
+### Python ###
+.venv/
+
+### Junie AI ###
+.junie/
+
 ### Minecraft Modding ###
 run/
 !**/src/**/run/

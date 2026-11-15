@@ -5,8 +5,6 @@
   "target": "@env(DEFAULT)",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "PistonBaseBlockMixin",
-    "PistonBlockEntityMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -1,7 +1,7 @@
 package com.thextrunner.praeteritum_futurum.item;
 
+import com.thextrunner.praeteritum_futurum.PraeteritumFuturumMod;
 import com.thextrunner.praeteritum_futurum.block.ModBlocks;
-import com.thextrunner.praeteritum_futurum.item.AnomalyCompassItem;
 import com.thextrunner.praeteritum_futurum.item.custom.*;
 import net.minecraft.world.item.*;
 import net.neoforged.bus.api.IEventBus;
@@ -182,6 +182,35 @@ public class ModItems {
      */
     public static final DeferredItem<GrindstoneModuleItem> GRINDSTONE_MODULE =
             ITEMS.registerItem("grindstone_module", GrindstoneModuleItem::new);
+
+    /**
+     * Cartography Module — adds cartography table functionality to the machine.
+     * Can clone maps, scale maps, and create maps.
+     */
+    public static final DeferredItem<CartographyModuleItem> CARTOGRAPHY_MODULE =
+            ITEMS.registerItem("cartography_module", CartographyModuleItem::new);
+
+    /**
+     * Anvil Module — adds anvil functionality to the machine.
+     * Can repair items and combine enchanted items.
+     */
+    public static final DeferredItem<AnvilModuleItem> ANVIL_MODULE =
+            ITEMS.registerItem("anvil_module", AnvilModuleItem::new);
+
+    /**
+     * Brewing Module — adds brewing stand functionality to the machine.
+     * Can brew potions using Blaze Powder as fuel and various ingredients.
+     */
+    public static final DeferredItem<BrewingModuleItem> BREWING_MODULE =
+            ITEMS.registerItem("brewing_module", BrewingModuleItem::new);
+
+    /**
+     * Redstone Module — a programmable logic circuit with a 6×9 (54-slot) circuit editor.
+     * Players place redstone components (Wire, Repeater, Comparator, Torch) to create
+     * custom logic circuits that control when other modules activate.
+     */
+    public static final DeferredItem<RedstoneModuleItem> REDSTONE_MODULE =
+            ITEMS.registerItem("redstone_module", RedstoneModuleItem::new);
 
     /**
      * Blueprint — a utility item that copies the entire configuration of one Machine Framework

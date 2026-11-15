@@ -11,8 +11,8 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
-public class DataWipeRecipe extends CustomRecipe {
-    public DataWipeRecipe(CraftingBookCategory category) {
+public class DataCleaningRecipe extends CustomRecipe {
+    public DataCleaningRecipe(CraftingBookCategory category) {
         super(category);
     }
 
@@ -52,6 +52,6 @@ public class DataWipeRecipe extends CustomRecipe {
 
     @Override
     public @NotNull RecipeSerializer<?> getSerializer() {
-        return ModRecipeSerializers.DATA_WIPE_SERIALIZER.get();
+        return ModRecipeSerializers.DATA_CLEANING.get();
     }
 }

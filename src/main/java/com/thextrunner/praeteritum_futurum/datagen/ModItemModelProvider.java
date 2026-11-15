@@ -1,8 +1,10 @@
 package com.thextrunner.praeteritum_futurum.datagen;
 
-import com.thextrunner.praeteritum_futurum.ModItems;
+import com.thextrunner.praeteritum_futurum.item.ModItems;
 import com.thextrunner.praeteritum_futurum.PraeteritumFuturumMod;
 import net.minecraft.data.PackOutput;
+import net.minecraft.resources.ResourceLocation;
+import net.neoforged.neoforge.client.model.generators.ItemModelBuilder;
 import net.neoforged.neoforge.client.model.generators.ItemModelProvider;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
 
@@ -13,9 +15,28 @@ public class ModItemModelProvider extends ItemModelProvider {
 
     @Override
     protected void registerModels() {
+        ItemModelBuilder compassBuilder = withExistingParent(ModItems.ANOMALY_COMPASS.getId().getPath(),
+                mcLoc("item/generated"))
+                .texture("layer0", modLoc("item/anomaly_compass_00"));
+
+        for (int i = 1; i < 32; i++) {
+            String frameName = String.format("anomaly_compass_%02d", i);
+
+            withExistingParent(frameName, mcLoc("item/generated"))
+                    .texture("layer0", modLoc("item/" + frameName));
+
+            compassBuilder.override()
+                    .predicate(ResourceLocation.fromNamespaceAndPath(PraeteritumFuturumMod.MODID, "angle"), (float) i / 32.0f)
+                    .model(getExistingFile(modLoc("item/" + frameName)))
+                    .end();
+        }
+
         basicItem(ModItems.SALVAGE_SCRAP.get());
         basicItem(ModItems.REFINED_SCRAP.get());
         basicItem(ModItems.STRANGE_ARTIFACT.get());
+        basicItem(ModItems.BLUEPRINT.get());
+        getBuilder(ModItems.MACHINE_FRAMEWORK_ITEM.getId().getPath())
+                .parent(new net.neoforged.neoforge.client.model.generators.ModelFile.UncheckedModelFile(modLoc("block/machine_framework")));
 
         withExistingParent(ModItems.YOOL.getId().getPath(),
                 mcLoc("item/handheld"))
@@ -48,5 +69,25 @@ public class ModItemModelProvider extends ItemModelProvider {
         withExistingParent(ModItems.COMPOSTER_MODULE.getId().getPath(),
                 mcLoc("item/generated"))
                 .texture("layer0", modLoc("item/composter_module"));
+
+        withExistingParent(ModItems.GRINDSTONE_MODULE.getId().getPath(),
+                mcLoc("item/generated"))
+                .texture("layer0", modLoc("item/grindstone_module"));
+
+        withExistingParent(ModItems.CARTOGRAPHY_MODULE.getId().getPath(),
+                mcLoc("item/generated"))
+                .texture("layer0", modLoc("item/cartography_module"));
+
+        withExistingParent(ModItems.ANVIL_MODULE.getId().getPath(),
+                mcLoc("item/generated"))
+                .texture("layer0", modLoc("item/anvil_module"));
+
+        withExistingParent(ModItems.BREWING_MODULE.getId().getPath(),
+                mcLoc("item/generated"))
+                .texture("layer0", modLoc("item/brewing_module"));
+
+        withExistingParent(ModItems.REDSTONE_MODULE.getId().getPath(),
+                mcLoc("item/generated"))
+                .texture("layer0", modLoc("item/redstone_module"));
     }
 }

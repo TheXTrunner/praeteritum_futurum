@@ -16,7 +16,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Generic packet sent when the player sets text on a module implementing {@link ITextInputModule}.
  * <p>
- * Flow: Player types text in the TextInputModuleScreen → client sends this packet
+ * Flow: Player types text in the inline text input panel (in MachineInfoScreen) → client sends this packet
  * → server calls ITextInputModule.setText() to store the value in the module's NBT data.
  * <p>
  * This packet is used by any module implementing ITextInputModule, making it reusable
@@ -48,6 +48,12 @@ public record ServerboundSetModuleTextPacket(String text, int slotIndex, BlockPo
             if (player.level().getBlockEntity(packet.blockPos()) instanceof MachineFrameworkBlockEntity blockEntity) {
                 ItemStack moduleStack = blockEntity.getModuleHandler().getStackInSlot(packet.slotIndex());
                 if (moduleStack.getItem() instanceof ITextInputModule textModule) {
+                    // Validate text length against the module's maximum allowed length
+                    if (packet.text().length() > textModule.getMaxTextLength()) {
+                        PraeteritumFuturumMod.LOGGER.warn("Player {} sent text exceeding max length ({}/{}) for module at {}",
+                                player.getName().getString(), packet.text().length(), textModule.getMaxTextLength(), packet.blockPos());
+                        return;
+                    }
                     textModule.setText(moduleStack, packet.text());
                     blockEntity.setChanged();
                     player.level().sendBlockUpdated(packet.blockPos(), blockEntity.getBlockState(), blockEntity.getBlockState(), 3);

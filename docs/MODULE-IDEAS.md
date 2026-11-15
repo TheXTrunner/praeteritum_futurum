@@ -6,13 +6,13 @@ Modules planned for future implementation, organized by release timeline.
 
 ---
 
-# Vanilla Modules (Upcoming — pre 1.0.0)
+## Vanilla Modules (Upcoming, pre 1.0.0)
 
 These modules automate existing vanilla Minecraft mechanics and are planned for upcoming builds.
 
-## Trader Module
+### Trader Module
 
-**GitHub Issue:** #12
+**GitHub Issue:** [#12](https://github.com/TheXTrunner/praeteritum_futurum/issues/12)
 
 **Summary:** Configurable module that inputs emeralds and outputs traded items.
 
@@ -21,11 +21,11 @@ These modules automate existing vanilla Minecraft mechanics and are planned for 
 - Detects a job station through an IO slot or adjacent module acting as a station.
 - Allows rerolling trades with a single button.
 
-**Notes:** Complex implementation — requires villager capture mechanics and job station detection.
+**Notes:** Complex implementation, requires villager capture mechanics and job station detection.
 
-## Crafter Module
+### Crafter Module
 
-**GitHub Issue:** #9
+**GitHub Issue:** [#9](https://github.com/TheXTrunner/praeteritum_futurum/issues/9)
 
 **Summary:** Automates the auto-crafting behavior of vanilla Crafter blocks.
 
@@ -34,9 +34,17 @@ These modules automate existing vanilla Minecraft mechanics and are planned for 
 - May include filtering for inputs and outputs.
 - Will likely require a custom UI.
 
-## Piston Module
+### Jukebox / Note Block Module
 
-**GitHub Issue:** #8
+**GitHub Issue:** [#16](https://github.com/TheXTrunner/praeteritum_futurum/issues/16)
+
+**Summary:** Automates disc playback, with note-block functionality as a possible related feature.
+
+**Proposed direction:** Explore how the machine could start jukebox playback and what useful note-block behavior belongs in a module. The exact mechanics and interface are still open.
+
+### Piston Module
+
+**GitHub Issue:** [#8](https://github.com/TheXTrunner/praeteritum_futurum/issues/8)
 
 **Summary:** Lets the machine push or pull blocks in the world.
 
@@ -46,9 +54,9 @@ These modules automate existing vanilla Minecraft mechanics and are planned for 
 
 **Notes:** High complexity but it is possible now!.
 
-## Redstone Logic Modules
+### Redstone Logic Modules
 
-**GitHub Issue:** #7
+**GitHub Issue:** [#7](https://github.com/TheXTrunner/praeteritum_futurum/issues/7)
 
 **Summary:** Add redstone modules to tie together modules with redstone logic and custom circuits.
 
@@ -56,9 +64,9 @@ These modules automate existing vanilla Minecraft mechanics and are planned for 
 - Interface with processing modules and IO modules.
 - Create redstone logic on block faces and within the grid itself.
 
-## More Logistic Modules
+### More Logistic Modules
 
-**GitHub Issue:** #6
+**GitHub Issue:** [#6](https://github.com/TheXTrunner/praeteritum_futurum/issues/6)
 
 **Summary:** Modules to handle liquids, piping of items and liquids, and advanced IO/Filter modules.
 
@@ -67,7 +75,9 @@ These modules automate existing vanilla Minecraft mechanics and are planned for 
 - Liquid handling and piping.
 - Advanced filtering beyond the current Filter module.
 
-## Dispenser/Dropper Module
+### Dispenser/Dropper Module
+
+**GitHub Issue:** [#15](https://github.com/TheXTrunner/praeteritum_futurum/issues/15)
 
 **Summary:** Makes the machine act as a vanilla Dispenser or Dropper, projecting items from adjacent inventory slots.
 
@@ -78,11 +88,11 @@ These modules automate existing vanilla Minecraft mechanics and are planned for 
 - Dropper variant simply drops items as entity drops in the target direction.
 - Tick rate or activation can be tied to redstone signals or a configurable delay.
 
-**Notes:** Vanilla behavior only — no custom projectiles or enhanced range. The module could be a single item that toggles between Dispenser and Dropper modes via the config slot.
+**Notes:** Vanilla behavior only; no custom projectiles or enhanced range. The module could be a single item that toggles between Dispenser and Dropper modes via the config slot.
 
-## Fluid/Block Interaction Module
+### Fluid/Block Interaction Module
 
-**GitHub Issue:** #14
+**GitHub Issue:** [#14](https://github.com/TheXTrunner/praeteritum_futurum/issues/14)
 
 **Summary:** A module that creates products from the mix of fluids and blocks.
 
@@ -90,20 +100,37 @@ These modules automate existing vanilla Minecraft mechanics and are planned for 
 - Pulls fluids from tank modules to interact with items in inventory slots.
 - Examples: lava + water = obsidian, water + blue ice = packed ice, etc.
 - Cobblestone generator automation.
+- Infinite water source.
+- Lava generator (dripstone interaction)
 
-# Non-Vanilla Modules (Post 1.0.0)
+### Apiary Module
+
+**GitHub Issue:** [#17](https://github.com/TheXTrunner/praeteritum_futurum/issues/17)
+
+**Summary:** Converts a bee hive block into an automated honey harvesting system.
+
+**Proposed mechanics:**
+- Places a bee hive block as part of the module structure.
+- Uses adjacent IO module output faces to determine where bees spawn and pop off from.
+- Handles full hive load automatically: the module manages bee population internally.
+- **Honey harvesting:** Input an empty bottle, output a honey bottle.
+- **Wax harvesting:** Input scissors (consumes durability), output wax (honeycomb block or wax item).
+
+**Notes:** Needs to determine how to handle bee spawning and hive fullness detection. The module should prevent bees from leaving the hive structure and manage the pollination cycle internally.
+
+## Non-Vanilla Modules (Post 1.0.0)
 
 These modules require new items, non-vanilla mechanics, or custom design beyond what vanilla Minecraft provides.
 
-## Fletching Module
+### Fletching Module
 
-**GitHub Issue:** #13
+**GitHub Issue:** [#13](https://github.com/TheXTrunner/praeteritum_futurum/issues/13)
 
 **Summary:** Streamlines the creation of arrows and tipped arrows.
 
 **Proposed mechanics:**
 - Inputs materials or potions (as fuel/charge) and outputs arrows/tipped arrows.
-- Needs non-vanilla design — vanilla fletching table has no meaningful use beyond villager trading.
+- Needs non-vanilla design, vanilla fletching table has no meaningful use beyond villager trading.
 
 **Ideas for non-vanilla extensions:**
 - Bulk arrow crafting with custom recipes (e.g., tipped arrows from potions + feathers)
@@ -111,9 +138,9 @@ These modules require new items, non-vanilla mechanics, or custom design beyond 
 - Custom arrow types (explosive, piercing, etc.) if other mods add them
 - Feather/stick processing (splitting, sharpening)
 
-## Smithing Table
+### Smithing Table
 
-**Summary:** Deferred — niche use case.
+**Summary:** Deferred, niche use case.
 
 **Reason:** Players only use the Smithing Table a couple of times per playthrough (diamond to netherite upgrade, occasional armor trims). Not worth automating unless given additional uses.
 
@@ -121,24 +148,31 @@ These modules require new items, non-vanilla mechanics, or custom design beyond 
 - Custom upgrade materials beyond netherite
 - Modular armor enhancement system
 - Tool/weapon upgrade paths (e.g., adding enchantment-like properties through materials)
-- If the mod adds new armor tiers or materials, Smithing Table becomes more relevant
+- Future new armor tiers or materials?
 
-## Block Placer / Block Breaker Module
+### RC Module (Remote Redstone)
 
-**GitHub Issue:** #10
-
-**Summary:** Places and breaks blocks in the world for structure building automation.
+**Summary:** A module that enables remote redstone activation without physical redstone dust connections, extending or replacing the Redstone Module's capabilities.
 
 **Proposed mechanics:**
-- Places/breaks blocks according to adjacent IO slots.
-- Inputs or outputs items in adjacent inventory slots.
-- Pairs well with Piston modules for structure building.
+- **Paired activation:** Two RC modules can be paired (e.g., via config slot with a linking item or frequency setting) to transmit redstone signals across distance without wire.
+- **Frequency-based channels:** Multiple pairs can operate independently using configurable channels/frequencies to avoid signal interference.
+- **Signal types:** Supports both momentary (pulse) and toggle (latch) signal modes.
+- **Range:** Unlimited range line-of-sight or configurable range limit for balance.
+- **Integration:** Works with the Redstone Module's IO faces: an RC module can act as a remote extension of a Redstone Module's output/input.
 
-**Notes:** Should be released in its own update alongside Piston modules.
+**Design options:**
+- **Standalone module:** A separate RC module item that pairs with another RC module.
+- **Redstone Module extension:** Adds a "remote" mode to the existing Redstone Module, allowing it to transmit/receive signals wirelessly when configured.
 
-## Woodcutter Module
+**Implementation notes:**
+- Requires network packets for pairing synchronization and signal transmission between modules.
+- Could use a simple linking item (e.g., a custom "RC Linker" crafted from redstone and a conductor) to establish pairs.
+- Consider signal delay based on distance for realism, or instant transmission for simplicity.
 
-**GitHub Issue:** #11
+### Woodcutter Module
+
+**GitHub Issue:** [#11](https://github.com/TheXTrunner/praeteritum_futurum/issues/11)
 
 **Summary:** Converts logs into stripped logs and planks into decorative wood variants.
 
@@ -146,20 +180,20 @@ These modules require new items, non-vanilla mechanics, or custom design beyond 
 - Acts as a dedicated wood-based stonecutter.
 - Custom recipes for streamlining wood building blocks.
 
-## Loom Module (Non-Vanilla)
+### Loom Module (Non-Vanilla)
 
 **Summary:** Cross-color banner copier that consumes a custom fuel item.
 
 **Reason:** Vanilla already supports banner copying (same base color), so a simple Loom module offers little value.
 
 **Design:**
-- **Color Mix item** — crafted by combining all three primary color dyes (red, blue, yellow/lime), acting like a printer cartridge. This is the fuel for the module.
-- **Center config slot** — holds the source banner (the blueprint with patterns to copy).
-- **Input slot** — accepts blank banners of *any* base color.
-- **Output slot** — produces an exact clone of the source banner, but in the base color of the input blank banner.
-- **Fuel consumption** — each copy consumes a portion of the Color Mix stack. The amount consumed could scale with the number of patterns on the source banner.
+- **Color Mix item:** crafted by combining all three primary color dyes (red, blue, yellow/lime), acting like a printer cartridge. This is the fuel for the module.
+- **Center config slot:** holds the source banner (the blueprint with patterns to copy).
+- **Input slot:** accepts blank banners of *any* base color.
+- **Output slot:** produces an exact clone of the source banner, but in the base color of the input blank banner.
+- **Fuel consumption:** each copy consumes a portion of the Color Mix stack. The amount consumed could scale with the number of patterns on the source banner.
 
 **Implementation notes:**
 - Requires a new item (Color Mix) with its own texture, recipe, and registration.
-- The module needs to read `DataComponents.BANNER_PATTERNS` from the source banner and apply it to a new banner of a different base color. This requires creating a `BannerPatternLayers` instance from the source's patterns, which is not directly accessible in NeoForge 1.21.1 — may need reflection or a workaround similar to the Brewing module's hardcoded approach.
+- The module needs to read `DataComponents.BANNER_PATTERNS` from the source banner and apply it to a new banner of a different base color. This requires creating a `BannerPatternLayers` instance from the source's patterns, which is not directly accessible in NeoForge 1.21.1; may need reflection or a workaround similar to the Brewing module's hardcoded approach.
 - The overlay should show a fuel bar for the Color Mix level, similar to the Smelting module.

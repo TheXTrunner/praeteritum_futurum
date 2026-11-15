@@ -57,6 +57,16 @@ public class StonecutterModuleItem extends ProcessingModuleItem {
     }
 
     @Override
+    public int getMaxInputs() {
+        return 3;
+    }
+
+    @Override
+    public int getMaxOutputs() {
+        return 1;
+    }
+
+    @Override
     public ItemStack getConfigSlotItem(ItemStack stack, HolderLookup.Provider registries) {
         CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
         if (customData != null) {
@@ -105,17 +115,18 @@ public class StonecutterModuleItem extends ProcessingModuleItem {
                 return SlotMode.DISABLED;
             }
 
-            boolean isTaken = false;
-            for (Map.Entry<Direction, SlotMode> entry : modes.entrySet()) {
-                if (entry.getKey() != clickedDir && entry.getValue() == next) {
-                    isTaken = true;
-                    break;
-                }
+            // Check if we've reached the max for this mode type
+            int currentCount = countSlotMode(stack, next);
+            if (current == next) {
+                currentCount--; // exclude the clicked direction itself
             }
 
-            if (!isTaken) {
-                return next;
+            int max = (next == SlotMode.INPUT) ? getMaxInputs() : getMaxOutputs();
+            if (currentCount >= max) {
+                continue; // skip this mode, limit reached
             }
+
+            return next;
         }
         return SlotMode.DISABLED;
     }

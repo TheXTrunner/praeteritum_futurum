@@ -1,27 +1,28 @@
 package com.thextrunner.praeteritum_futurum.item.custom;
 
+import com.thextrunner.praeteritum_futurum.item.ModItems;
 import com.thextrunner.praeteritum_futurum.PraeteritumFuturumMod;
 import com.thextrunner.praeteritum_futurum.api.module.IModuleMenuProvider;
 import com.thextrunner.praeteritum_futurum.block.entity.MachineFrameworkBlockEntity;
 import com.thextrunner.praeteritum_futurum.screen.GenericModuleConfigMenu;
 import com.thextrunner.praeteritum_futurum.screen.GenericModuleConfigScreen;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.items.ItemStackHandler;
 import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.NotNull;
@@ -38,6 +39,29 @@ public class FilterModuleItem extends LogisticsModuleItem implements IModuleMenu
         super(properties);
     }
 
+    public enum FilterMode {
+        WHITELIST("Whitelist"),
+        BLACKLIST("Blacklist");
+
+        private final String label;
+
+        FilterMode(String label) {
+            this.label = label;
+        }
+
+        public String getLabel() {
+            return label;
+        }
+
+        public FilterMode next() {
+            return this == WHITELIST ? BLACKLIST : WHITELIST;
+        }
+
+        public static FilterMode fromId(int id) {
+            return id >= 0 && id < values().length ? values()[id] : WHITELIST;
+        }
+    }
+
     @Override
     public void renderModuleOverlay(GuiGraphics graphics, Slot slot, ItemStack stack, MachineFrameworkBlockEntity blockEntity) {
         graphics.blit(
@@ -47,11 +71,6 @@ public class FilterModuleItem extends LogisticsModuleItem implements IModuleMenu
                 16, 16,
                 16, 16
         );
-    }
-
-    @Override
-    public AbstractContainerScreen<?> createScreen(AbstractContainerMenu menu, Inventory playerInventory, Component title) {
-        return new GenericModuleConfigScreen((GenericModuleConfigMenu) menu, playerInventory, title);
     }
 
     @Override
@@ -103,7 +122,6 @@ public class FilterModuleItem extends LogisticsModuleItem implements IModuleMenu
             }
             saveFilterInventory(menu.getModuleStack(), ghostHandler, player.registryAccess());
 
-            // updates slot directly as interacting
             if (slotId < menu.slots.size()) {
                 menu.slots.get(slotId).set(ghostHandler.getStackInSlot(slotId));
             }
@@ -158,13 +176,74 @@ public class FilterModuleItem extends LogisticsModuleItem implements IModuleMenu
                 break;
             }
         }
-        updateStackSize(stack, hasItems);
+        updateStackSize(stack, hasItems || getFilterMode(stack) != FilterMode.WHITELIST);
+    }
+
+    public static FilterMode getFilterMode(ItemStack stack) {
+        CompoundTag tag = getCustomTag(stack, "FilterConfig");
+        return tag.contains("Mode") ? FilterMode.fromId(tag.getInt("Mode")) : FilterMode.WHITELIST;
+    }
+
+    public static void toggleFilterMode(ItemStack stack) {
+        FilterMode next = getFilterMode(stack).next();
+        modifyCustomData(stack, "FilterConfig", tag -> tag.putInt("Mode", next.ordinal()));
+        updateStackSize(stack, true);
+    }
+
+    public static boolean isItemBlockedByFilters(MachineFrameworkBlockEntity blockEntity, int ioModuleSlot, int targetSlotIndex, ItemStack stack) {
+        Level level = blockEntity.getLevel();
+        if (level == null) return false;
+        HolderLookup.Provider registries = level.registryAccess();
+
+        int[] ioNeighbors = blockEntity.getAdjacentSlots(ioModuleSlot);
+        for (int adj : ioNeighbors) {
+            ItemStack moduleStack = blockEntity.getModuleHandler().getStackInSlot(adj);
+            if (moduleStack.is(ModItems.FILTER_MODULE.get())) {
+                if (!test(moduleStack, stack, registries)) {
+                    return true; // Blocked by IO filter
+                }
+            }
+        }
+
+        int[] invNeighbors = blockEntity.getAdjacentSlots(targetSlotIndex);
+        for (int adj : invNeighbors) {
+            ItemStack moduleStack = blockEntity.getModuleHandler().getStackInSlot(adj);
+            if (moduleStack.is(ModItems.FILTER_MODULE.get())) {
+                if (!test(moduleStack, stack, registries)) {
+                    return true; // Blocked by Inventory filter
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public static boolean test(ItemStack filterModuleStack, ItemStack targetStack, HolderLookup.Provider registries) {
+        if (targetStack.isEmpty()) return false;
+        ItemStackHandler handler = getFilterInventory(filterModuleStack, registries);
+        FilterMode mode = getFilterMode(filterModuleStack);
+
+        boolean foundMatch = false;
+        for (int i = 0; i < handler.getSlots(); i++) {
+            ItemStack filterItem = handler.getStackInSlot(i);
+            if (!filterItem.isEmpty() && ItemStack.isSameItem(filterItem, targetStack)) {
+                foundMatch = true;
+                break;
+            }
+        }
+
+        if (mode == FilterMode.WHITELIST) {
+            return foundMatch; // Whitelist: must match to pass
+        } else {
+            return !foundMatch; // Blacklist: must NOT match to pass
+        }
     }
 
     @Override
     public void appendHoverText(@NotNull ItemStack stack, Item.@NotNull TooltipContext context, @NotNull List<Component> tooltipComponents, @NotNull TooltipFlag tooltipFlag) {
         if (context.registries() != null) {
             ItemStackHandler handler = getFilterInventory(stack, context.registries());
+            FilterMode mode = getFilterMode(stack);
             int activeFilters = 0;
             for (int i = 0; i < handler.getSlots(); i++) {
                 if (!handler.getStackInSlot(i).isEmpty()) {
@@ -172,12 +251,14 @@ public class FilterModuleItem extends LogisticsModuleItem implements IModuleMenu
                 }
             }
 
+            tooltipComponents.add(Component.literal("Mode: ").withStyle(ChatFormatting.GRAY)
+                    .append(Component.literal(mode.getLabel()).withStyle(ChatFormatting.GOLD)));
             if (activeFilters > 0) {
-                tooltipComponents.add(Component.literal("§7Status: §aFilter Configured (" + activeFilters + " / " + FILTER_SLOTS + " slots)"));
-            } else if (stack.has(net.minecraft.core.component.DataComponents.CUSTOM_DATA)) {
-                tooltipComponents.add(Component.literal("§7Status: §eData Initialized (Empty)"));
+                tooltipComponents.add(Component.literal("Status: ").withStyle(ChatFormatting.GRAY)
+                        .append(Component.literal("Configured (" + activeFilters + " / " + FILTER_SLOTS + " slots)").withStyle(ChatFormatting.GREEN)));
             } else {
-                tooltipComponents.add(Component.literal("§7Status: §cUnconfigured (Clean)"));
+                tooltipComponents.add(Component.literal("Status: ").withStyle(ChatFormatting.GRAY)
+                        .append(Component.literal("Empty").withStyle(ChatFormatting.RED)));
             }
         }
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);

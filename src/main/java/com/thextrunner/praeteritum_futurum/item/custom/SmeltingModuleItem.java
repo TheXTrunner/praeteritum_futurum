@@ -1,6 +1,6 @@
 package com.thextrunner.praeteritum_futurum.item.custom;
 
-import com.thextrunner.praeteritum_futurum.ModItems;
+import com.thextrunner.praeteritum_futurum.item.ModItems;
 import com.thextrunner.praeteritum_futurum.PraeteritumFuturumMod;
 import com.thextrunner.praeteritum_futurum.block.entity.MachineFrameworkBlockEntity;
 import net.minecraft.client.gui.GuiGraphics;
@@ -58,6 +58,16 @@ public class SmeltingModuleItem extends ProcessingModuleItem {
     @Override
     public String getModuleConfigKey() {
         return NBT_KEY;
+    }
+
+    @Override
+    public int getMaxInputs() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxOutputs() {
+        return 1;
     }
 
     @Override
@@ -185,17 +195,25 @@ public class SmeltingModuleItem extends ProcessingModuleItem {
                 return SlotMode.DISABLED;
             }
 
-            boolean isTaken = false;
-            for (Map.Entry<Direction, SlotMode> entry : modes.entrySet()) {
-                if (entry.getKey() != clickedDir && entry.getValue() == next) {
-                    isTaken = true;
-                    break;
-                }
+            // Check if we've reached the max for this mode type
+            int currentCount = countSlotMode(stack, next);
+            if (current == next) {
+                currentCount--; // exclude the clicked direction itself
             }
 
-            if (!isTaken) {
-                return next;
+            // FUEL has no limit from getMaxInputs/Outputs, but we limit to 1
+            int max;
+            if (next == SlotMode.FUEL) {
+                max = 1;
+            } else {
+                max = (next == SlotMode.INPUT) ? getMaxInputs() : getMaxOutputs();
             }
+
+            if (currentCount >= max) {
+                continue; // skip this mode, limit reached
+            }
+
+            return next;
         }
         return SlotMode.DISABLED;
     }

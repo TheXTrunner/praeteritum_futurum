@@ -8,7 +8,20 @@ import net.minecraft.world.item.component.CustomData;
 
 import java.util.function.Consumer;
 
+/**
+ * Base class for logistics modules (Filter, IO, and future modules like liquid piping,
+ * redstone logic, etc.). Extending this class gives you face-mode configuration
+ * and the {@link IConfigurableModule} interface for custom config screens.
+ * <p>
+ * Third-party modders should extend this class for modules that manage item/liquid flow,
+ * filtering, or other logistics-related functionality.
+ */
 public abstract class LogisticsModuleItem extends BaseModuleItem implements IConfigurableModule {
+    /**
+     * Constructs a LogisticsModuleItem with the given properties.
+     *
+     * @param properties The item properties (stack size, rarity, etc.)
+     */
     public LogisticsModuleItem(Properties properties) {
         super(properties);
     }
