@@ -1,12 +1,12 @@
 package com.thextrunner.praeteritum_futurum.datagen;
 
-import com.thextrunner.praeteritum_futurum.ModItems;
+import com.thextrunner.praeteritum_futurum.item.ModItems;
+import com.thextrunner.praeteritum_futurum.PraeteritumFuturumMod;
+import com.thextrunner.praeteritum_futurum.recipe.DataCleaningRecipe;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
-import net.minecraft.data.recipes.RecipeCategory;
-import net.minecraft.data.recipes.RecipeOutput;
-import net.minecraft.data.recipes.RecipeProvider;
-import net.minecraft.data.recipes.ShapedRecipeBuilder;
+import net.minecraft.data.recipes.*;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.common.conditions.IConditionBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -63,7 +63,7 @@ public class ModRecipeProvider extends RecipeProvider implements IConditionBuild
                 .save(recipeOutput);
 
         // IO Module: Hopper with salvage scrap
-        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.IO_MODULE.get())
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.IO_MODULE.get(),5)
                 .define('S', ModItems.SALVAGE_SCRAP.get())
                 .define('H', Items.HOPPER)
                 .pattern(" S ")
@@ -112,6 +112,50 @@ public class ModRecipeProvider extends RecipeProvider implements IConditionBuild
                 .unlockedBy("has_refined_scrap", has(ModItems.REFINED_SCRAP.get()))
                 .save(recipeOutput);
 
+        // Grindstone Module: Grindstone and refined scrap
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.GRINDSTONE_MODULE.get())
+                .define('R', ModItems.REFINED_SCRAP.get())
+                .define('G', Items.GRINDSTONE)
+                .pattern(" R ")
+                .pattern("RGR")
+                .pattern(" R ")
+                .unlockedBy("has_refined_scrap", has(ModItems.REFINED_SCRAP.get()))
+                .save(recipeOutput);
+
+        // Cartography Module: Cartography table and refined scrap
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.CARTOGRAPHY_MODULE.get())
+                .define('R', ModItems.REFINED_SCRAP.get())
+                .define('C', Items.CARTOGRAPHY_TABLE)
+                .pattern(" R ")
+                .pattern("RCR")
+                .pattern(" R ")
+                .unlockedBy("has_refined_scrap", has(ModItems.REFINED_SCRAP.get()))
+                .save(recipeOutput);
+
+        // Anvil Module: Anvil and refined scrap
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.ANVIL_MODULE.get())
+                .define('R', ModItems.REFINED_SCRAP.get())
+                .define('A', Items.ANVIL)
+                .pattern(" R ")
+                .pattern("RAR")
+                .pattern(" R ")
+                .unlockedBy("has_refined_scrap", has(ModItems.REFINED_SCRAP.get()))
+                .save(recipeOutput);
+
+        // Brewing Module: Brewing stand and refined scrap
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.BREWING_MODULE.get())
+                .define('R', ModItems.REFINED_SCRAP.get())
+                .define('B', Items.BREWING_STAND)
+                .pattern(" R ")
+                .pattern("RBR")
+                .pattern(" R ")
+                .unlockedBy("has_refined_scrap", has(ModItems.REFINED_SCRAP.get()))
+                .save(recipeOutput);
+
+        // Unified Data Cleaning Recipe for modules and blueprints
+        SpecialRecipeBuilder.special(DataCleaningRecipe::new)
+                .save(recipeOutput, ResourceLocation.fromNamespaceAndPath(PraeteritumFuturumMod.MODID, "data_cleaning"));
+
         // Salvage Cutter: Diamond sword and salvage scrap
         ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, ModItems.SALVAGE_CUTTER.get())
                 .define('S', ModItems.SALVAGE_SCRAP.get())
@@ -120,6 +164,13 @@ public class ModRecipeProvider extends RecipeProvider implements IConditionBuild
                 .pattern(" P ")
                 .pattern("S S")
                 .unlockedBy("has_salvage_scrap", has(ModItems.SALVAGE_SCRAP.get()))
+                .save(recipeOutput);
+
+        // Blueprint: 1 Refined Scrap + 1 Paper (Shapeless)
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.BLUEPRINT.get())
+                .requires(Items.PAPER)
+                .requires(ModItems.REFINED_SCRAP.get())
+                .unlockedBy("has_refined_scrap", has(ModItems.REFINED_SCRAP.get()))
                 .save(recipeOutput);
     }
 }

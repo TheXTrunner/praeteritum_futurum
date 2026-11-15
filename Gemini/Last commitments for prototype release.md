@@ -3153,7 +3153,7 @@ ModRecipeSerializers.register(modEventBus);
 
 ### 4. Create the Recipe File
 
-Lastly, just add the single static recipe definition at: `src/main/resources/data/praeteritum_futurum/recipe/module_cleaning.json`
+Lastly, just add the single static recipe definition at: `../src/main/resources/data/praeteritum_futurum/recipe/data_cleaning.json`
 
 ```json
 {

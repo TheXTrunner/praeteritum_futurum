@@ -1,72 +1,62 @@
 package com.thextrunner.praeteritum_futurum;
 
+import com.thextrunner.praeteritum_futurum.block.entity.ModBlockEntities;
+import com.thextrunner.praeteritum_futurum.client.ClientModSetup;
+import com.thextrunner.praeteritum_futurum.client.MachineFrameworkRenderer;
 import com.thextrunner.praeteritum_futurum.screen.*;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.item.ItemProperties;
-import net.minecraft.core.component.DataComponents;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.CustomData;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
-import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 
+/**
+ * Client-side entry point for Praeteritum Futurum.
+ * <p>
+ * The @Mod(dist = Dist.CLIENT) annotation tells NeoForge this class runs only on the client.
+ * It handles client-only setup: block entity renderers, screen registration, and the config
+ * screen factory. All other client logic (like item property overrides) lives in
+ * ClientModSetup, which is wired up in the main mod class via modEventBus.addListener().
+ * <p>
+ * Note: The config spec itself is registered in the main mod class (PraeteritumFuturumMod).
+ * Registering it here as well would cause a "config file conflict" crash since both
+ * ModContainer instances would try to manage the same praeteritum_futurum-common.toml file.
+ */
 @Mod(value = PraeteritumFuturumMod.MODID, dist = Dist.CLIENT)
-@EventBusSubscriber(modid = PraeteritumFuturumMod.MODID)
 public class PraeteritumFuturumModClient {
-    public PraeteritumFuturumModClient(ModContainer container) {
+
+    /**
+     * Client mod constructor — called by NeoForge during client-side mod loading.
+     * <p>
+     * Registers the config screen button, block entity renderers, and GUI screen factories.
+     */
+    public PraeteritumFuturumModClient(ModContainer container, IEventBus modEventBus) {
+        // Register the config screen factory so NeoForge shows a "Config..." button
+        // in the mod list screen for this mod.
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
+
+        // Register custom block entity renderer for the Machine Framework
+        modEventBus.addListener(this::registerBlockEntityRenderers);
+
+        // Register GUI screen factories (links MenuTypes to their visual Screen classes)
+        modEventBus.addListener(ModMenuTypes::registerScreens);
+
+        // Item property overrides use client-only types, so keep their listener
+        // registration inside the client-only mod entry point.
+        modEventBus.addListener(ClientModSetup::onClientSetup);
     }
 
-    @SubscribeEvent
-    public static void registerScreens(RegisterMenuScreensEvent event) {
-        ModMenuTypes.registerScreens(event);
-    }
-
-    @SubscribeEvent
-    static void onClientSetup(FMLClientSetupEvent event) {
-        PraeteritumFuturumMod.LOGGER.info("Past meets the future...");
-        PraeteritumFuturumMod.LOGGER.info("YOUR NAME >> {}", Minecraft.getInstance().getUser().getName());
-
-        event.enqueueWork(() -> ItemProperties.register(
-                ModItems.ANOMALY_COMPASS.get(),
-                ResourceLocation.withDefaultNamespace("angle"),
-                (ItemStack stack, ClientLevel level, LivingEntity entity, int seed) -> {
-                    if (entity == null || level == null) {
-                        return 0.0F;
-                    }
-
-                    CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
-                    if (customData != null) {
-                        CompoundTag tag = customData.copyTag();
-                        if (tag.getBoolean("HasTarget")) {
-                            int targetX = tag.getInt("TargetX");
-                            int targetZ = tag.getInt("TargetZ");
-
-                            double angleToTarget = Math.atan2(
-                                    targetZ - entity.getZ(),
-                                    targetX - entity.getX()
-                            );
-                            double entityRotation = Math.toRadians(entity.getYRot());
-// Add Math.PI / 2 to correct the ninety-degree rotational offset
-                            double difference = angleToTarget - entityRotation + (Math.PI / 2);
-
-                            return (float) Math.floorMod((long) (difference / (2 * Math.PI) * 360), 360) / 360.0F;
-                        }
-                    }
-
-                    // Return 0.5 or 0.0 instead of Math.random() so it stays still when uncalibrated
-                    return 0.0F;
-                }
-        ));
+    /**
+     * Registers custom renderers for block entities.
+     * <p>
+     * Called by NeoForge during the RegisterRenderers event. The Machine Framework
+     * uses a custom renderer to draw the 3D model with emissive layers and module overlays.
+     */
+    private void registerBlockEntityRenderers(net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers event) {
+        event.registerBlockEntityRenderer(
+                ModBlockEntities.MACHINE_FRAMEWORK_BE.get(),
+                MachineFrameworkRenderer::new
+        );
     }
 }

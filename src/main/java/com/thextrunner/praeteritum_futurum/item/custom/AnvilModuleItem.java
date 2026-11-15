@@ -5,12 +5,8 @@ import com.thextrunner.praeteritum_futurum.PraeteritumFuturumMod;
 import com.thextrunner.praeteritum_futurum.api.module.IConfigurableModule;
 import com.thextrunner.praeteritum_futurum.api.module.ITextInputModule;
 import com.thextrunner.praeteritum_futurum.block.entity.MachineFrameworkBlockEntity;
-import com.thextrunner.praeteritum_futurum.network.ServerboundOpenModuleConfigPacket;
-import com.thextrunner.praeteritum_futurum.screen.TextInputModuleMenu;
-import com.thextrunner.praeteritum_futurum.screen.TextInputModuleScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
@@ -18,12 +14,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.EnchantmentTags;
-import net.minecraft.world.SimpleMenuProvider;
-import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -33,7 +24,6 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.items.ItemStackHandler;
-import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -81,16 +71,15 @@ public class AnvilModuleItem extends ProcessingModuleItem implements IConfigurab
     }
 
     @Override
+    public boolean useDefaultConfigSlotClick() {
+        return false; // Text input panel is handled by MachineInfoScreen for ITextInputModule
+    }
+
+    @Override
     public void handleCustomClick(double mouseX, double mouseY, int slotX, int slotY, ItemStack stack, MachineFrameworkBlockEntity blockEntity, int slotIndex, Minecraft minecraft) {
-        // Center config slot click — open the text input screen via the proper IConfigurableModule pattern
-        if (mouseX >= slotX && mouseX < slotX + 16 && mouseY >= slotY && mouseY < slotY + 16) {
-            if (minecraft.player != null) {
-                minecraft.player.playNotifySound(SoundEvents.UI_BUTTON_CLICK.value(), net.minecraft.sounds.SoundSource.PLAYERS, 0.5F, 1.0F);
-            }
-            PacketDistributor.sendToServer(new ServerboundOpenModuleConfigPacket(slotIndex, blockEntity.getBlockPos()));
-            return;
-        }
-        // Fall through to parent for direction buttons (U/D/L/R)
+        // Center config slot click is handled by MachineInfoScreen for ITextInputModule —
+        // it opens the inline text input panel directly. This method is only called
+        // for clicks outside the center slot (direction buttons U/D/L/R).
         super.handleCustomClick(mouseX, mouseY, slotX, slotY, stack, blockEntity, slotIndex, minecraft);
     }
 
@@ -139,26 +128,8 @@ public class AnvilModuleItem extends ProcessingModuleItem implements IConfigurab
         }
     }
 
-    // --- IConfigurableModule implementation ---
-
-    @Override
-    public AbstractContainerScreen<?> createScreen(AbstractContainerMenu menu, Inventory playerInventory, Component title) {
-        return new TextInputModuleScreen((TextInputModuleMenu) menu, playerInventory, title);
-    }
-
-    @Override
-    public void openConfiguration(ServerPlayer player, ItemStack moduleStack, int slotIndex, BlockPos blockPos) {
-        SimpleMenuProvider provider = new SimpleMenuProvider(
-                (containerId, playerInventory, p) -> new TextInputModuleMenu(containerId, playerInventory, moduleStack, slotIndex, blockPos),
-                getTextInputLabel()
-        );
-
-        player.openMenu(provider, buf -> {
-            ItemStack.STREAM_CODEC.encode(buf, moduleStack);
-            buf.writeInt(slotIndex);
-            buf.writeBlockPos(blockPos);
-        });
-    }
+    // --- IConfigurableModule implementation (no-op — inline panel handles text input) ---
+    // The MachineInfoScreen handles text input inline for ITextInputModule implementations.
 
     // --- Config slot display for inline overlay ---
 
@@ -250,6 +221,18 @@ public class AnvilModuleItem extends ProcessingModuleItem implements IConfigurab
         if (!secondItem.isEmpty()) {
             // Try to repair or combine
             result = repairOrCombine(level, mainItem, secondItem);
+        }
+
+        // Rename-only mode: if there's only one input and a name is configured, allow renaming
+        if (result == null && secondItem.isEmpty()) {
+            String customNameText = getExistingText(stack);
+            if (!customNameText.isEmpty()) {
+                result = mainItem.copy();
+                result.set(DataComponents.CUSTOM_NAME, Component.literal(customNameText));
+                // Increase repair cost for rename operation
+                int currentCost = mainItem.getOrDefault(DataComponents.REPAIR_COST, 0);
+                result.set(DataComponents.REPAIR_COST, currentCost + 1);
+            }
         }
 
         if (result == null) return;
@@ -357,7 +340,7 @@ public class AnvilModuleItem extends ProcessingModuleItem implements IConfigurab
             int currentLevel = 0;
             ItemEnchantments currentEnchants = mutable.toImmutable();
             for (Map.Entry<Holder<Enchantment>, Integer> existing : currentEnchants.entrySet()) {
-                if (existing.getKey().is(enchantHolder)) {
+                if (existing.getKey().value() == enchantHolder.value()) {
                     currentLevel = existing.getValue();
                     break;
                 }
@@ -438,7 +421,7 @@ public class AnvilModuleItem extends ProcessingModuleItem implements IConfigurab
                     int firstLevel = 0;
                     ItemEnchantments currentEnchants = mutable.toImmutable();
                     for (Map.Entry<Holder<Enchantment>, Integer> existing : currentEnchants.entrySet()) {
-                        if (existing.getKey().is(enchantHolder)) {
+                        if (existing.getKey().value() == enchantHolder.value()) {
                             firstLevel = existing.getValue();
                             break;
                         }

@@ -1,7 +1,7 @@
 /**
  * Module API for the Praeteritum Futurum mod.
  * <p>
- * This package defines the core interfaces that enable extensible module design
+ * This package defines the core interfaces and data models that enable extensible module design
  * for the Machine Framework block. Each module type implements one or more of
  * these interfaces to provide its functionality.
  * </p>
@@ -15,6 +15,13 @@
  *   <li>{@link com.thextrunner.praeteritum_futurum.api.module.IModuleMenuProvider} —
  *       For modules that use standard NeoForge container menus (full-screen GUIs).
  *       Implement this if your module needs a dedicated inventory screen.</li>
+ *
+ *   <li>{@link com.thextrunner.praeteritum_futurum.api.module.ITextInputModule} —
+ *       For modules that configure their behavior through text input.
+ *       Implement this to get a free inline text input panel (overlay) with Save/Clear buttons
+ *       that appears on top of the machine config screen. The module defines the label, hint,
+ *       and max length. No custom screen code is needed — MachineInfoScreen handles the panel
+ *       automatically when it detects an ITextInputModule in a config slot. Example: AnvilModuleItem.</li>
  *
  *   <li>{@link com.thextrunner.praeteritum_futurum.api.module.ICustomScreenProvider} —
  *       For modules that render custom inline overlays directly on the machine UI.
@@ -33,7 +40,8 @@
  * <ul>
  *   <li>{@code IoModuleItem} — Uses inline overlay for face configuration</li>
  *   <li>{@code ProcessingModuleItem} — Uses inline overlay for slot direction config</li>
- *   <li>{@code FilterModuleItem} — Uses inline overlay for filter mode toggle</li>
+ *   <li>{@code FilterModuleItem} — Uses GenericModuleConfigMenu for filter item slots</li>
+ *   <li>{@code AnvilModuleItem} — Uses ITextInputModule for custom name input</li>
  * </ul>
  */
 package com.thextrunner.praeteritum_futurum.api.module;

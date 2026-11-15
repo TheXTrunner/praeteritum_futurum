@@ -1,6 +1,8 @@
 package com.thextrunner.praeteritum_futurum.screen;
 
+import com.thextrunner.praeteritum_futurum.item.custom.FilterModuleItem;
 import com.thextrunner.praeteritum_futurum.network.ServerboundReturnToMachineMenuPacket;
+import com.thextrunner.praeteritum_futurum.network.ServerboundToggleFilterModePacket;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -10,6 +12,12 @@ import net.minecraft.world.entity.player.Inventory;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Generic base screen for module configuration menus.
+ * Third-party modules can extend this class to add custom UI elements
+ * while inheriting the standard back button, background rendering,
+ * and filter mode toggle functionality.
+ */
 public class GenericModuleConfigScreen extends AbstractContainerScreen<GenericModuleConfigMenu> {
     private static final ResourceLocation SHULKER_GUI_TEXTURE =
             ResourceLocation.withDefaultNamespace("textures/gui/container/shulker_box.png");
@@ -42,6 +50,35 @@ public class GenericModuleConfigScreen extends AbstractContainerScreen<GenericMo
                         })
                 .bounds(this.leftPos + 6, this.topPos - 22, 50, 20)
                 .build());
+
+        // Client-side check keeps common interfaces clean and safe for third-party modules
+        if (menu.getModuleStack().getItem() instanceof FilterModuleItem) {
+            FilterModuleItem.FilterMode currentMode = FilterModuleItem.getFilterMode(menu.getModuleStack());
+
+            this.addRenderableWidget(Button.builder(
+                            Component.literal("Mode: " + currentMode.getLabel()), button -> {
+                                if (this.minecraft != null && this.minecraft.player != null) {
+                                    this.minecraft.player.playNotifySound(
+                                            net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK.value(),
+                                            net.minecraft.sounds.SoundSource.PLAYERS,
+                                            0.5F,
+                                            1.0F
+                                    );
+                                }
+
+                                PacketDistributor.sendToServer(
+                                        new ServerboundToggleFilterModePacket(
+                                                menu.getSlotIndexInMachine(), menu.getBlockPos()
+                                        )
+                                );
+
+                                FilterModuleItem.toggleFilterMode(menu.getModuleStack());
+                                FilterModuleItem.FilterMode nextMode = FilterModuleItem.getFilterMode(menu.getModuleStack());
+                                button.setMessage(Component.literal("Mode: " + nextMode.getLabel()));
+                            })
+                    .bounds(this.leftPos + 60, this.topPos - 22, 110, 20)
+                    .build());
+        }
     }
 
     @Override

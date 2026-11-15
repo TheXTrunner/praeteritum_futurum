@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "G": {
+      "item": "minecraft:grindstone"
+    },
+    "R": {
+      "item": "praeteritum_futurum:refined_scrap"
+    }
+  },
+  "pattern": [
+    " R ",
+    "RGR",
+    " R "
+  ],
+  "result": {
+    "count": 1,
+    "id": "praeteritum_futurum:grindstone_module"
+  }
+}

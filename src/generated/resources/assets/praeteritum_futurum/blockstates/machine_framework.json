@@ -1,7 +1,19 @@
 {
   "variants": {
-    "": {
+    "facing=east": {
+      "model": "praeteritum_futurum:block/machine_framework",
+      "y": 90
+    },
+    "facing=north": {
       "model": "praeteritum_futurum:block/machine_framework"
+    },
+    "facing=south": {
+      "model": "praeteritum_futurum:block/machine_framework",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "praeteritum_futurum:block/machine_framework",
+      "y": 270
     }
   }
 }

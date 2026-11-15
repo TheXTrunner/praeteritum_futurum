@@ -1,6 +1,8 @@
 # Module API Guide for Third-Party Modders
 
-This guide explains how to create custom modules for the **Praeteritum Futurum** Machine Framework system. Modules are items placed in the 3×3 module grid of a Machine Framework block, each providing specialized functionality (smelting, filtering, IO control, etc.).
+[Documentation index](README.md) | [Project README](../README.md) | [Contributing guide](../CONTRIBUTING.md)
+
+This guide walks through creating custom modules for the **Praeteritum Futurum** Machine Framework. Modules are items placed in its 27-slot grid, each providing specialized functionality (smelting, filtering, IO control, etc.). Start with dependency setup, then follow the base-class and complete-module examples. The guide targets third-party mod developers familiar with Java, Gradle, and NeoForge.
 
 ---
 
@@ -9,15 +11,15 @@ This guide explains how to create custom modules for the **Praeteritum Futurum**
 1. [Prerequisites & Dependency Setup](#1-prerequisites--dependency-setup)
 2. [Base Classes](#2-base-classes)
 3. [API Interfaces](#3-api-interfaces)
-4. [Creating a Processing Module](#4-creating-a-processing-module)
-5. [Creating a Logistics Module](#5-creating-a-logistics-module)
-6. [Creating a Base Module](#6-creating-a-base-module)
-7. [Registration](#7-registration)
-8. [Textures](#8-textures)
-9. [Data Tags](#9-data-tags)
-10. [Network Packets](#10-network-packets)
-11. [Example: Complete Module](#11-example-complete-module)
-12. [Comparison with Other Mod APIs](#12-comparison-with-other-mod-apis)
+5. [Creating a Processing Module](#6-creating-a-processing-module)
+6. [Creating a Logistics Module](#7-creating-a-logistics-module)
+7. [Creating a Base Module](#8-creating-a-base-module)
+8. [Registration](#9-registration)
+9. [Textures](#10-textures)
+10. [Data Tags](#11-data-tags)
+11. [Network Packets](#12-network-packets)
+12. [Example: Complete Module](#13-example-complete-module)
+13. [Creating a Custom Brewing Module](#14-creating-a-custom-brewing-module)
 
 ---
 
@@ -27,20 +29,7 @@ Before creating a module, your mod needs to depend on Praeteritum Futurum.
 
 ### Adding the Dependency in `build.gradle`
 
-Add Praeteritum Futurum as a compile-time dependency so you can access the API classes:
-
-```groovy
-// In your build.gradle dependencies block
-dependencies {
-    // Add Praeteritum Futurum as a compile-only dependency
-    compileOnly "com.thextrunner:praeteritum-futurum:<version>"
-    
-    // Runtime dependency for testing
-    runtimeOnly "com.thextrunner:praeteritum-futurum:<version>"
-}
-```
-
-If you're developing locally and Praeteritum Futurum isn't published to Maven yet, use a local file reference:
+The project does not publish artifacts to a public Maven repository. For local development, place the mod JAR in the add-on project libs directory and declare it as a dependency:
 
 ```groovy
 dependencies {
@@ -49,15 +38,15 @@ dependencies {
 }
 ```
 
-### Declaring the Dependency in `mods.toml`
+### Declaring the Dependency in `neoforge.mods.toml`
 
-Tell NeoForge that your mod requires Praeteritum Futurum:
+Tell NeoForge that your mod requires Praeteritum Futurum. Set the version range to the minimum release your add-on supports:
 
 ```toml
 [[dependencies.your_mod_id]]
     modId="praeteritum_futurum"
-    mandatory=true
-    versionRange="[1.0.0,)"
+    type="required"
+    versionRange="[0.1.1,)"
     ordering="NONE"
     side="BOTH"
 ```
@@ -69,7 +58,7 @@ Once the dependency is set up, you can import and extend any of the public API c
 - `com.thextrunner.praeteritum_futurum.item.custom.BaseModuleItem`
 - `com.thextrunner.praeteritum_futurum.item.custom.ProcessingModuleItem`
 - `com.thextrunner.praeteritum_futurum.item.custom.LogisticsModuleItem`
-- `com.thextrunner.praeteritum_futurum.api.module.*` (all interfaces)
+- `com.thextrunner.praeteritum_futurum.api.module.*` (all interfaces and data models)
 - `com.thextrunner.praeteritum_futurum.block.entity.MachineFrameworkBlockEntity`
 - `com.thextrunner.praeteritum_futurum.screen.GenericModuleConfigMenu`
 - `com.thextrunner.praeteritum_futurum.screen.GenericModuleConfigScreen`
@@ -86,10 +75,10 @@ There are three base classes you can extend, depending on your module's purpose:
 - Provides: overlay rendering, click handling, slot hiding, face modes, tick hooks
 - Constructor: `public BaseModuleItem(Properties properties)`
 - Key methods to override:
-  - `renderModuleOverlay()` — draws visual indicators on the module slot
-  - `handleCustomClick()` — handles clicks on the module's overlay
-  - `tickModule()` — called every tick on the server (auto-dispatched by MachineFrameworkBlockEntity)
-  - `isInsideOverlay()` — defines the clickable area of the overlay
+  - `renderModuleOverlay()` - draws visual indicators on the module slot
+  - `handleCustomClick()` - handles clicks on the module's overlay
+  - `tickModule()` - called every tick on the server (auto-dispatched by MachineFrameworkBlockEntity)
+  - `isInsideOverlay()` - defines the clickable area of the overlay
 
 ### `ProcessingModuleItem` (extends `BaseModuleItem`)
 **For modules that transform items over time.** Use this for smelting-like, brewing-like, crafting-like operations.
@@ -97,16 +86,17 @@ There are three base classes you can extend, depending on your module's purpose:
 - Provides: slot direction configuration (U/D/L/R arrows), progress bar overlay, config slot support, IO slot resolution
 - Constructor: `public ProcessingModuleItem(Properties properties)`
 - **Must override:**
-  - `getModuleConfigKey()` — returns the NBT key for storing slot mode data
-  - `processModule()` — your core processing logic (called every tick)
+  - `getModuleConfigKey()` - returns the NBT key for storing slot mode data
+  - `processModule()` - your core processing logic (called every tick)
 - **Optional overrides:**
-  - `getMaxInputs()` — max input slots (default: unlimited)
-  - `getMaxOutputs()` — max output slots (default: unlimited)
-  - `hasConfigSlot()` — returns `true` to show a center config button (default: `false`)
-  - `acceptsConfigSlotItem()` — restricts what items can be placed in the config slot (default: accepts all)
-  - `useDefaultConfigSlotClick()` — returns `false` to handle config slot clicks yourself (default: `true`)
-  - `getNextMode()` — controls the slot mode cycle (default: DISABLED → INPUT → FUEL → OUTPUT)
-  - `getProgressPercent()` — returns 0.0–1.0 for the progress bar overlay
+  - `getMaxInputs()` - max input slots (default: unlimited)
+  - `getMaxOutputs()` - max output slots (default: unlimited)
+  - `getInventorySlotLimit()` - restrict the max stack size for a specific inventory slot (default: 0 = no restriction); the Brewing Module uses this to limit ingredient slots to 1 item
+  - `hasConfigSlot()` - returns `true` to show a center config button (default: `false`)
+  - `acceptsConfigSlotItem()` - restricts what items can be placed in the config slot (default: accepts all)
+  - `useDefaultConfigSlotClick()` - returns `false` to handle config slot clicks yourself (default: `true`)
+  - `getNextMode()` - controls the slot mode cycle (default: DISABLED -> INPUT -> FUEL -> OUTPUT)
+  - `getProgressPercent()` - returns 0.0-1.0 for the progress bar overlay
 
 ### `LogisticsModuleItem` (extends `BaseModuleItem`, implements `IConfigurableModule`)
 **For modules that manage item/liquid flow, filtering, or logistics.** Use this for filter modules, IO modules, liquid piping, redstone logic, etc.
@@ -114,7 +104,7 @@ There are three base classes you can extend, depending on your module's purpose:
 - Provides: face-mode configuration, `IConfigurableModule` interface for custom config screens
 - Constructor: `public LogisticsModuleItem(Properties properties)`
 - **Must override:**
-  - `openConfiguration()` — opens a server-side container menu for configuration
+  - `openConfiguration()` - opens a server-side container menu for configuration
 
 ---
 
@@ -138,6 +128,26 @@ Component getDisplayName(ItemStack moduleStack)
 int getModuleSlots()  // number of custom slots to add
 ```
 
+**Screen extensibility:** When creating a custom screen for your module, extend `GenericModuleConfigScreen` instead of `AbstractContainerScreen`. This gives you the standard back button, filter mode toggle, and background rendering for free. Then add your custom overlays in the `render()` method. The `RedstoneConfigScreen` in the built-in mod demonstrates this pattern: it extends `GenericModuleConfigScreen` and adds rotation indicators and wall attachment borders on top.
+
+To associate a custom screen with your module, register a dedicated `MenuType` in `ModMenuTypes` and pass it to the `GenericModuleConfigMenu` constructor:
+
+```java
+// Register your menu type
+public static final DeferredHolder<MenuType<?>, MenuType<GenericModuleConfigMenu>> MY_MODULE_CONFIG_MENU =
+    MENUS.register("my_module_config_menu", () ->
+        IMenuTypeExtension.create(GenericModuleConfigMenu::new));
+
+// In your module's openConfiguration method
+new GenericModuleConfigMenu(
+    ModMenuTypes.MY_MODULE_CONFIG_MENU.get(),
+    containerId, playerInventory, moduleStack, slotIndex, blockPos
+);
+
+// Register the screen
+event.register(MY_MODULE_CONFIG_MENU.get(), MyModuleConfigScreen::new);
+```
+
 ### `ITextInputModule`
 For modules that need text input (like Anvil module renaming). Implement this to get a free inline text input panel that appears on top of the machine config screen.
 
@@ -149,7 +159,7 @@ String getExistingText()     // current stored text (for pre-filling)
 void setText(String text)    // called when player saves text
 ```
 
-**No custom screen code is needed** — `MachineInfoScreen` automatically provides the inline panel when it detects an `ITextInputModule` in a config slot. Just make sure `hasConfigSlot()` returns `true`.
+**No custom screen code is needed.** `MachineInfoScreen` automatically provides the inline panel when it detects an `ITextInputModule` in a config slot. Just make sure `hasConfigSlot()` returns `true`.
 
 ### `ICustomScreenProvider`
 For modules that render custom inline overlays directly on the machine UI.
@@ -160,9 +170,7 @@ void renderCustomScreen(GuiGraphics graphics, int x, int y, ItemStack stack, Mac
 
 ---
 
-## 4. Creating a Processing Module
-
-This is the most common module type. Here's the minimal structure:
+## 6. Creating a Processing Module
 
 ```java
 public class MyProcessingModule extends ProcessingModuleItem {
@@ -217,7 +225,7 @@ setChannelValue(be, slotIndex, channel, value);
 
 ---
 
-## 5. Creating a Logistics Module
+## 7. Creating a Logistics Module
 
 ```java
 public class MyLogisticsModule extends LogisticsModuleItem implements IModuleMenuProvider {
@@ -249,7 +257,7 @@ public class MyLogisticsModule extends LogisticsModuleItem implements IModuleMen
 
 ---
 
-## 6. Creating a Base Module
+## 8. Creating a Base Module
 
 For modules that don't fit the processing or logistics patterns:
 
@@ -266,7 +274,7 @@ public class MyBaseModule extends BaseModuleItem {
 
     @Override
     public void tickModule(Level level, BlockPos pos, MachineFrameworkBlockEntity be, int slotIndex, ItemStack stack) {
-        // Your per-tick logic — this IS called automatically
+        // Your per-tick logic (this IS called automatically)
     }
 
     @Override
@@ -277,11 +285,11 @@ public class MyBaseModule extends BaseModuleItem {
 }
 ```
 
-**Important:** `tickModule()` is automatically called for all `BaseModuleItem` instances every server tick. You don't need to register anything special.
+**Important:** `tickModule()` is automatically called for all `BaseModuleItem` instances every server tick. No special registration is needed.
 
 ---
 
-## 7. Registration
+## 9. Registration
 
 Register your module item using NeoForge's registry system:
 
@@ -295,7 +303,7 @@ public static final DeferredItem<MyProcessingModule> MY_MODULE =
 
 ---
 
-## 8. Textures
+## 10. Textures
 
 ### Item Texture
 Place a 16×16 PNG at:
@@ -336,7 +344,7 @@ Add tooltips in your language file:
 
 ---
 
-## 9. Data Tags
+## 11. Data Tags
 
 Your module **must** be added to the `praeteritum_futurum:machine_modules` tag to be accepted in module slots. Create a JSON file in your mod's data folder:
 
@@ -360,14 +368,14 @@ These tags are **additive**; they use `"values"` (not `"replace": true`), so you
 
 ---
 
-## 10. Network Packets
+## 12. Network Packets
 
 The following packets are pre-registered and reusable by any module:
 
 | Packet | Purpose |
 |--------|---------|
 | `ServerboundToggleModuleDirectionPacket` | Cycles slot modes (U/D/L/R) |
-| `ServerboundSetModuleConfigItemPacket` | Sets a config/filter item in NBT |
+| `ServerboundSetModuleConfigItemPacket` | Sets a config or filter item in NBT |
 | `ServerboundSetModuleTextPacket` | Sets text on any `ITextInputModule` |
 | `ServerboundOpenModuleConfigPacket` | Opens a module's config screen from the client |
 | `ServerboundToggleIoFacePacket` | Toggles IO face modes |
@@ -376,7 +384,7 @@ For custom interactions, register your own packets using NeoForge's networking s
 
 ---
 
-## 11. Example: Complete Module
+## 13. Example: Complete Module
 
 Here's a complete minimal processing module that converts one item to another:
 
@@ -447,7 +455,201 @@ Then register it, add it to the `machine_modules` tag, and create the textures. 
 
 ---
 
-## Summary Checklist
+
+---
+
+## 14. Creating a Custom Brewing Module
+
+The built-in Brewing Module only supports vanilla potions because NeoForge's `PotionBrewing` API is broken in 1.21.1 (see [Create #9732](https://github.com/Creators-of-Create/Create/issues/9732)). If your mod adds custom potions, you can create your own brewing-like module (for example, a "Distillery Module") that supports your custom recipes.
+
+### Why Not Extend the Brewing Module?
+
+The Brewing Module uses a hardcoded recipe map (`BrewingRecipeItem`) that only knows about vanilla potions. There's no recipe registration hook, so mod-added potions cannot be added to it. The cleanest solution is to create a separate module for your mod's potions.
+
+### Step 1: Define Your Recipes
+
+Create a utility class with a recipe map similar to `BrewingRecipeItem`. Each recipe maps an input potion and ingredient item to an output potion:
+
+```java
+public class MyPotionRecipes {
+    private static final Map<BrewingKey, Holder<Potion>> RECIPES = new HashMap<>();
+
+    static {
+        // Example: Awkward Potion + Custom Herb = Custom Potion
+        put(Potions.AWKWARD, MyItems.CUSTOM_HERB.get(), MyPotions.CUSTOM_POTION.get());
+
+        // Example: Custom Potion + Glowstone = Strong Custom Potion
+        put(MyPotions.CUSTOM_POTION.get(), Items.GLOWSTONE_DUST, MyPotions.STRONG_CUSTOM_POTION.get());
+    }
+
+    private static void put(Holder<Potion> input, Item ingredient, Holder<Potion> output) {
+        RECIPES.put(new BrewingKey(input, ingredient), output);
+    }
+
+    public static boolean hasRecipe(Holder<Potion> inputPotion, ItemStack ingredient) {
+        return RECIPES.containsKey(new BrewingKey(inputPotion, ingredient.getItem()));
+    }
+
+    public static Holder<Potion> getOutput(Holder<Potion> inputPotion, ItemStack ingredient) {
+        return RECIPES.get(new BrewingKey(inputPotion, ingredient.getItem()));
+    }
+
+    // BrewingKey class (same as in BrewingRecipeItem)
+    private static class BrewingKey {
+        private final Holder<Potion> potion;
+        private final Item ingredient;
+        private final int hashCode;
+
+        BrewingKey(Holder<Potion> potion, Item ingredient) {
+            this.potion = potion;
+            this.ingredient = ingredient;
+            this.hashCode = System.identityHashCode(potion.value()) ^ ingredient.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (!(obj instanceof BrewingKey other)) return false;
+            return this.potion.value() == other.potion.value() && this.ingredient == other.ingredient;
+        }
+
+        @Override
+        public int hashCode() {
+            return hashCode;
+        }
+    }
+}
+```
+
+### Step 2: Create the Module Class
+
+Extend `ProcessingModuleItem` and implement brewing logic. The slot layout uses 3 potion input slots and 1 ingredient slot, with Blaze Powder auto-detected as fuel:
+
+```java
+public class DistilleryModuleItem extends ProcessingModuleItem {
+    private static final String NBT_KEY = "DistilleryModes";
+    private static final int BREW_TIME = 200; // ticks per batch
+    private static final int MAX_FUEL_TIME = 400; // 20 batches per Blaze Powder
+
+    public DistilleryModuleItem(Properties properties) {
+        super(properties);
+    }
+
+    @Override
+    public String getModuleConfigKey() {
+        return NBT_KEY;
+    }
+
+    @Override
+    public int getMaxInputs() { return 3; } // 3 potion slots
+    @Override
+    public int getMaxOutputs() { return 0; } // in-place brewing
+
+    @Override
+    protected void processModule(Level level, BlockPos pos, MachineFrameworkBlockEntity be,
+                                  int slotIndex, ItemStack stack) {
+        // Resolve slots
+        Map<Direction, SlotMode> modes = getSlotModes(stack, NBT_KEY);
+        ResolvedIoSlots resolved = resolveAdjacentIoSlots(be, slotIndex, modes);
+
+        // Collect potion slots and ingredient slot
+        List<Integer> potionSlots = new ArrayList<>();
+        int ingredientSlot = -1;
+        for (Map.Entry<Direction, SlotMode> entry : modes.entrySet()) {
+            int slot = getAdjacentSlotIndex(slotIndex, entry.getKey());
+            if (slot == -1) continue;
+            if (entry.getValue() == SlotMode.INPUT) {
+                potionSlots.add(slot);
+            }
+        }
+        // The 4th input slot is the ingredient slot
+        // (resolve based on your slot configuration)
+
+        // Read fuel state from module NBT
+        int fuelTime = getChannelValue(be, slotIndex, 0);
+        int brewTime = getChannelValue(be, slotIndex, 1);
+        boolean isBurning = fuelTime > 0;
+
+        // Check ingredient slot for Blaze Powder (fuel) or brewing ingredient
+        ItemStack ingredient = be.getItemHandler().getStackInSlot(ingredientSlot);
+        if (!ingredient.isEmpty() && ingredient.is(Items.BLAZE_POWDER) && !isBurning) {
+            // Load fuel
+            ingredient.shrink(1);
+            fuelTime = MAX_FUEL_TIME;
+            setChannelValue(be, slotIndex, 0, fuelTime);
+            be.setChanged();
+            return;
+        }
+
+        // Check if any potion has a valid recipe
+        if (!isBurning || ingredient.isEmpty()) return;
+        boolean anyRecipe = false;
+        for (int potionSlot : potionSlots) {
+            ItemStack potion = be.getItemHandler().getStackInSlot(potionSlot);
+            if (!potion.isEmpty() && isPotionItem(potion)) {
+                Holder<Potion> potionType = getPotionHolder(potion);
+                if (potionType != null && MyPotionRecipes.hasRecipe(potionType, ingredient)) {
+                    anyRecipe = true;
+                    break;
+                }
+            }
+        }
+        if (!anyRecipe) return;
+
+        // Brew
+        brewTime++;
+        setChannelValue(be, slotIndex, 1, brewTime);
+
+        if (brewTime >= BREW_TIME) {
+            // Batch complete - apply recipes
+            for (int potionSlot : potionSlots) {
+                ItemStack potion = be.getItemHandler().getStackInSlot(potionSlot);
+                if (!potion.isEmpty() && isPotionItem(potion)) {
+                    Holder<Potion> potionType = getPotionHolder(potion);
+                    if (potionType != null && MyPotionRecipes.hasRecipe(potionType, ingredient)) {
+                        Holder<Potion> output = MyPotionRecipes.getOutput(potionType, ingredient);
+                        if (output != null) {
+                            // Create the output potion in-place
+                            ItemStack result = potion.copy();
+                            result.set(DataComponents.POTION_CONTENTS,
+                                new PotionContents(Optional.of(output), Optional.empty(), Collections.emptyList()));
+                            be.getItemHandler().setStackInSlot(potionSlot, result);
+                        }
+                    }
+                }
+            }
+            // Consume ingredient and fuel
+            ingredient.shrink(1);
+            fuelTime -= 20;
+            brewTime = 0;
+            setChannelValue(be, slotIndex, 0, fuelTime);
+            setChannelValue(be, slotIndex, 1, brewTime);
+        }
+        be.setChanged();
+    }
+
+    // Helper methods for potion type checking and extraction
+    // (similar to BrewingModuleItem helpers)
+}
+```
+
+### Step 3: Register and Configure
+
+Follow the standard registration steps (sections 7-9 of this guide):
+
+- Register the item with NeoForge
+- Create item and overlay textures
+- Add to `praeteritum_futurum:machine_modules` and `processing_modules` tags
+- Add language keys and a crafting recipe
+
+### Important Notes
+
+- **In-place brewing**: Potions transform in their input slots, so no output slots are needed. This fits within the 4-adjacent-slot limit.
+- **Fuel**: Blaze Powder is auto-detected from the ingredient slot. Each powder provides 20 brew batches.
+- **PotionContents constructor**: Always pass `Optional.empty()` and `Collections.emptyList()` for the custom effects parameter. Passing `null` will cause a crash when serializing potions.
+- **Splash and lingering conversions**: If your mod has splash/lingering-style conversions, handle them as item-type changes (like the Brewing Module does with gunpowder and dragon breath), not as separate potion types.
+
+## Module Implementation Checklist
 
 - [ ] Extend the appropriate base class (`ProcessingModuleItem`, `LogisticsModuleItem`, or `BaseModuleItem`)
 - [ ] Override the required methods
@@ -459,65 +661,3 @@ Then register it, add it to the `machine_modules` tag, and create the textures. 
 - [ ] Add to `praeteritum_futurum:machine_modules` tag
 - [ ] (Optional) Add to `processing_modules` / `configurable_modules` tags
 - [ ] (Optional) Add a crafting recipe
-
----
-
-## 12. Comparison with Other Mod APIs
-
-This section compares the Praeteritum Futurum Module API with other popular mod APIs to help you understand where it stands.
-
-### Create Mod Addon API
-
-**How Create works:** Create provides a template repository and CLI bootstrapper for addons. Addons are standalone mods that depend on Create and use its public classes (like `create.foundation.block` and `create.kinetics`).
-
-| Feature | Create | Praeteritum Futurum |
-|---------|--------|---------------------|
-| Template repo | ✅ Provided | ❌ Not yet provided |
-| Public base classes | ✅ Extensive | ✅ 3 base classes |
-| Data-only addons | ✅ Via data packs | ✅ Via data tags |
-| Documentation | ✅ Wiki + examples | ✅ This guide |
-| Network packets | ✅ Pre-registered | ✅ Pre-registered |
-| Config screen system | ✅ Custom | ✅ GenericModuleConfigMenu |
-
-**What Create does better:** Provides a ready-to-use template repository and CLI bootstrapper. A modder can clone the template and start coding immediately.
-
-**What Praeteritum Futurum does better:** The module system is more self-contained — you extend a base class and the machine framework handles all the rest (slot resolution, progress tracking, overlay rendering). Create addons often need to implement their own block entities and tile entity rendering from scratch.
-
-### Architectury API
-
-**How Architectury works:** Architectury is a cross-loader abstraction layer. It provides gradle plugins, templates, and API abstractions for developing mods that work on both Fabric and NeoForge.
-
-| Feature | Architectury | Praeteritum Futurum |
-|---------|--------------|---------------------|
-| Cross-loader support | ✅ Fabric + NeoForge | ❌ NeoForge only |
-| Gradle plugin | ✅ Full toolchain | ❌ Standard NeoForge |
-| Event hooks | ✅ 90+ events | ❌ N/A |
-| Registry abstraction | ✅ Unified | ❌ NeoForge-native |
-| Template mods | ✅ Provided | ❌ Not yet provided |
-
-**Note:** Architectury is a different category — it's a development toolchain, not a gameplay API. The comparison is only relevant for the template and documentation aspects.
-
-### What's Missing Compared to Create
-
-1. **Template repository** — Create provides a GitHub template you can clone. Praeteritum Futurum doesn't yet have one. The complete example in this guide serves the same purpose, but a template repo would lower the barrier to entry.
-
-2. **Dedicated API JAR** — Create ships a separate API JAR that addons depend on. Praeteritum Futurum currently ships everything in one JAR. This isn't a blocker, but a separate API JAR would reduce the dependency footprint for addons.
-
-3. **API versioning** — Create uses semantic versioning for its API. Praeteritum Futurum should follow the same pattern to ensure addon compatibility across versions.
-
-### What Praeteritum Futurum Does Better
-
-1. **Zero boilerplate for common patterns** — The `ITextInputModule` interface gives you a complete text input config screen with no custom code. The `GenericModuleConfigMenu` gives you a slot-based config screen. Create addons often need to implement their own GUI infrastructure.
-
-2. **Automatic server-side dispatch** — `tickModule()` is called automatically for all module types. You don't need to register your module with any event system or service loader.
-
-3. **Additive data tags** — Third-party modules work purely via data tags. No code changes to the base mod are needed. The tags are additive (`"values"`, not `"replace": true`), so multiple mods can add modules without conflict.
-
-4. **Inline overlay system** — The module config overlay renders directly on the machine UI, not as a separate full-screen. This is more compact and keeps the player in context.
-
-### Recommendations for Future API Improvements
-
-- **Create a template repository** — Follow Create's model: a GitHub template with a pre-configured `build.gradle`, `mods.toml`, and a skeleton module class.
-- **Publish a separate API JAR** — Ship the API classes as a separate artifact so addons have a minimal dependency.
-- **Add API versioning** — Use semantic versioning and document breaking changes in the changelog.
-- **Consider a `ModuleRegistry` event** — Instead of requiring data tags, an event could let mods register modules programmatically. This would be optional alongside the existing tag system.

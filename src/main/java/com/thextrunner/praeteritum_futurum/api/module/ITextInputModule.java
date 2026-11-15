@@ -7,9 +7,14 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Interface for modules that configure their behavior through text input.
  * <p>
- * When a module implements this interface, clicking the module in the machine menu
- * opens a text input screen where the player can type a value. The text is stored
- * in the module's NBT data and can be read during processing.
+ * When a module implements this interface and has a config slot, clicking the
+ * center config slot in the machine menu opens an inline text input panel
+ * (overlay) where the player can type a value. The text is stored in the
+ * module's NBT data and can be read during processing.
+ * <p>
+ * The text input panel appears as a sub-panel on top of the machine config
+ * screen — it does not replace the entire screen. The player can close the
+ * panel by clicking outside it or by saving/clearing the text.
  * <p>
  * This interface is designed for third-party modders who want to create modules
  * that accept text configuration, such as:
@@ -21,11 +26,16 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * To use this interface, implement it on your module item class and override
  * the methods to define the text field label, existing value, and how to
- * store/retrieve the text value.
+ * store/retrieve the text value. Make sure your module also returns
+ * {@code true} from {@code hasConfigSlot()} so the center config slot is
+ * displayed in the inline overlay.
  * <p>
  * Example usage:
  * <pre>
- * public class MyModuleItem extends BaseModuleItem implements ITextInputModule {
+ * public class MyModuleItem extends ProcessingModuleItem implements ITextInputModule {
+ *     &#64;Override
+ *     public boolean hasConfigSlot() { return true; }
+ *
  *     &#64;Override
  *     public Component getTextInputLabel() {
  *         return Component.translatable("module.my_mod.text_input.label");

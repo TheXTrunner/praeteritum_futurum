@@ -2,6 +2,8 @@
 
 Thank you for your interest in contributing! This mod is developed with AI assistance (Google Gemini), and contributions from the community are welcome.
 
+For the project overview and player-facing features, start with the [README](./README.md). Use the [documentation index](./docs/README.md) to find focused guides; the [architecture overview](./docs/ARCHITECTURE.md) maps the major code areas and runtime flow.
+
 ## Development Setup
 
 ### Prerequisites
@@ -17,26 +19,30 @@ Thank you for your interest in contributing! This mod is developed with AI assis
    ```
 
 2. Open the project in IntelliJ IDEA:
-   - File → Open → Select the project root directory
+   - In IntelliJ IDEA, choose File > Open and select the project root directory
    - Wait for Gradle sync to complete
 
-3. Run the development client:
+3. Run the development client. On Windows:
    ```bash
-   ./gradlew runClient
+   .\gradlew.bat runClient
    ```
-   Or use the run configuration in your IDE.
+   On macOS or Linux, use `./gradlew runClient`. You can also use the run configuration in your IDE.
 
 ### Building the Mod
-```bash
-./gradlew build
-```
+On Windows, run `.\gradlew.bat build`; on macOS or Linux, run `./gradlew build`.
 The compiled JAR will be in `build/libs/`.
+
+### Running GameTests
+
+Run the registered server-side GameTests with:
+
+On Windows, run `.\gradlew.bat runGameTestServer`; on macOS or Linux, run `./gradlew runGameTestServer`.
+
+The GameTest server uses the separate `run-gametest/` directory. Its worlds and logs are generated files and are ignored by Git. Test source and structure templates live under `src/main/java/.../gametest/` and `src/main/resources/data/praeteritum_futurum/structure/`.
 
 ### Data Generation
 If you add new blocks, items, or recipes, run the data generators:
-```bash
-./gradlew runData
-```
+On Windows, run `.\gradlew.bat runData`; on macOS or Linux, run `./gradlew runData`.
 Commit the generated files in `src/generated/resources/`.
 
 ## Code Style
@@ -47,11 +53,11 @@ Commit the generated files in `src/generated/resources/`.
 
 ## Module API
 The mod uses a modular API for extensibility:
-- `IConfigurableModule` — for modules with configuration screens
-- `IModuleMenuProvider` — for modules that provide container menus
-- `ICustomScreenProvider` — for modules with custom GUI screens
+- `IConfigurableModule`: for modules with configuration screens
+- `IModuleMenuProvider`: for modules that provide container menus
+- `ICustomScreenProvider`: for modules with custom GUI screens
 
-See the existing module implementations (`IoModuleItem`, `ProcessingModuleItem`, `FilterModuleItem`) for examples.
+See the [Module API Guide](./docs/MODULE-API-GUIDE.md) and existing implementations (`IoModuleItem`, `ProcessingModuleItem`, `FilterModuleItem`) for examples.
 
 ## Reporting Issues
 - Use the [GitHub Issues](https://github.com/TheXTrunner/praeteritum_futurum/issues) tracker for bugs and feature requests
@@ -61,6 +67,6 @@ See the existing module implementations (`IoModuleItem`, `ProcessingModuleItem`,
 ## Pull Requests
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes
+3. Make your changes and update relevant documentation when behavior or setup instructions change
 4. Test thoroughly
 5. Submit a pull request with a clear description of changes

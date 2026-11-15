@@ -84,6 +84,7 @@ public class BrewingRecipeItem {
         put(Potions.TURTLE_MASTER, Items.REDSTONE, Potions.LONG_TURTLE_MASTER);
         put(Potions.SLOW_FALLING, Items.REDSTONE, Potions.LONG_SLOW_FALLING);
         put(Potions.WATER_BREATHING, Items.REDSTONE, Potions.LONG_WATER_BREATHING);
+        put(Potions.STRENGTH, Items.REDSTONE, Potions.LONG_STRENGTH);
 
         // === Corrupted potions (Fermented Spider Eye) ===
         put(Potions.AWKWARD, Items.FERMENTED_SPIDER_EYE, Potions.MUNDANE);

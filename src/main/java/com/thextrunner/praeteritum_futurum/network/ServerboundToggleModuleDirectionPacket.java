@@ -15,6 +15,14 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Packet sent when the player toggles a processing module's slot direction.
+ * <p>
+ * Flow: Player clicks a direction arrow in the module config screen → client sends this packet
+ * → server cycles the slot mode (Disabled → Input → Output → Disabled) for that direction.
+ * <p>
+ * Only affects ProcessingModuleItem subclasses (Smelting, Stonecutter, Composter, Grindstone).
+ */
 public record ServerboundToggleModuleDirectionPacket(int slotIndex, Direction direction, BlockPos blockPos) implements CustomPacketPayload {
     public static final Type<ServerboundToggleModuleDirectionPacket> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(PraeteritumFuturumMod.MODID, "toggle_module_direction")
@@ -38,6 +46,10 @@ public record ServerboundToggleModuleDirectionPacket(int slotIndex, Direction di
     public static void handle(ServerboundToggleModuleDirectionPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             ServerPlayer player = (ServerPlayer) context.player();
+            if (player.distanceToSqr(packet.blockPos().getX() + 0.5, packet.blockPos().getY() + 0.5, packet.blockPos().getZ() + 0.5) > 64.0) {
+                PraeteritumFuturumMod.LOGGER.warn("Player {} tried to toggle module direction from too far away at {}", player.getName().getString(), packet.blockPos());
+                return;
+            }
             if (player.level().getBlockEntity(packet.blockPos()) instanceof MachineFrameworkBlockEntity blockEntity) {
                 ItemStack stack = blockEntity.getModuleHandler().getStackInSlot(packet.slotIndex());
 

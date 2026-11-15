@@ -10,7 +10,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.MapItem;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import net.neoforged.neoforge.items.ItemStackHandler;
@@ -227,7 +226,6 @@ public class CartographyModuleItem extends ProcessingModuleItem {
 
         // Use the scaled() method to create a zoomed-out copy
         MapItemSavedData scaledData = sourceData.scaled();
-        if (scaledData == null) return null;
 
         net.minecraft.world.level.saveddata.maps.MapId newMapId = level.getFreeMapId();
         level.setMapData(newMapId, scaledData);
@@ -282,7 +280,6 @@ public class CartographyModuleItem extends ProcessingModuleItem {
 
         // Use the locked() method to create a locked copy
         MapItemSavedData lockedData = sourceData.locked();
-        if (lockedData == null) return null;
 
         net.minecraft.world.level.saveddata.maps.MapId newMapId = level.getFreeMapId();
         level.setMapData(newMapId, lockedData);

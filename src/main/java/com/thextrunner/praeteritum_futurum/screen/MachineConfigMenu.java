@@ -1,6 +1,6 @@
 package com.thextrunner.praeteritum_futurum.screen;
 
-import com.thextrunner.praeteritum_futurum.ModItems;
+import com.thextrunner.praeteritum_futurum.item.ModItems;
 import com.thextrunner.praeteritum_futurum.block.entity.MachineFrameworkBlockEntity;
 import com.thextrunner.praeteritum_futurum.inventory.ModuleAwareSlotItemHandler;
 import com.thextrunner.praeteritum_futurum.inventory.ModuleConfigSlotItemHandler;
@@ -24,6 +24,9 @@ public class MachineConfigMenu extends BaseMachineContainerMenu {
 
     public MachineConfigMenu(int containerId, Inventory playerInventory, MachineFrameworkBlockEntity blockEntity) {
         super(ModMenuTypes.MACHINE_CONFIG_MENU.get(), containerId, blockEntity != null ? blockEntity.getBlockPos() : null);
+        if (blockEntity == null) {
+            throw new IllegalStateException("Invalid block entity for MachineConfigMenu");
+        }
 
         Player player = playerInventory.player;
         this.isConfigMode = player.getMainHandItem().is(ModItems.YOOL.get()) || player.getOffhandItem().is(ModItems.YOOL.get());
@@ -32,7 +35,6 @@ public class MachineConfigMenu extends BaseMachineContainerMenu {
         for (int row = 0; row < 3; ++row) {
             for (int col = 0; col < 9; ++col) {
                 int index = col + row * 9;
-                assert blockEntity != null;
                 if (isConfigMode) {
                     this.addSlot(new ModuleConfigSlotItemHandler(
                             blockEntity,

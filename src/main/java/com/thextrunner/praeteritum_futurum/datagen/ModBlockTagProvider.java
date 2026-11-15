@@ -1,6 +1,6 @@
 package com.thextrunner.praeteritum_futurum.datagen;
 
-import com.thextrunner.praeteritum_futurum.ModBlocks;
+import com.thextrunner.praeteritum_futurum.block.ModBlocks;
 import com.thextrunner.praeteritum_futurum.ModTags;
 import com.thextrunner.praeteritum_futurum.PraeteritumFuturumMod;
 import net.minecraft.core.HolderLookup;

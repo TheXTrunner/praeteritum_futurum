@@ -65,5 +65,3 @@ Detailed manual layouts, expected outcomes, and log interpretation are in [Pisto
 - Piston movement preservation: `mixin/` and `accessor/`.
 - Automated piston regressions: `gametest/` and `src/main/resources/data/praeteritum_futurum/structure/`.
 - Config defaults and limits: `Config.java`.
-
-Update this map when package responsibilities, important runtime flows, or persistence and piston behavior change.

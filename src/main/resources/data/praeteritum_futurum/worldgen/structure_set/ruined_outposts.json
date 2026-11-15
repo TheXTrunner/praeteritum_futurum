@@ -6,7 +6,7 @@
     }
   ],
   "placement": {
-    "type": "minecraft:random_spread",
+    "type": "praeteritum_futurum:config_driven_random_spread",
     "spacing": 34,
     "separation": 12,
     "salt": 48291048
