@@ -4,25 +4,11 @@ All notable changes to Praeteritum Futurum will be documented in this file.
 
 [Project README](README.md) | [Documentation index](docs/README.md)
 
-## [Deferred] Held Back from 0.1.2 (Local Development Only)
-
-The following features are fully implemented locally but deferred to a future release (0.1.3+):
-
-- **Block Manipulator Module** for automated block placing and breaking
-  - Refactored into `BlockManipulatorPlacementEngine.java` and `BlockManipulatorBreakingEngine.java`
-  - Smart placement for 15+ block types, redstone component support
-  - Architecture documentation at `docs/BLOCK-MANIPULATOR-ENGINE.md`
-- **Redstone Module** — a programmable logic circuit with a 6×9 (54-slot) circuit editor
-  - `RedstoneCircuit` and `RedstoneComponent` API classes for custom circuit-based modules
-  - Signal propagation, rotation, and wall attachment support
-- **Piston-compatible Machine Framework:** pistons can push and sticky pistons can pull the machine while preserving all data
-
-The code remains on the `main` branch for continued development.
-
-## [Unreleased], 0.1.2, In Development
+## [0.1.2] - 2026-11-15
 
 ### Added
-- **Public/Private toggle** for anti-grief protection: set a machine to private to prevent other players from using or interacting with it.
+- **Piston-compatible Machine Framework:** pistons can push the machine and sticky pistons can pull it while preserving modules, internal inventory, and public/private settings. Also works with slime/honey blocks. See [piston test scenarios](docs/PISTON_TEST_SCENARIOS.md) and [troubleshooting notes](docs/PISTON_TROUBLESHOOTING.md).
+- **Public/Private toggle** for anti-grief protection: set a machine to private to prevent other players from using or interacting with it. Private machines are also protected from piston movement, blocking all pistons (including the owner's own).
 - **Blueprint system for copying machine configurations**
 - Blacklist mode for Filter Module
 - **Brewing Module** for automated potion brewing
@@ -46,10 +32,17 @@ The code remains on the `main` branch for continued development.
   - IO transfer tick rate configuration
   - Yool rotation toggle configuration
   - Anvil Module max repair cost: override the "Too Expensive" limit (0 = no limit)
-
 - Various internal logic improvements to machine and module behavior
 
-## [0.1.1]  2026-10-30
+### Deferred
+- **Block Manipulator Module** has been deferred to post-0.1.2 for continued development
+  - The module is fully implemented locally but held back from this release
+  - Will be included in a future release (0.1.3+)
+- **Redstone Module** — a programmable logic circuit with a 6×9 (54-slot) circuit editor
+  - `RedstoneCircuit` and `RedstoneComponent` API classes for custom circuit-based modules
+  - Signal propagation, rotation, and wall attachment support
+
+## [0.1.1] - 2026-10-30
 
 ### Added
 - Ruined Outpost structures spawning in the Overworld
