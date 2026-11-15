@@ -153,6 +153,21 @@ public class MachineFrameworkBlockEntity extends BlockEntity implements MenuProv
         protected void onContentsChanged(int slot) {
             setChanged();
         }
+
+        @Override
+        public int getSlotLimit(int slot) {
+            // Ask each module if it wants to restrict this inventory slot
+            for (int i = 0; i < moduleHandler.getSlots(); i++) {
+                ItemStack moduleStack = moduleHandler.getStackInSlot(i);
+                if (moduleStack.getItem() instanceof BaseModuleItem module) {
+                    int limit = module.getInventorySlotLimit(MachineFrameworkBlockEntity.this, i, slot);
+                    if (limit > 0) {
+                        return limit;
+                    }
+                }
+            }
+            return super.getSlotLimit(slot);
+        }
     };
 
     public MachineFrameworkBlockEntity(BlockPos pos, BlockState state) {

@@ -226,7 +226,7 @@ public class FilterModuleItem extends LogisticsModuleItem implements IModuleMenu
         boolean foundMatch = false;
         for (int i = 0; i < handler.getSlots(); i++) {
             ItemStack filterItem = handler.getStackInSlot(i);
-            if (!filterItem.isEmpty() && ItemStack.isSameItem(filterItem, targetStack)) {
+            if (!filterItem.isEmpty() && ItemStack.isSameItemSameComponents(filterItem, targetStack)) {
                 foundMatch = true;
                 break;
             }

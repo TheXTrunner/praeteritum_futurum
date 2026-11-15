@@ -89,6 +89,38 @@ public class BrewingModuleItem extends ProcessingModuleItem {
     }
 
     @Override
+    public int getInventorySlotLimit(MachineFrameworkBlockEntity blockEntity, int moduleSlotIndex, int inventorySlotIndex) {
+        Map<Direction, SlotMode> modes = getSlotModes(blockEntity.getModuleHandler().getStackInSlot(moduleSlotIndex), NBT_KEY);
+
+        int row = moduleSlotIndex / 9;
+        int col = moduleSlotIndex % 9;
+
+        int[] neighborIndices = {
+                row > 0 ? moduleSlotIndex - 9 : -1,
+                row < 2 ? moduleSlotIndex + 9 : -1,
+                col > 0 ? moduleSlotIndex - 1 : -1,
+                col < 8 ? moduleSlotIndex + 1 : -1
+        };
+        Direction[] dirs = {Direction.UP, Direction.DOWN, Direction.WEST, Direction.EAST};
+
+        for (int i = 0; i < 4; i++) {
+            int adjSlot = neighborIndices[i];
+            if (adjSlot < 0) continue;
+
+            ItemStack adjModule = blockEntity.getModuleHandler().getStackInSlot(adjSlot);
+            if (!adjModule.is(com.thextrunner.praeteritum_futurum.item.ModItems.INVENTORY_MODULE.get())) {
+                continue;
+            }
+
+            SlotMode mode = modes.get(dirs[i]);
+            if (mode == SlotMode.INGREDIENT && adjSlot == inventorySlotIndex) {
+                return 1; // Limit ingredient slot to 1 item for proper queuing
+            }
+        }
+        return 0; // Use default limit for non-ingredient slots
+    }
+
+    @Override
     public SlotMode getNextMode(ItemStack stack, Direction clickedDir) {
         Map<Direction, SlotMode> modes = getSlotModes(stack, NBT_KEY);
         SlotMode current = modes.get(clickedDir);

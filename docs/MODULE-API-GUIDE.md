@@ -91,6 +91,7 @@ There are three base classes you can extend, depending on your module's purpose:
 - **Optional overrides:**
   - `getMaxInputs()` - max input slots (default: unlimited)
   - `getMaxOutputs()` - max output slots (default: unlimited)
+  - `getInventorySlotLimit()` - restrict the max stack size for a specific inventory slot (default: 0 = no restriction); the Brewing Module uses this to limit ingredient slots to 1 item
   - `hasConfigSlot()` - returns `true` to show a center config button (default: `false`)
   - `acceptsConfigSlotItem()` - restricts what items can be placed in the config slot (default: accepts all)
   - `useDefaultConfigSlotClick()` - returns `false` to handle config slot clicks yourself (default: `true`)

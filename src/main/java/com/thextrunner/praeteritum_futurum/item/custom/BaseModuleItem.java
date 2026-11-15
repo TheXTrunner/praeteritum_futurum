@@ -84,4 +84,17 @@ public class BaseModuleItem extends Item {
     }
 
     public void openConfiguration(ServerPlayer player, ItemStack moduleStack, int slotIndex, BlockPos blockPos) {}
+
+    /**
+     * Returns the max stack limit for a specific inventory slot used by this module.
+     * Override in subclasses to restrict slot capacity (e.g., ingredient slots limited to 1).
+     *
+     * @param blockEntity The parent machine framework
+     * @param moduleSlotIndex The grid slot index where this module is placed
+     * @param inventorySlotIndex The inventory slot index to check
+     * @return The max stack limit for the slot, or 0 to use the default limit
+     */
+    public int getInventorySlotLimit(MachineFrameworkBlockEntity blockEntity, int moduleSlotIndex, int inventorySlotIndex) {
+        return 0; // 0 means use default (no restriction)
+    }
 }
