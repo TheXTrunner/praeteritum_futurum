@@ -15,6 +15,7 @@ The mod also includes exploration elements: discover **Ruined Outpost** structur
 - **Modular design:** mix and match modules to create custom automation pipelines
 - **Blueprint system:** copy configurations across machines for easy replication
 - **Public/Private toggle:** anti-grief protection that prevents other players from using or interacting with your machine
+- **Data Cleaning recipe:** place a configured module or blueprint alone in any crafting grid to reset it to a clean state
 
 ### Modules
 | Module | Description |
@@ -29,11 +30,13 @@ The mod also includes exploration elements: discover **Ruined Outpost** structur
 | **Cartography Module** | Use cartography table recipes |
 | **Anvil Module** | Use anvil recipes |
 | **Brewing Module** | Use brewing stand recipes |
+| **Ejection Module** | Eject items with dispenser or dropper behavior |
 
 ### Exploration
 - **Ruined Outpost structures** spawning in the Overworld
-- **Anomaly Compass** for locating structures via right-click
-- **Salvage Cutter** and **Yool wrench** tools with dual inventory mechanics
+- **Anomaly Compass** for locating structures via right-click (sneak + right-click to cycle between nearby targets)
+- **Salvage Cutter** for mining salvage blocks with increased speed
+- **Yool wrench** for rotating directional blocks and hoppers (sneak + right-click on a Machine Framework to safely break and drop it)
 - **Salvage Scrap** and **Refined Scrap** crafting materials
 - **Strange Artifact** dropped from advanced salvage blocks
 

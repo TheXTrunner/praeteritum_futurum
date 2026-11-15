@@ -4,6 +4,34 @@ All notable changes to Praeteritum Futurum will be documented in this file.
 
 [Project README](README.md) | [Documentation index](docs/README.md)
 
+## [Unreleased] - 0.1.3, In Development
+
+### Added
+- **Ejection Module** for ejecting items from the machine to the world
+  - Three ejection styles: `DISPENSE` (uses vanilla `DispenseItemBehavior` — arrows fire, snowballs throw, potions splash, eggs throw, spawn eggs spawn, bone meal fertilizes, boats place, buckets collect/place fluids, armor equips mobs, etc.), `DROP` (simple entity drop — items eject as pickups), and `CATCH` (captures item entities spawned by DISPENSE/DROP and routes them to a designated output slot)
+  - DISPENSE mode delegates entirely to vanilla dispenser logic, so all current and future dispenser-compatible items work automatically
+  - CATCH mode captures items returned by dispenser behaviors (e.g., shearing sheep drops wool, bucket collecting returns filled bucket, armor ejection) before they fall to the ground
+  - Direction buttons adapt to adjacent module type: inventory modules cycle DISPENSE/DROP/CATCH, IO modules cycle ENABLED/DISABLED
+  - Only interacts with `OUTPUT` and `OPEN` IO faces; `INPUT` faces are ignored
+  - Requires an adjacent IO module to determine world directions and adjacent Inventory modules for item storage
+- **Adjacent-module detection infrastructure** in `BaseModuleItem`
+  - `AdjacentModuleType` enum for classifying modules (INVENTORY, IO, FILTER, PROCESSING, LOGISTICS)
+  - `getAllowedAdjacentModuleTypes()` hook for configurable modules to declare which adjacent types they care about
+  - Shared UI helpers (`getClickedDirection`, `hasAdjacentSlot`, `isInsideButton`) eliminate code duplication across modules
+  - Processing modules now detect only Inventory modules, preventing invalid direction configuration
+- Generic direction-toggle packet handler for all configurable modules via `BaseModuleItem.toggleDirectionMode()`
+- **Husk sand drops:** Husks have a chance to drop sand on death, with configurable drop chance and amount
+
+### Changed
+- **`GridDirection` enum** replaces raw `Direction` for all grid-adjacent slot navigation
+  - Separates grid directions (`UP`, `DOWN`, `LEFT`, `RIGHT`) from world-facing IO directions (`NORTH`, `SOUTH`, `WEST`, `EAST`, `UP`, `DOWN`)
+  - Prevents confusion between grid-adjacent slot lookup and world-facing block directions
+  - All configurable module overlays, NBT config maps, and adjacent-module detection now use `GridDirection`
+- **Slot mode cycle is now declarative** via `getSupportedModes()` in `ProcessingModuleItem`
+  - Each module declares which `SlotMode` values it supports (e.g., Smelting uses INPUT/FUEL/OUTPUT; Brewing uses POTION/INGREDIENT)
+  - The base `getNextMode()` iterates only over supported modes, so modules never cycle into modes they don't use
+  - Per-mode limits are controlled by `getMaxForMode()`, eliminating duplicate `getNextMode()` implementations across subclasses
+
 ## [0.1.2] - 2026-11-15
 
 ### Added
@@ -54,4 +82,5 @@ All notable changes to Praeteritum Futurum will be documented in this file.
 - Directional IO modules for routing inputs and outputs
 - Filter Module with whitelist mode
 - Ghost item filter containers for precise inventory control
-- Smelting Module, Stonecutter Module, and Composter Module
+- Smelting Module, Stonecutter Module, Composter Module, and Grindstone Module
+- Data Cleaning recipe for resetting module and blueprint configuration
