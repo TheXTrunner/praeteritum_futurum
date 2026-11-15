@@ -7,8 +7,6 @@ All notable changes to Praeteritum Futurum will be documented in this file.
 ## [0.1.2] - 2026-11-15
 
 ### Added
-- **Piston-compatible Machine Framework:** pistons can push the machine and sticky pistons can pull it while preserving modules, internal inventory, and public/private settings. Also works with slime/honey blocks. See [piston test scenarios](docs/PISTON_TEST_SCENARIOS.md) and [troubleshooting notes](docs/PISTON_TROUBLESHOOTING.md).
-- **Public/Private toggle** for anti-grief protection: set a machine to private to prevent other players from using or interacting with it. Private machines are also protected from piston movement, blocking all pistons (including the owner's own).
 - **Blueprint system for copying machine configurations**
 - Blacklist mode for Filter Module
 - **Brewing Module** for automated potion brewing
