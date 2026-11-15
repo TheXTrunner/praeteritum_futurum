@@ -21,8 +21,6 @@ This is a code-oriented map of the mod for contributors and module authors. It d
 | `inventory` | Item-handler adapters for module constraints, config slots, single slots, and read-only views. |
 | `network` | Serverbound payloads for machine and module UI actions. Handlers validate the request before changing server state. |
 | `screen` | Machine and module menus, screens, and menu-type registration. |
-| `mixin`, `accessor` | Piston integration and access to piston moving-block-entity data needed to preserve machine block-entity state. |
-| `gametest` | Development GameTest fixtures and regression tests for piston edge cases. |
 | `recipe` | Custom recipe types and serializers. |
 | `worldgen` | Config-driven structure placement and registration. |
 | `datagen` | Generated block states, models, tags, language entries, and recipes. |
@@ -48,20 +46,10 @@ The machine configuration menu edits the module grid. Module-specific configurat
 
 Keep client-only classes and APIs in the client entry point or client packages so dedicated servers do not load client classes.
 
-## Piston Integration and Data Safety
-
-`PistonBaseBlockMixin` handles piston movement when the Machine Framework block is part of the resolved movement. It allows this specific block entity to be pushable, resolves the full piston structure (including sticky branches), and checks required chunks before allowing a move that could affect a machine. If a required destination is not loaded, the move is rejected before machine data is changed.
-
-For valid moves, machine block-entity data is carried through the piston moving block entity using the accessor in `accessor`. `PistonBlockEntityMixin` restores that data when movement finishes. The mixins leave ordinary piston operations to vanilla when no Machine Framework block is involved. Development-only fixtures under `gametest` exercise cases that are difficult to reproduce reliably by walking between chunks.
-
-Detailed manual layouts, expected outcomes, and log interpretation are in [Piston Test Scenarios](PISTON_TEST_SCENARIOS.md) and [Piston Troubleshooting](PISTON_TROUBLESHOOTING.md).
-
 ## Useful Source Locations
 
 - Registrations: `block/ModBlocks.java`, `block/entity/ModBlockEntities.java`, `item/ModItems.java`, `screen/ModMenuTypes.java`, and `recipe/ModRecipeSerializers.java`.
 - Machine state and tick flow: `block/entity/MachineFrameworkBlockEntity.java`.
 - Module contracts and examples: `api/module/` and `item/custom/`.
 - Network payload registration: `PraeteritumFuturumMod.java`; payload implementations are in `network/`.
-- Piston movement preservation: `mixin/` and `accessor/`.
-- Automated piston regressions: `gametest/` and `src/main/resources/data/praeteritum_futurum/structure/`.
 - Config defaults and limits: `Config.java`.
