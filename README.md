@@ -30,11 +30,6 @@ The mod also includes exploration elements: discover **Ruined Outpost** structur
 | **Anvil Module** | Use anvil recipes |
 | **Brewing Module** | Use brewing stand recipes |
 
-### Coming Soon
-| Module | Description |
-|--------|-------------|
-| **Block Manipulator Module** | Place and break blocks in the world with smart orientation and NBT preservation (deferred to post-0.1.2) |
-
 ### Exploration
 - **Ruined Outpost structures** spawning in the Overworld
 - **Anomaly Compass** for locating structures via right-click
@@ -67,7 +62,6 @@ The [documentation index](./docs/README.md) is the entry point for project docum
 
 - To develop the project, start with [CONTRIBUTING.md](./CONTRIBUTING.md); it links to the [architecture overview](./docs/ARCHITECTURE.md) and focused guides.
 - To create an add-on module, use the [Module API Guide](./docs/MODULE-API-GUIDE.md).
-- To reproduce piston or chunk-boundary behavior, use [Piston Test Scenarios](./docs/PISTON_TEST_SCENARIOS.md), then consult [Piston Troubleshooting](./docs/PISTON_TROUBLESHOOTING.md) if the result differs.
 
 ## Release History and Future Ideas
 
@@ -89,6 +83,6 @@ This project is licensed under the [MIT License](./LICENSE).
 
 ## Development & Transparency
 
-This project was developed in close collaboration with AI assistance (Google's Gemini) to design, architect, and debug complex NeoForge mechanics, custom item components, and container synchronization.
+This project was developed in close collaboration with AI assistance (Google's Gemini and JetBrains' Junie) to design, architect, and debug complex NeoForge mechanics, custom item components, and container synchronization.
 
 Check out the [`Gemini/`](./Gemini) directory for the complete chronological devlog, including architectural notes, conversation archives, and **timestamped development screenshots**.
