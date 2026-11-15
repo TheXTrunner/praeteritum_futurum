@@ -31,7 +31,6 @@ public class ModLanguageProvider extends LanguageProvider {
         addItem(ModItems.CARTOGRAPHY_MODULE, "Cartography Module");
         addItem(ModItems.ANVIL_MODULE, "Anvil Module");
         addItem(ModItems.BREWING_MODULE, "Brewing Module");
-        addItem(ModItems.REDSTONE_MODULE, "Redstone Module");
 
         addItem(ModItems.BLUEPRINT, "Blueprint");
 
@@ -95,9 +94,6 @@ public class ModLanguageProvider extends LanguageProvider {
         add("text.autoconfig.praeteritum_futurum.option.machine.anvilMaxRepairCost", "Anvil Max Repair Cost");
         add("text.autoconfig.praeteritum_futurum.option.machine.anvilMaxRepairCost.@",
             "Maximum repair cost for Anvil module operations. 0 = no limit (default), 40 = vanilla behavior.");
-        add("text.autoconfig.praeteritum_futurum.option.machine.redstoneEvaluationTickRate", "Redstone Evaluation Tick Rate");
-        add("text.autoconfig.praeteritum_futurum.option.machine.redstoneEvaluationTickRate.@",
-            "How many ticks between Redstone Module signal evaluations. Higher values = slower logic but less server load. Default: 2 ticks.");
         add("text.autoconfig.praeteritum_futurum.option.machine.enableDebugLogging", "Enable Debug Logging");
         add("text.autoconfig.praeteritum_futurum.option.machine.enableDebugLogging.@",
             "Enable verbose debug logging for all machine modules. Generates a large amount of log output — only enable for debugging.");

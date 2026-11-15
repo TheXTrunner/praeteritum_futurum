@@ -205,14 +205,6 @@ public class ModItems {
             ITEMS.registerItem("brewing_module", BrewingModuleItem::new);
 
     /**
-     * Redstone Module — a programmable logic circuit with a 6×9 (54-slot) circuit editor.
-     * Players place redstone components (Wire, Repeater, Comparator, Torch) to create
-     * custom logic circuits that control when other modules activate.
-     */
-    public static final DeferredItem<RedstoneModuleItem> REDSTONE_MODULE =
-            ITEMS.registerItem("redstone_module", RedstoneModuleItem::new);
-
-    /**
      * Blueprint — a utility item that copies the entire configuration of one Machine Framework
      * to another. Right-click a configured machine to save its setup, then right-click another
      * machine to apply the saved configuration using modules in inventory.

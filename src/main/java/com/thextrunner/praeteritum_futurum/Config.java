@@ -104,22 +104,6 @@ public class Config {
                 .defineInRange("anvilMaxRepairCost", 0, 0, 100);
 
         /**
-         * Tick interval for Redstone Module signal propagation.
-         * <p>
-         * Controls how often the redstone circuit evaluates and propagates signals.
-         * A value of 1 means every tick. The default of 2 means every other tick.
-         */
-        public static final ModConfigSpec.IntValue REDSTONE_EVALUATION_TICK_RATE = BUILDER
-                .comment(
-                        "How many ticks between Redstone Module signal evaluations",
-                        "Higher values = slower logic but less server load",
-                        "Default: 2 (one evaluation every 2 ticks)",
-                        "Range: 1-100"
-                )
-                .translation("text.autoconfig.praeteritum_futurum.option.machine.redstoneEvaluationTickRate")
-                .defineInRange("redstoneEvaluationTickRate", 2, 1, 100);
-
-        /**
          * Enable verbose debug logging for machine modules.
          * <p>
          * When enabled, modules will log detailed information about their operations
@@ -197,7 +181,6 @@ public class Config {
         Object ignore = General.ENABLE_YOOL_ROTATION;
         ignore = Machine.IO_TRANSFER_TICK_RATE;
         ignore = Machine.ANVIL_MAX_REPAIR_COST;
-        ignore = Machine.REDSTONE_EVALUATION_TICK_RATE;
         ignore = Machine.ENABLE_DEBUG_LOGGING;
         ignore = WorldGen.STRUCTURE_SPAWN_RATE;
     }
@@ -268,19 +251,6 @@ public class Config {
         } catch (NullPointerException e) {
             // Spec not built yet — return the default value (no limit)
             return 0;
-        }
-    }
-
-    /**
-     * Safely gets the Redstone Module evaluation tick rate config value.
-     * Returns the default value (2 ticks) if the config spec hasn't been built yet.
-     */
-    public static int getRedstoneEvaluationTickRate() {
-        try {
-            return Machine.REDSTONE_EVALUATION_TICK_RATE.get();
-        } catch (NullPointerException e) {
-            // Spec not built yet — return the default value
-            return 2;
         }
     }
 

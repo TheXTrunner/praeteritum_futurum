@@ -152,16 +152,6 @@ public class ModRecipeProvider extends RecipeProvider implements IConditionBuild
                 .unlockedBy("has_refined_scrap", has(ModItems.REFINED_SCRAP.get()))
                 .save(recipeOutput);
 
-        // Redstone Module: Redstone comparator and refined scrap
-        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.REDSTONE_MODULE.get())
-                .define('R', ModItems.REFINED_SCRAP.get())
-                .define('C', Items.COMPARATOR)
-                .pattern(" R ")
-                .pattern("RCR")
-                .pattern(" R ")
-                .unlockedBy("has_refined_scrap", has(ModItems.REFINED_SCRAP.get()))
-                .save(recipeOutput);
-
         // Unified Data Cleaning Recipe for modules and blueprints
         SpecialRecipeBuilder.special(DataCleaningRecipe::new)
                 .save(recipeOutput, ResourceLocation.fromNamespaceAndPath(PraeteritumFuturumMod.MODID, "data_cleaning"));

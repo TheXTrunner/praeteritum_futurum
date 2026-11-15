@@ -11,7 +11,6 @@ This guide walks through creating custom modules for the **Praeteritum Futurum**
 1. [Prerequisites & Dependency Setup](#1-prerequisites--dependency-setup)
 2. [Base Classes](#2-base-classes)
 3. [API Interfaces](#3-api-interfaces)
-4. [Redstone Circuit API](#4-redstone-circuit-api)
 5. [Creating a Processing Module](#6-creating-a-processing-module)
 6. [Creating a Logistics Module](#7-creating-a-logistics-module)
 7. [Creating a Base Module](#8-creating-a-base-module)
@@ -63,10 +62,6 @@ Once the dependency is set up, you can import and extend any of the public API c
 - `com.thextrunner.praeteritum_futurum.block.entity.MachineFrameworkBlockEntity`
 - `com.thextrunner.praeteritum_futurum.screen.GenericModuleConfigMenu`
 - `com.thextrunner.praeteritum_futurum.screen.GenericModuleConfigScreen`
-
-Key API classes for redstone logic:
-- `com.thextrunner.praeteritum_futurum.api.module.RedstoneComponent`: redstone component types
-- `com.thextrunner.praeteritum_futurum.api.module.RedstoneCircuit`: 54-slot circuit grid data model
 
 ---
 
@@ -171,133 +166,6 @@ For modules that render custom inline overlays directly on the machine UI.
 ```java
 void renderCustomScreen(GuiGraphics graphics, int x, int y, ItemStack stack, MachineFrameworkBlockEntity blockEntity)
 ```
-
----
-
-## 4. Redstone Circuit API
-
-The Praeteritum Futurum mod provides a redstone circuit API that allows you to create programmable logic modules. The built-in `RedstoneModuleItem` uses this API to provide a 6×9 (54-slot) circuit editor where players place redstone components to create custom logic circuits.
-
-### API Classes
-
-All redstone API classes are in `com.thextrunner.praeteritum_futurum.api.module`.
-
-#### `RedstoneComponent` (Enum)
-
-Defines the four redstone component types available in the circuit editor:
-
-| Component | Description |
-|-----------|-------------|
-| `WIRE` | Passes signal from neighbors, decays by 1 per block |
-| `REPEATER` | Delays signal by one tick, maintains signal strength |
-| `COMPARATOR` | Reads from input direction, outputs to opposite direction |
-| `TORCH` | Inverts signal (NOT gate), outputs 15 when input is 0 |
-
-Each component has a display name, color, and unique ID. Use `RedstoneComponent.fromId()` to convert an ID back to the enum value.
-
-#### `RedstoneCircuit` (Data Model)
-
-Represents a 6×9 (54-slot) redstone circuit grid. Key features:
-
-- **Component placement**: `setComponent(slotIndex, component)` and `getComponent(slotIndex)`
-- **Rotation**: `setRotation(slotIndex, rotation)` and `rotateComponent(slotIndex)`: rotation is 0-3 (N/E/S/W)
-- **Wall attachments**: `toggleWallAttachment(slotIndex)` and `getWallAttachment(slotIndex)`: allows torches to attach to walls as NOT gates
-- **Signal propagation**: `propagateSignals(inputSignals)`: evaluates the entire circuit and returns output signals
-- **NBT serialization**: `serializeNBT()` and `deserializeNBT(tag)`: save/load circuit state
-- **Item stack integration**: `fromStack(stack, registries)` and `toStack(stack)`: store circuits in item NBT
-
-### Using the Redstone Circuit API in a Custom Module
-
-Here's how to create a module that uses the redstone circuit API:
-
-```java
-public class MyLogicModule extends BaseModuleItem implements IModuleMenuProvider {
-    
-    public MyLogicModule(Properties properties) {
-        super(properties);
-    }
-    
-    @Override
-    public void tickModule(Level level, BlockPos pos, MachineFrameworkBlockEntity blockEntity, 
-                           int slotIndex, ItemStack stack) {
-        // Load the circuit from the module's item stack
-        RedstoneCircuit circuit = RedstoneCircuit.fromStack(stack, level.registryAccess());
-        
-        // Get input signals from adjacent blocks (0-15 per direction)
-        int[] inputSignals = new int[6]; // 6 directions
-        for (Direction dir : Direction.values()) {
-            inputSignals[dir.getStepY() + 2] = level.getSignal(pos.relative(dir), dir.getOpposite());
-        }
-        
-        // Propagate signals through the circuit
-        int[] outputSignals = circuit.propagateSignals(inputSignals);
-        
-        // Save the updated circuit state
-        circuit.toStack(stack);
-        
-        // Use output signals to control other modules or emit redstone power
-        // outputSignals[0] = top edge, [1] = bottom, [2] = left, [3] = right
-    }
-    
-    @Override
-    public void addModuleSlots(Inventory playerInventory, ItemStack moduleStack, 
-                               BlockPos blockPos, Consumer<Slot> slotAdder) {
-        // Create a ghost handler for the 54-slot circuit grid
-        ItemStackHandler ghostHandler = new ItemStackHandler(RedstoneCircuit.GRID_SIZE);
-        
-        // Load the circuit and populate slots
-        RedstoneCircuit circuit = RedstoneCircuit.fromStack(moduleStack, playerInventory.player.registryAccess());
-        for (int i = 0; i < RedstoneCircuit.GRID_SIZE; i++) {
-            RedstoneComponent component = circuit.getComponent(i);
-            if (component != null) {
-                ghostHandler.setStackInSlot(i, getComponentItemStack(component));
-            }
-        }
-        
-        // Add slots in a 6×9 grid layout
-        for (int row = 0; row < RedstoneCircuit.GRID_HEIGHT; row++) {
-            for (int col = 0; col < RedstoneCircuit.GRID_WIDTH; col++) {
-                int index = row * RedstoneCircuit.GRID_WIDTH + col;
-                slotAdder.accept(new SlotItemHandler(ghostHandler, index, 8 + col * 18, 18 + row * 18) {
-                    @Override
-                    public boolean mayPlace(@NotNull ItemStack stack) {
-                        return isRedstoneComponentItem(stack);
-                    }
-                });
-            }
-        }
-    }
-    
-    // Helper: map vanilla items to RedstoneComponent enum
-    private RedstoneComponent getComponentFromItem(ItemStack stack) {
-        return switch (BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath()) {
-            case "redstone_wire" -> RedstoneComponent.WIRE;
-            case "repeater" -> RedstoneComponent.REPEATER;
-            case "comparator" -> RedstoneComponent.COMPARATOR;
-            case "redstone_torch" -> RedstoneComponent.TORCH;
-            default -> null;
-        };
-    }
-    
-    private boolean isRedstoneComponentItem(ItemStack stack) {
-        return getComponentFromItem(stack) != null;
-    }
-    
-    private ItemStack getComponentItemStack(RedstoneComponent component) {
-        Item item = switch (component) {
-            case WIRE -> Items.REDSTONE;
-            case REPEATER -> Items.REPEATER;
-            case COMPARATOR -> Items.COMPARATOR;
-            case TORCH -> Items.REDSTONE_TORCH;
-        };
-        return new ItemStack(item);
-    }
-}
-```
-
-### Screen Extensibility
-
-For custom module screens, extend `GenericModuleConfigScreen` (see section 3). The `RedstoneConfigScreen` in the built-in mod demonstrates how to add rotation indicators and wall attachment overlays on top of the generic base screen.
 
 ---
 

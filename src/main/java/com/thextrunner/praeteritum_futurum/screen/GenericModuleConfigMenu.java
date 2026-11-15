@@ -143,27 +143,9 @@ public class GenericModuleConfigMenu extends BaseMachineContainerMenu {
      */
     private void saveModuleInventory(IModuleMenuProvider provider, Player player) {
         // Import the specific implementations that need save on close
-        if (provider instanceof com.thextrunner.praeteritum_futurum.item.custom.RedstoneModuleItem) {
-            com.thextrunner.praeteritum_futurum.item.custom.RedstoneModuleItem.saveRedstoneInventory(
-                    moduleStack, getRedstoneItemHandler(), player.registryAccess());
-        } else if (provider instanceof com.thextrunner.praeteritum_futurum.item.custom.FilterModuleItem) {
+        if (provider instanceof com.thextrunner.praeteritum_futurum.item.custom.FilterModuleItem) {
             com.thextrunner.praeteritum_futurum.item.custom.FilterModuleItem.saveFilterInventory(
                     moduleStack, com.thextrunner.praeteritum_futurum.item.custom.FilterModuleItem.getFilterInventory(moduleStack, player.registryAccess()), player.registryAccess());
         }
-    }
-
-    /**
-     * Gets the ItemStackHandler for the redstone module slots.
-     * Reconstructs the handler from the slots added by the module.
-     */
-    private net.neoforged.neoforge.items.ItemStackHandler getRedstoneItemHandler() {
-        int gridSize = com.thextrunner.praeteritum_futurum.api.module.RedstoneCircuit.GRID_SIZE;
-        net.neoforged.neoforge.items.ItemStackHandler handler = new net.neoforged.neoforge.items.ItemStackHandler(gridSize);
-        for (int i = 0; i < gridSize && i < slots.size(); i++) {
-            if (slots.get(i) instanceof net.neoforged.neoforge.items.SlotItemHandler slotHandler) {
-                handler.setStackInSlot(i, slotHandler.getItem());
-            }
-        }
-        return handler;
     }
 }

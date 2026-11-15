@@ -63,7 +63,6 @@ public class ModCreativeTabs {
                         output.accept(ModItems.CARTOGRAPHY_MODULE.get());
                         output.accept(ModItems.ANVIL_MODULE.get());
                         output.accept(ModItems.BREWING_MODULE.get());
-                        output.accept(ModItems.REDSTONE_MODULE.get());
 
                         // Utility items
                         output.accept(ModItems.BLUEPRINT.get());

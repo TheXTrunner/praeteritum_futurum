@@ -30,8 +30,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 ModItems.GRINDSTONE_MODULE.get(),
                 ModItems.CARTOGRAPHY_MODULE.get(),
                 ModItems.ANVIL_MODULE.get(),
-                ModItems.BREWING_MODULE.get(),
-                ModItems.REDSTONE_MODULE.get()
+                ModItems.BREWING_MODULE.get()
         );
 
         this.tag(ModTags.Items.LOGISTICS_MODULES).add(
@@ -49,8 +48,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 ModItems.GRINDSTONE_MODULE.get(),
                 ModItems.CARTOGRAPHY_MODULE.get(),
                 ModItems.ANVIL_MODULE.get(),
-                ModItems.BREWING_MODULE.get(),
-                ModItems.REDSTONE_MODULE.get()
+                ModItems.BREWING_MODULE.get()
         );
 
         this.tag(ModTags.Items.PROCESSING_MODULES).add(

@@ -54,16 +54,6 @@ These modules automate existing vanilla Minecraft mechanics and are planned for 
 
 **Notes:** High complexity but it is possible now!.
 
-### Redstone Logic Modules
-
-**GitHub Issue:** [#7](https://github.com/TheXTrunner/praeteritum_futurum/issues/7)
-
-**Summary:** Add redstone modules to tie together modules with redstone logic and custom circuits.
-
-**Proposed mechanics:**
-- Interface with processing modules and IO modules.
-- Create redstone logic on block faces and within the grid itself.
-
 ### More Logistic Modules
 
 **GitHub Issue:** [#6](https://github.com/TheXTrunner/praeteritum_futurum/issues/6)
@@ -86,7 +76,7 @@ These modules automate existing vanilla Minecraft mechanics and are planned for 
 - Projects items (arrows, snowballs, eggs, firework rockets, etc.) in the direction configured via an adjacent IO module or the module's face setting.
 - Dispenser variant can also place blocks, activate levers/buttons, and harvest crops (vanilla dispenser behavior).
 - Dropper variant simply drops items as entity drops in the target direction.
-- Tick rate or activation can be tied to redstone signals or a configurable delay.
+- Tick rate or activation can be tied to a configurable delay.
 
 **Notes:** Vanilla behavior only; no custom projectiles or enhanced range. The module could be a single item that toggles between Dispenser and Dropper modes via the config slot.
 
@@ -150,24 +140,22 @@ These modules require new items, non-vanilla mechanics, or custom design beyond 
 - Tool/weapon upgrade paths (e.g., adding enchantment-like properties through materials)
 - Future new armor tiers or materials?
 
-### RC Module (Remote Redstone)
+### RC Module (Remote Signal)
 
-**Summary:** A module that enables remote redstone activation without physical redstone dust connections, extending or replacing the Redstone Module's capabilities.
+**Summary:** A module that enables remote signal activation without physical connections.
 
 **Proposed mechanics:**
-- **Paired activation:** Two RC modules can be paired (e.g., via config slot with a linking item or frequency setting) to transmit redstone signals across distance without wire.
+- **Paired activation:** Two RC modules can be paired (e.g., via config slot with a linking item or frequency setting) to transmit signals across distance without wire.
 - **Frequency-based channels:** Multiple pairs can operate independently using configurable channels/frequencies to avoid signal interference.
 - **Signal types:** Supports both momentary (pulse) and toggle (latch) signal modes.
 - **Range:** Unlimited range line-of-sight or configurable range limit for balance.
-- **Integration:** Works with the Redstone Module's IO faces: an RC module can act as a remote extension of a Redstone Module's output/input.
 
 **Design options:**
 - **Standalone module:** A separate RC module item that pairs with another RC module.
-- **Redstone Module extension:** Adds a "remote" mode to the existing Redstone Module, allowing it to transmit/receive signals wirelessly when configured.
 
 **Implementation notes:**
 - Requires network packets for pairing synchronization and signal transmission between modules.
-- Could use a simple linking item (e.g., a custom "RC Linker" crafted from redstone and a conductor) to establish pairs.
+- Could use a simple linking item to establish pairs.
 - Consider signal delay based on distance for realism, or instant transmission for simplicity.
 
 ### Woodcutter Module

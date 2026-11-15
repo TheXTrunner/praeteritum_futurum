@@ -8,7 +8,6 @@
     "praeteritum_futurum:grindstone_module",
     "praeteritum_futurum:cartography_module",
     "praeteritum_futurum:anvil_module",
-    "praeteritum_futurum:brewing_module",
-    "praeteritum_futurum:redstone_module"
+    "praeteritum_futurum:brewing_module"
   ]
 }

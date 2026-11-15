@@ -85,9 +85,5 @@ public class ModItemModelProvider extends ItemModelProvider {
         withExistingParent(ModItems.BREWING_MODULE.getId().getPath(),
                 mcLoc("item/generated"))
                 .texture("layer0", modLoc("item/brewing_module"));
-
-        withExistingParent(ModItems.REDSTONE_MODULE.getId().getPath(),
-                mcLoc("item/generated"))
-                .texture("layer0", modLoc("item/redstone_module"));
     }
 }

@@ -28,31 +28,6 @@
  *       Implement this for specialized client-side rendering.</li>
  * </ul>
  *
- * <h2>Redstone Circuit API</h2>
- * <p>
- * The following classes provide a programmable redstone logic system for creating
- * custom circuit-based modules (like the built-in RedstoneModuleItem).
- * </p>
- * <ul>
- *   <li>{@link com.thextrunner.praeteritum_futurum.api.module.RedstoneComponent} —
- *       Enum defining the four redstone component types: Wire, Repeater, Comparator, and Torch.
- *       Each component has a display name, color, and signal behavior.</li>
- *
- *   <li>{@link com.thextrunner.praeteritum_futurum.api.module.RedstoneCircuit} —
- *       Data model for a 6×9 (54-slot) redstone circuit grid. Handles component placement,
- *       rotation, wall attachments, signal propagation, and NBT serialization.
- *       Use this to create custom logic circuits inside your modules.</li>
- * </ul>
- * <p>
- * To use the redstone circuit API in a custom module:
- * </p>
- * <ol>
- *   <li>Store a {@code RedstoneCircuit} instance in your module's {@code CustomData} component</li>
- *   <li>Call {@code RedstoneCircuit.fromStack()} to load the circuit from an item stack</li>
- *   <li>Call {@code circuit.propagateSignals(inputSignals)} each tick to evaluate the circuit</li>
- *   <li>Call {@code circuit.toStack()} to save the updated circuit state</li>
- * </ol>
- *
  * <h2>Creating a New Module</h2>
  * <ol>
  *   <li>Extend {@link com.thextrunner.praeteritum_futurum.item.custom.BaseModuleItem}</li>
@@ -67,7 +42,6 @@
  *   <li>{@code ProcessingModuleItem} — Uses inline overlay for slot direction config</li>
  *   <li>{@code FilterModuleItem} — Uses GenericModuleConfigMenu for filter item slots</li>
  *   <li>{@code AnvilModuleItem} — Uses ITextInputModule for custom name input</li>
- *   <li>{@code RedstoneModuleItem} — Uses RedstoneCircuit for programmable logic circuits</li>
  * </ul>
  */
 package com.thextrunner.praeteritum_futurum.api.module;

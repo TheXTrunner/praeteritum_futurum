@@ -52,15 +52,6 @@ public class ModMenuTypes {
                     IMenuTypeExtension.create(GenericModuleConfigMenu::new));
 
     /**
-     * Redstone Module Config Menu — dedicated menu type for the Redstone Module
-     * circuit editor. Uses RedstoneConfigMenu for double-chest layout (54 slots)
-     * and RedstoneConfigScreen to render rotation and wall attachment overlays.
-     */
-    public static final DeferredHolder<MenuType<?>, MenuType<RedstoneConfigMenu>> REDSTONE_MODULE_CONFIG_MENU =
-            MENUS.register("redstone_module_config_menu", () ->
-                    IMenuTypeExtension.create(RedstoneConfigMenu::new));
-
-    /**
      * Registers the menu types with the mod event bus.
      * Called from PraeteritumFuturumMod's constructor.
      */
@@ -77,6 +68,5 @@ public class ModMenuTypes {
         event.register(MACHINE_CONFIG_MENU.get(), MachineConfigScreen::new);
         event.register(MACHINE_INFO_MENU.get(), MachineInfoScreen::new);
         event.register(GENERIC_MODULE_CONFIG_MENU.get(), GenericModuleConfigScreen::new);
-        event.register(REDSTONE_MODULE_CONFIG_MENU.get(), RedstoneConfigScreen::new);
     }
 }
