@@ -4,6 +4,21 @@ All notable changes to Praeteritum Futurum will be documented in this file.
 
 [Project README](README.md) | [Documentation index](docs/README.md)
 
+## [Deferred] Held Back from 0.1.2 (Local Development Only)
+
+The following features are fully implemented locally but deferred to a future release (0.1.3+):
+
+- **Block Manipulator Module** for automated block placing and breaking
+  - Refactored into `BlockManipulatorPlacementEngine.java` and `BlockManipulatorBreakingEngine.java`
+  - Smart placement for 15+ block types, redstone component support
+  - Architecture documentation at `docs/BLOCK-MANIPULATOR-ENGINE.md`
+- **Redstone Module** — a programmable logic circuit with a 6×9 (54-slot) circuit editor
+  - `RedstoneCircuit` and `RedstoneComponent` API classes for custom circuit-based modules
+  - Signal propagation, rotation, and wall attachment support
+- **Piston-compatible Machine Framework:** pistons can push and sticky pistons can pull the machine while preserving all data
+
+The code remains on the `main` branch for continued development.
+
 ## [Unreleased], 0.1.2, In Development
 
 ### Added
