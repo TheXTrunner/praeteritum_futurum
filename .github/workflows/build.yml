@@ -77,11 +77,13 @@ jobs:
           body_path: release_body.md
 
       - name: Publish to CurseForge
+        continue-on-error: true
         env:
           CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_TOKEN }}
         run: ./gradlew curseforge
 
       - name: Publish to Modrinth
+        continue-on-error: true
         env:
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
         run: ./gradlew modrinth

@@ -185,9 +185,10 @@ idea {
 
 tasks.register('curseforge') {
     doLast {
-        def apiToken = System.getenv('CURSEFORGE_API_KEY') ?: 'change_me'
-        if (apiToken == 'change_me') {
-            throw new GradleException('CURSEFORGE_API_KEY environment variable is not set')
+        def apiToken = System.getenv('CURSEFORGE_API_KEY')
+        if (!apiToken || apiToken.isEmpty()) {
+            println 'WARNING: CURSEFORGE_API_KEY not set — skipping CurseForge upload'
+            return
         }
 
         def jarFile = project.file('build/libs/' + project.name + '-' + project.version + '.jar')
@@ -257,37 +258,42 @@ tasks.register('curseforge') {
 // ======================
 // The MODRINTH_TOKEN environment variable must be set (via GitHub Secrets in CI).
 // Run with: ./gradlew modrinth
-modrinth {
-    // Your Modrinth access token — NEVER hardcode it. Use the environment variable from GitHub Secrets.
-    token = System.getenv('MODRINTH_TOKEN') ?: 'change_me'
+def modrinthToken = System.getenv('MODRINTH_TOKEN')
+if (modrinthToken && !modrinthToken.isEmpty()) {
+    modrinth {
+        // Your Modrinth access token — NEVER hardcode it. Use the environment variable from GitHub Secrets.
+        token = modrinthToken
 
-    // Your Modrinth project ID (the slug from your project URL)
-    projectId = 'praeteritum-futurum'
+        // Your Modrinth project ID (the slug from your project URL)
+        projectId = 'praeteritum-futurum'
 
-    // Version number and name
-    versionNumber = project.version
-    versionName = "Praeteritum Futurum v${project.version}"
-    versionType = 'release'
+        // Version number and name
+        versionNumber = project.version
+        versionName = "Praeteritum Futurum v${project.version}"
+        versionType = 'release'
 
-    // Changelog
-    changelog = new File('CHANGELOG.md').text
+        // Changelog
+        changelog = new File('CHANGELOG.md').text
 
-    // Game versions and loaders
-    gameVersions = [project.minecraft_version]
-    loaders = ['neoforge']
+        // Game versions and loaders
+        gameVersions = [project.minecraft_version]
+        loaders = ['neoforge']
 
-    // Upload the built JAR
-    uploadFile = project.file('build/libs/' + project.name + '-' + project.version + '.jar')
+        // Upload the built JAR
+        uploadFile = project.file('build/libs/' + project.name + '-' + project.version + '.jar')
 
-    // Sync the project body (description) from README.md on each publish
-    // Requires MODRINTH_TOKEN with PROJECT_WRITE scope
-    syncBodyFrom = new File('README.md').text
-}
+        // Sync the project body (description) from README.md on each publish
+        // Requires MODRINTH_TOKEN with PROJECT_WRITE scope
+        syncBodyFrom = new File('README.md').text
+    }
 
-// Ensure the project body (description) syncs with Modrinth on every publish
-tasks.named('modrinth') {
-    mustRunAfter 'modrinthSyncBody'
-}
-tasks.named('modrinthSyncBody') {
-    // Sync body runs before modrinth upload
+    // Ensure the project body (description) syncs with Modrinth on every publish
+    tasks.named('modrinth') {
+        mustRunAfter 'modrinthSyncBody'
+    }
+    tasks.named('modrinthSyncBody') {
+        // Sync body runs before modrinth upload
+    }
+} else {
+    println 'WARNING: MODRINTH_TOKEN not set — Modrinth publishing disabled'
 }
