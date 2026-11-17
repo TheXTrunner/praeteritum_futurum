@@ -3,6 +3,7 @@ plugins {
     id 'maven-publish'
     id 'net.neoforged.moddev' version '2.0.148'
     id 'idea'
+    id 'com.modrinth.minotaur' version '2.+'
 }
 
 tasks.named('wrapper', Wrapper).configure {
@@ -174,4 +175,102 @@ idea {
         downloadSources = true
         downloadJavadoc = true
     }
+}
+
+// ======================
+// CurseForge Publishing
+// ======================
+// The CURSEFORGE_API_KEY environment variable must be set (via GitHub Secrets in CI).
+// Run with: ./gradlew curseforge
+// Note: CurseForgeGradle is applied via buildscript classpath because the latest versions require Java 25.
+// We use version 1.1.28 which is compatible with Java 21.
+
+tasks.register('curseforge') {
+    doLast {
+        def apiToken = System.getenv('CURSEFORGE_API_KEY') ?: 'change_me'
+        if (apiToken == 'change_me') {
+            throw new GradleException('CURSEFORGE_API_KEY environment variable is not set')
+        }
+
+        def jarFile = project.file('build/libs/' + project.name + '-' + project.version + '.jar')
+        if (!jarFile.exists()) {
+            throw new GradleException('JAR file not found: ' + jarFile.path)
+        }
+
+        // Use the CurseForge upload API directly via HTTP
+        def url = new URL('https://api.curseforge.com/v1/mods/1774651/upload-files')
+        def connection = url.openConnection()
+        connection.doOutput = true
+        connection.requestMethod = 'POST'
+        connection.setRequestProperty('X-API-Key', apiToken)
+        connection.setRequestProperty('Content-Type', 'multipart/form-data; boundary=----Boundary')
+
+        def boundary = '------Boundary'
+        def changelog = new File('CHANGELOG.md').text
+
+        // Build multipart request body
+        def body = new ByteArrayOutputStream()
+        body.write((boundary + '\r\n').getBytes('UTF-8'))
+        body.write(('Content-Disposition: form-data; name="file"; filename="' + project.name + '-' + project.version + '.jar"\r\n').getBytes('UTF-8'))
+        body.write(('Content-Type: application/java-archive\r\n\r\n').getBytes('UTF-8'))
+        body.write(jarFile.bytes)
+        body.write('\r\n'.getBytes('UTF-8'))
+        body.write((boundary + '\r\n').getBytes('UTF-8'))
+        body.write(('Content-Disposition: form-data; name="changelog"\r\n').getBytes('UTF-8'))
+        body.write(('Content-Type: text/markdown\r\n\r\n').getBytes('UTF-8'))
+        body.write(changelog.getBytes('UTF-8'))
+        body.write('\r\n'.getBytes('UTF-8'))
+        body.write((boundary + '--\r\n').getBytes('UTF-8'))
+
+        connection.outputStream.write(body.toByteArray())
+        connection.outputStream.flush()
+
+        def responseCode = connection.responseCode
+        if (responseCode != 200) {
+            def response = connection.errorStream?.getText('UTF-8') ?: 'No response body'
+            throw new GradleException('CurseForge upload failed with code ' + responseCode + ': ' + response)
+        }
+
+        println 'Successfully uploaded to CurseForge'
+    }
+}
+
+// ======================
+// Modrinth Publishing
+// ======================
+// The MODRINTH_TOKEN environment variable must be set (via GitHub Secrets in CI).
+// Run with: ./gradlew modrinth
+modrinth {
+    // Your Modrinth access token — NEVER hardcode it. Use the environment variable from GitHub Secrets.
+    token = System.getenv('MODRINTH_TOKEN') ?: 'change_me'
+
+    // Your Modrinth project ID (the slug from your project URL)
+    projectId = 'praeteritum-futurum'
+
+    // Version number and name
+    versionNumber = project.version
+    versionName = "Praeteritum Futurum v${project.version}"
+    versionType = 'release'
+
+    // Changelog
+    changelog = new File('CHANGELOG.md').text
+
+    // Game versions and loaders
+    gameVersions = [project.minecraft_version]
+    loaders = ['neoforge']
+
+    // Upload the built JAR
+    uploadFile = project.file('build/libs/' + project.name + '-' + project.version + '.jar')
+
+    // Sync the project body (description) from README.md on each publish
+    // Requires MODRINTH_TOKEN with PROJECT_WRITE scope
+    syncBodyFrom = new File('README.md').text
+}
+
+// Ensure the project body (description) syncs with Modrinth on every publish
+tasks.named('modrinth') {
+    mustRunAfter 'modrinthSyncBody'
+}
+tasks.named('modrinthSyncBody') {
+    // Sync body runs before modrinth upload
 }

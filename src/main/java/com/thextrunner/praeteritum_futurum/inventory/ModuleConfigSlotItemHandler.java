@@ -2,6 +2,7 @@ package com.thextrunner.praeteritum_futurum.inventory;
 
 import com.thextrunner.praeteritum_futurum.ModTags;
 import com.thextrunner.praeteritum_futurum.block.entity.MachineFrameworkBlockEntity;
+import com.thextrunner.praeteritum_futurum.item.custom.BaseModuleItem;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.items.SlotItemHandler;
@@ -24,7 +25,16 @@ public class ModuleConfigSlotItemHandler extends SlotItemHandler {
 
     @Override
     public boolean mayPickup(@NotNull Player player) {
-        return blockEntity.getInventoryHandler().getStackInSlot(slotIndex).isEmpty();
+        // Check if the inventory slot is empty
+        if (!blockEntity.getInventoryHandler().getStackInSlot(slotIndex).isEmpty()) {
+            return false;
+        }
+        // Check if the module itself allows being picked up
+        ItemStack moduleStack = blockEntity.getModuleHandler().getStackInSlot(slotIndex);
+        if (!moduleStack.isEmpty() && moduleStack.getItem() instanceof BaseModuleItem baseModule) {
+            return baseModule.mayPickupModule(blockEntity.getLevel(), blockEntity.getBlockPos(), blockEntity, slotIndex, moduleStack);
+        }
+        return true;
     }
 
     @Override

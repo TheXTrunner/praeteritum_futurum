@@ -163,6 +163,20 @@ public class ModItems {
             ITEMS.registerItem("smelting_module", SmeltingModuleItem::new);
 
     /**
+     * Blast Module — adds blast furnace smelting capability to the machine.
+     * Smelts ores and metals faster than the Smelting Module (100 ticks instead of 200).
+     */
+    public static final DeferredItem<BlastModuleItem> BLAST_MODULE =
+            ITEMS.registerItem("blast_module", BlastModuleItem::new);
+
+    /**
+     * Smoker Module — adds smoker cooking capability to the machine.
+     * Cooks food items faster than the Smelting Module (100 ticks instead of 200).
+     */
+    public static final DeferredItem<SmokerModuleItem> SMOKER_MODULE =
+            ITEMS.registerItem("smoker_module", SmokerModuleItem::new);
+
+    /**
      * Stonecutter Module — adds stonecutter processing to the machine.
      * Can cut stone, stone bricks, glass, and other stonecutter-compatible materials.
      */
@@ -203,6 +217,23 @@ public class ModItems {
      */
     public static final DeferredItem<BrewingModuleItem> BREWING_MODULE =
             ITEMS.registerItem("brewing_module", BrewingModuleItem::new);
+
+    /**
+     * Ejection Module — adds dispenser/dropper functionality to the machine.
+     * Can dispense items (arrows, snowballs, seeds, etc.) with smart dispenser behavior
+     * or simply drop them as entity drops (dropper behavior).
+     */
+    public static final DeferredItem<EjectionModuleItem> EJECTION_MODULE =
+            ITEMS.registerItem("ejection_module", EjectionModuleItem::new);
+
+    /**
+     * Jukebox Module — plays music discs held in its own inventory slot.
+     * The module slot holds a single disc; placing a disc starts playback,
+     * removing it stops. Adjacent IO modules auto-feed discs from external
+     * inventories in queue or shuffle mode.
+     */
+     public static final DeferredItem<JukeboxModuleItem> JUKEBOX_MODULE =
+             ITEMS.registerItem("jukebox_module", JukeboxModuleItem::new);
 
     /**
      * Blueprint — a utility item that copies the entire configuration of one Machine Framework

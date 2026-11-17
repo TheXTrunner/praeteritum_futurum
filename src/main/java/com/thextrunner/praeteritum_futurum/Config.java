@@ -128,6 +128,79 @@ public class Config {
     }
 
     // ========================================================================
+    // Loot Settings
+    // ========================================================================
+    public static final class Loot {
+        static {
+            BUILDER.translation("text.autoconfig.praeteritum_futurum.category.loot")
+                    .push("loot");
+        }
+
+        /**
+         * Enable sand drops from Husks.
+         * <p>
+         * When enabled, Husks have a chance to drop sand on death, reflecting their
+         * desert biome origin. This is analogous to how zombies drop rotten flesh.
+         */
+        public static final ModConfigSpec.BooleanValue ENABLE_HUSK_SAND_DROP = BUILDER
+                .comment(
+                        "Enable sand drops from Husks",
+                        "Husks live in deserts, so sand is their biome signature drop",
+                        "Default: true (enabled)"
+                )
+                .translation("text.autoconfig.praeteritum_futurum.option.loot.enableHuskSandDrop")
+                .define("enableHuskSandDrop", true);
+
+        /**
+         * Chance for Husks to drop sand (0.0 to 1.0).
+         * <p>
+         * This is checked per Husk death. A value of 0.025 means a 2.5% chance,
+         * matching the rarity of iron/carrot/potato drops from Husks.
+         */
+        public static final ModConfigSpec.DoubleValue HUSK_SAND_DROP_CHANCE = BUILDER
+                .comment(
+                        "Chance for Husks to drop sand (0.0 to 1.0)",
+                        "0.025 = 2.5% chance (matches iron/carrot/potato rarity)",
+                        "0.0 = disabled, 1.0 = always drops",
+                        "Range: 0.0-1.0"
+                )
+                .translation("text.autoconfig.praeteritum_futurum.option.loot.huskSandDropChance")
+                .defineInRange("huskSandDropChance", 0.025, 0.0, 1.0);
+
+        /**
+         * Minimum sand count dropped by Husks.
+         * <p>
+         * When a Husk drops sand, it drops between min and max amount (inclusive).
+         */
+        public static final ModConfigSpec.IntValue HUSK_SAND_DROP_MIN = BUILDER
+                .comment(
+                        "Minimum sand count dropped by Husks",
+                        "When a Husk drops sand, it drops between min and max amount",
+                        "Range: 0-64"
+                )
+                .translation("text.autoconfig.praeteritum_futurum.option.loot.huskSandDropMin")
+                .defineInRange("huskSandDropMin", 0, 0, 64);
+
+        /**
+         * Maximum sand count dropped by Husks.
+         * <p>
+         * When a Husk drops sand, it drops between min and max amount (inclusive).
+         */
+        public static final ModConfigSpec.IntValue HUSK_SAND_DROP_MAX = BUILDER
+                .comment(
+                        "Maximum sand count dropped by Husks",
+                        "When a Husk drops sand, it drops between min and max amount",
+                        "Range: 0-64"
+                )
+                .translation("text.autoconfig.praeteritum_futurum.option.loot.huskSandDropMax")
+                .defineInRange("huskSandDropMax", 1, 0, 64);
+
+        static {
+            BUILDER.pop();
+        }
+    }
+
+    // ========================================================================
     // World Generation Settings
     // ========================================================================
     public static final class WorldGen {
@@ -182,6 +255,10 @@ public class Config {
         ignore = Machine.IO_TRANSFER_TICK_RATE;
         ignore = Machine.ANVIL_MAX_REPAIR_COST;
         ignore = Machine.ENABLE_DEBUG_LOGGING;
+        ignore = Loot.ENABLE_HUSK_SAND_DROP;
+        ignore = Loot.HUSK_SAND_DROP_CHANCE;
+        ignore = Loot.HUSK_SAND_DROP_MIN;
+        ignore = Loot.HUSK_SAND_DROP_MAX;
         ignore = WorldGen.STRUCTURE_SPAWN_RATE;
     }
 
@@ -264,6 +341,54 @@ public class Config {
         } catch (NullPointerException e) {
             // Spec not built yet — return the default value (disabled)
             return false;
+        }
+    }
+
+    /**
+     * Safely gets the Husk sand drop enabled flag.
+     * Returns the default value (true) if the config spec hasn't been built yet.
+     */
+    public static boolean isHuskSandDropEnabled() {
+        try {
+            return Loot.ENABLE_HUSK_SAND_DROP.get();
+        } catch (NullPointerException e) {
+            return true;
+        }
+    }
+
+    /**
+     * Safely gets the Husk sand drop chance.
+     * Returns the default value (0.025) if the config spec hasn't been built yet.
+     */
+    public static double getHuskSandDropChance() {
+        try {
+            return Loot.HUSK_SAND_DROP_CHANCE.get();
+        } catch (NullPointerException e) {
+            return 0.025;
+        }
+    }
+
+    /**
+     * Safely gets the Husk sand drop minimum count.
+     * Returns the default value (0) if the config spec hasn't been built yet.
+     */
+    public static int getHuskSandDropMin() {
+        try {
+            return Loot.HUSK_SAND_DROP_MIN.get();
+        } catch (NullPointerException e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Safely gets the Husk sand drop maximum count.
+     * Returns the default value (1) if the config spec hasn't been built yet.
+     */
+    public static int getHuskSandDropMax() {
+        try {
+            return Loot.HUSK_SAND_DROP_MAX.get();
+        } catch (NullPointerException e) {
+            return 1;
         }
     }
 }

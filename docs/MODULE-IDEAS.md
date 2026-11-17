@@ -34,13 +34,6 @@ These modules automate existing vanilla Minecraft mechanics and are planned for 
 - May include filtering for inputs and outputs.
 - Will likely require a custom UI.
 
-### Jukebox / Note Block Module
-
-**GitHub Issue:** [#16](https://github.com/TheXTrunner/praeteritum_futurum/issues/16)
-
-**Summary:** Automates disc playback, with note-block functionality as a possible related feature.
-
-**Proposed direction:** Explore how the machine could start jukebox playback and what useful note-block behavior belongs in a module. The exact mechanics and interface are still open.
 
 ### Piston Module
 
@@ -65,20 +58,15 @@ These modules automate existing vanilla Minecraft mechanics and are planned for 
 - Liquid handling and piping.
 - Advanced filtering beyond the current Filter module.
 
-### Dispenser/Dropper Module
+#### Entity Inventory Detection
 
-**GitHub Issue:** [#15](https://github.com/TheXTrunner/praeteritum_futurum/issues/15)
-
-**Summary:** Makes the machine act as a vanilla Dispenser or Dropper, projecting items from adjacent inventory slots.
+**Summary:** Allow IO modules to detect and interact with entity inventories (e.g., minecarts with chests, hoppers on minecarts) in addition to block inventories.
 
 **Proposed mechanics:**
-- Uses adjacent IO/INPUT slots as the source of items to dispense.
-- Projects items (arrows, snowballs, eggs, firework rockets, etc.) in the direction configured via an adjacent IO module or the module's face setting.
-- Dispenser variant can also place blocks, activate levers/buttons, and harvest crops (vanilla dispenser behavior).
-- Dropper variant simply drops items as entity drops in the target direction.
-- Tick rate or activation can be tied to a configurable delay.
+- IO modules query entity capabilities at adjacent positions, not just block capabilities.
+- Supports minecarts with chests, hoppers on minecarts, and other entity inventories.
 
-**Notes:** Vanilla behavior only; no custom projectiles or enhanced range. The module could be a single item that toggles between Dispenser and Dropper modes via the config slot.
+**Notes:** See [.github/DEVELOPMENT.md](../.github/DEVELOPMENT.md#entity-inventory-detection) for implementation details.
 
 ### Fluid/Block Interaction Module
 
@@ -107,6 +95,86 @@ These modules automate existing vanilla Minecraft mechanics and are planned for 
 - **Wax harvesting:** Input scissors (consumes durability), output wax (honeycomb block or wax item).
 
 **Notes:** Needs to determine how to handle bee spawning and hive fullness detection. The module should prevent bees from leaving the hive structure and manage the pollination cycle internally.
+
+## Implemented on Dev (Targeting 1.0.0)
+
+These modules are already implemented on the dev branch but not yet released. They are tracked here for planning purposes.
+
+### Ejection Module
+
+**GitHub Issue:** [#15](https://github.com/TheXTrunner/praeteritum_futurum/issues/15)
+
+**Summary:** Dispenses or drops items from the machine's inventory to the world.
+
+**Implemented mechanics:**
+- Per-direction mode configuration: DISPENSE or DROP
+- Dispense mode shoots items like a dispenser
+- Drop mode drops items as entity pickups
+
+**Notes:** See [ARCHITECTURE.md](README.md#ejection-module-runtime) for runtime details.
+
+### Blast Module
+
+**GitHub Issue:** [#18](https://github.com/TheXTrunner/praeteritum_futurum/issues/18)
+
+**Summary:** A variation of the Smelting Module that uses blast furnace recipes, smelting ores and metals faster.
+
+**Implemented mechanics:**
+- Uses `RecipeType.BLASTING` for faster cook time (100 ticks vs 200)
+- Same INPUT/FUEL/OUTPUT direction structure as Smelting Module
+
+**Notes:** Shares implementation pattern with Smelting and Smoker modules via `FuelProcessingModuleItem` base class.
+
+### Smoker Module
+
+**GitHub Issue:** [#18](https://github.com/TheXTrunner/praeteritum_futurum/issues/18)
+
+**Summary:** A variation of the Smelting Module that uses smoker recipes, cooking food items faster.
+
+**Implemented mechanics:**
+- Uses `RecipeType.SMOKING` for faster cook time (100 ticks vs 200)
+- Same INPUT/FUEL/OUTPUT direction structure as Smelting Module
+
+**Notes:** Shares implementation pattern with Smelting and Blast modules via `FuelProcessingModuleItem` base class.
+
+### Jukebox Module
+
+**GitHub Issue:** [#16](https://github.com/TheXTrunner/praeteritum_futurum/issues/16)
+
+**Summary:** Plays music discs with playlist support, including queue and shuffle modes.
+
+**Implemented mechanics:**
+- Accepts music discs as input
+- Queue mode plays discs in order
+- Shuffle mode randomizes play order
+- Discs are consumed after playing
+
+**Notes:** Note Block Module was split to a separate issue [#19](https://github.com/TheXTrunner/praeteritum_futurum/issues/19) for post-1.0.0.
+
+### Block Manipulator Module
+
+**Summary:** Places and breaks blocks in the world with smart orientation and NBT data preservation.
+
+**Implemented mechanics:**
+- Per-direction mode configuration: DISABLED, PLACE, or BREAK
+- Smart block placement with automatic orientation detection
+- NBT data preservation when breaking and placing blocks
+- Integration with IO module for block input/output routing
+- Support for double-height blocks
+- Excludes redstone components from placement
+
+**Notes:** Future documentation on this feature underway
+
+### Redstone Module
+
+**Summary:** A programmable logic circuit with a 6×9 (54-slot) circuit editor for custom redstone logic.
+
+**Implemented mechanics:**
+- `RedstoneCircuit` and `RedstoneComponent` API classes for custom circuit-based modules
+- Signal propagation, rotation, and wall attachment support
+- Custom config screen for circuit editing
+
+**Notes:** Part of the 1.0.0 feature set alongside Block Manipulator and Piston push/pull.
 
 ## Non-Vanilla Modules (Post 1.0.0)
 
@@ -145,18 +213,12 @@ These modules require new items, non-vanilla mechanics, or custom design beyond 
 **Summary:** A module that enables remote signal activation without physical connections.
 
 **Proposed mechanics:**
-- **Paired activation:** Two RC modules can be paired (e.g., via config slot with a linking item or frequency setting) to transmit signals across distance without wire.
-- **Frequency-based channels:** Multiple pairs can operate independently using configurable channels/frequencies to avoid signal interference.
-- **Signal types:** Supports both momentary (pulse) and toggle (latch) signal modes.
-- **Range:** Unlimited range line-of-sight or configurable range limit for balance.
+- Two RC modules can be paired to transmit signals across distance without wire.
+- Frequency-based channels allow multiple pairs to operate independently.
+- Supports both momentary (pulse) and toggle (latch) signal modes.
+- Configurable range limit for balance.
 
-**Design options:**
-- **Standalone module:** A separate RC module item that pairs with another RC module.
-
-**Implementation notes:**
-- Requires network packets for pairing synchronization and signal transmission between modules.
-- Could use a simple linking item to establish pairs.
-- Consider signal delay based on distance for realism, or instant transmission for simplicity.
+**Notes:** See [.github/DEVELOPMENT.md](../.github/DEVELOPMENT.md#rc-module-remote-signal) for implementation details.
 
 ### Woodcutter Module
 
@@ -172,16 +234,44 @@ These modules require new items, non-vanilla mechanics, or custom design beyond 
 
 **Summary:** Cross-color banner copier that consumes a custom fuel item.
 
-**Reason:** Vanilla already supports banner copying (same base color), so a simple Loom module offers little value.
+**Proposed mechanics:**
+- **Color Mix item:** crafted from primary color dyes, acts as fuel for the module.
+- **Center config slot:** holds the source banner (blueprint with patterns to copy).
+- **Input slot:** accepts blank banners of any base color.
+- **Output slot:** produces an exact clone of the source banner in the input banner's base color.
+- **Fuel consumption:** each copy consumes Color Mix, scaling with pattern count.
 
-**Design:**
-- **Color Mix item:** crafted by combining all three primary color dyes (red, blue, yellow/lime), acting like a printer cartridge. This is the fuel for the module.
-- **Center config slot:** holds the source banner (the blueprint with patterns to copy).
-- **Input slot:** accepts blank banners of *any* base color.
-- **Output slot:** produces an exact clone of the source banner, but in the base color of the input blank banner.
-- **Fuel consumption:** each copy consumes a portion of the Color Mix stack. The amount consumed could scale with the number of patterns on the source banner.
+**Notes:** See [.github/DEVELOPMENT.md](../.github/DEVELOPMENT.md#loom-module) for implementation details.
 
-**Implementation notes:**
-- Requires a new item (Color Mix) with its own texture, recipe, and registration.
-- The module needs to read `DataComponents.BANNER_PATTERNS` from the source banner and apply it to a new banner of a different base color. This requires creating a `BannerPatternLayers` instance from the source's patterns, which is not directly accessible in NeoForge 1.21.1; may need reflection or a workaround similar to the Brewing module's hardcoded approach.
-- The overlay should show a fuel bar for the Color Mix level, similar to the Smelting module.
+### Note Block Module
+
+**GitHub Issue:** [#19](https://github.com/TheXTrunner/praeteritum_futurum/issues/19)
+
+**Summary:** Automates note block music playing, allowing machines to play melodies via configured sequences.
+
+**Proposed mechanics:**
+- Related to [#16](https://github.com/TheXTrunner/praeteritum_futurum/issues/16) (Jukebox Module, now implemented for v0.1.3)
+- Note blocks have 12 pitches + 15 instrument types: UI for configuring sequences will need to be intuitive
+- How does a player input a melody? (e.g., a "score" item, a config screen with a piano roll, or detecting adjacent note block patterns?)
+- Does the module physically place note blocks, or simulate the sound server-side?
+- Tempo/rate control: how fast does it cycle through notes?
+- Can multiple Note Block modules sync to play harmonies?
+
+**Notes:** Deferred to post-1.0.0 as the second part of the original Jukebox/Note block Module idea.
+
+### Grinder Module
+
+**Summary:** A module that attacks entities in the world based on IO module direction, functioning as an automated entity damager.
+
+**Proposed mechanics:**
+- Uses adjacent IO module output faces to determine which direction(s) to target entities.
+- Detects entities within range and deals damage at a configurable tick rate.
+- Damaged entities drop XP orbs, which the machine collects into its internal inventory.
+
+**Open design questions:**
+- **Damage scaling:** Fixed per hit, fuel-based, grid-scaling, or config-item-based?
+- **XP capture:** From damage or kills only? Stored as XP bottles or custom item? Output to enchanting module?
+- **Targeting rules:** All entities, hostile only, passive only, or filter-configurable?
+- **Range and rate:** Configurable or fixed to prevent performance issues?
+
+**Notes:** See [.github/DEVELOPMENT.md](../.github/DEVELOPMENT.md#grinder-module) for implementation details.

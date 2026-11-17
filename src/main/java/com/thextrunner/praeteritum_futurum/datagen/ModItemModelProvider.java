@@ -62,6 +62,14 @@ public class ModItemModelProvider extends ItemModelProvider {
                 mcLoc("item/generated"))
                 .texture("layer0", modLoc("item/smelting_module"));
 
+        withExistingParent(ModItems.BLAST_MODULE.getId().getPath(),
+                mcLoc("item/generated"))
+                .texture("layer0", modLoc("item/blast_module"));
+
+        withExistingParent(ModItems.SMOKER_MODULE.getId().getPath(),
+                mcLoc("item/generated"))
+                .texture("layer0", modLoc("item/smoker_module"));
+
         withExistingParent(ModItems.STONECUTTER_MODULE.getId().getPath(),
                 mcLoc("item/generated"))
                 .texture("layer0", modLoc("item/stonecutter_module"));
@@ -85,5 +93,13 @@ public class ModItemModelProvider extends ItemModelProvider {
         withExistingParent(ModItems.BREWING_MODULE.getId().getPath(),
                 mcLoc("item/generated"))
                 .texture("layer0", modLoc("item/brewing_module"));
+
+        withExistingParent(ModItems.EJECTION_MODULE.getId().getPath(),
+                mcLoc("item/generated"))
+                .texture("layer0", modLoc("item/ejection_module"));
+
+        withExistingParent(ModItems.JUKEBOX_MODULE.getId().getPath(),
+                mcLoc("item/generated"))
+                .texture("layer0", modLoc("item/jukebox_module"));
     }
 }

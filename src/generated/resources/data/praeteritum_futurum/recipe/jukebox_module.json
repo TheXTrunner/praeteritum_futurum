@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "J": {
+      "item": "minecraft:jukebox"
+    },
+    "R": {
+      "item": "praeteritum_futurum:refined_scrap"
+    }
+  },
+  "pattern": [
+    " R ",
+    "RJR",
+    " R "
+  ],
+  "result": {
+    "count": 1,
+    "id": "praeteritum_futurum:jukebox_module"
+  }
+}

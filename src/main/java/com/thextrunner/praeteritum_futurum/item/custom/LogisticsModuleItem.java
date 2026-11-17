@@ -1,17 +1,20 @@
 package com.thextrunner.praeteritum_futurum.item.custom;
 
 import com.thextrunner.praeteritum_futurum.api.module.IConfigurableModule;
-import net.minecraft.core.component.DataComponents;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.CustomData;
-
-import java.util.function.Consumer;
 
 /**
  * Base class for logistics modules (Filter, IO, and future modules like liquid piping,
  * redstone logic, etc.). Extending this class gives you face-mode configuration
  * and the {@link IConfigurableModule} interface for custom config screens.
+ * <p>
+ * Direction config validation is inherited from {@link BaseModuleItem}. Subclasses that use
+ * GridDirection-based config should override {@link BaseModuleItem#isDirectionConfigured},
+ * {@link BaseModuleItem#resetDirection}, and {@link BaseModuleItem#resetDirectionMode},
+ * then call {@link BaseModuleItem#validateAndSyncDirectionConfig} in their click handler.
+ * See {@link EjectionModuleItem} for an example.
+ * <p>
+ * NBT helpers ({@code getCustomTag}, {@code modifyCustomData}, {@code updateStackSize}) are
+ * inherited from {@link BaseModuleItem} — no need to redefine them.
  * <p>
  * Third-party modders should extend this class for modules that manage item/liquid flow,
  * filtering, or other logistics-related functionality.
@@ -24,32 +27,5 @@ public abstract class LogisticsModuleItem extends BaseModuleItem implements ICon
      */
     public LogisticsModuleItem(Properties properties) {
         super(properties);
-    }
-
-    protected static void updateStackSize(ItemStack stack, boolean hasConfiguration) {
-        if (hasConfiguration) {
-            stack.set(DataComponents.MAX_STACK_SIZE, 1);
-        } else {
-            stack.remove(DataComponents.MAX_STACK_SIZE);
-        }
-    }
-
-    protected static CompoundTag getCustomTag(ItemStack stack, String key) {
-        CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
-        if (customData != null) {
-            CompoundTag tag = customData.copyTag();
-            if (tag.contains(key)) {
-                return tag.getCompound(key);
-            }
-        }
-        return new CompoundTag();
-    }
-
-    protected static void modifyCustomData(ItemStack stack, String key, Consumer<CompoundTag> action) {
-        CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> {
-            CompoundTag subTag = tag.contains(key) ? tag.getCompound(key) : new CompoundTag();
-            action.accept(subTag);
-            tag.put(key, subTag);
-        });
     }
 }

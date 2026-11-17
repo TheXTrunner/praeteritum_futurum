@@ -1,5 +1,9 @@
 # Praeteritum Futurum
 
+[![CurseForge](https://cf.way2muchnoise.eu/short/praeteritum-futurum.svg)](https://www.curseforge.com/minecraft/mc-mods/praeteritum-futurum)<br>
+[![Modrinth](https://img.shields.io/modrinth/dt/praeteritum-futurum?label=modrinth)](https://modrinth.com/mod/praeteritum-futurum)<br>
+[![Build](https://github.com/TheXTrunner/praeteritum_futurum/actions/workflows/build.yml/badge.svg)](https://github.com/TheXTrunner/praeteritum_futurum/actions/workflows/build.yml)
+
 A modular machine and logistics mod for Minecraft on NeoForge. Build custom automation pipelines by configuring a single Machine Framework block with interchangeable modules; no need for dozens of specialized machines.
 
 ## Overview
@@ -30,6 +34,9 @@ The mod also includes exploration elements: discover **Ruined Outpost** structur
 | **Cartography Module** | Use cartography table recipes |
 | **Anvil Module** | Use anvil recipes |
 | **Brewing Module** | Use brewing stand recipes |
+| **Blast Module** | Faster ore and metal smelting (100-tick cook time) |
+| **Smoker Module** | Faster food cooking (100-tick cook time) |
+| **Jukebox Module** | Play music discs with playlist support (queue and shuffle modes) |
 | **Ejection Module** | Eject items with dispenser or dropper behavior |
 
 ### Exploration
@@ -39,6 +46,7 @@ The mod also includes exploration elements: discover **Ruined Outpost** structur
 - **Yool wrench** for rotating directional blocks and hoppers (sneak + right-click on a Machine Framework to safely break and drop it)
 - **Salvage Scrap** and **Refined Scrap** crafting materials
 - **Strange Artifact** dropped from advanced salvage blocks
+- **Husk sand drops:** Husks have a chance to drop sand on death, reflecting their desert biome origin
 
 ### Configuration
 - **Yool rotation toggle:** enable/disable Yool wrench rotation behavior
@@ -46,6 +54,7 @@ The mod also includes exploration elements: discover **Ruined Outpost** structur
 - **Anvil max repair cost:** override the "Too Expensive" limit for Anvil module (0 = no limit)
 - **Debug logging:** enable verbose console logging for troubleshooting
 - **Structure spawn rate:** control how often Ruined Outposts appear
+- **Husk sand drop:** enable/disable Husk sand drops and configure drop chance and amount
 
 ## Requirements
 
@@ -61,31 +70,33 @@ The mod also includes exploration elements: discover **Ruined Outpost** structur
 
 ## Documentation
 
-The [documentation index](./docs/README.md) is the entry point for project documentation. Common paths:
+The [documentation index](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/docs/README.md) is the entry point for project documentation. Common paths:
 
-- To develop the project, start with [CONTRIBUTING.md](./CONTRIBUTING.md); it links to the [architecture overview](./docs/ARCHITECTURE.md) and focused guides.
-- To create an add-on module, use the [Module API Guide](./docs/MODULE-API-GUIDE.md).
+- To develop the project, start with [CONTRIBUTING.md](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/CONTRIBUTING.md); it links to the [architecture overview](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/docs/ARCHITECTURE.md) and focused guides.
+- To create an add-on module, use the [Module API Guide](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/docs/MODULE-API-GUIDE.md).
 
 ## Release History and Future Ideas
 
-See [CHANGELOG.md](./CHANGELOG.md) for release history. Report and track planned work in [GitHub Issues](https://github.com/TheXTrunner/praeteritum_futurum/issues). The [Deferred Module Ideas](./docs/MODULE-IDEAS.md) page contains proposals, not implemented features.
+See [CHANGELOG.md](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/CHANGELOG.md) for release history. Report and track planned work in [GitHub Issues](https://github.com/TheXTrunner/praeteritum_futurum/issues). The [Deferred Module Ideas](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/docs/MODULE-IDEAS.md) page contains proposals, not implemented features.
 
 ## Contributing
 
 Contributions, bug reports, and feature requests are welcome!
 
 - **Report bugs:** [Issues Tracker](https://github.com/TheXTrunner/praeteritum_futurum/issues)
+- **Report security vulnerabilities:** [Security Policy](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/.github/SECURITY.md)
 - **Suggest features:** [Issues Tracker](https://github.com/TheXTrunner/praeteritum_futurum/issues)
+- **Discuss:** [GitHub Discussions](https://github.com/TheXTrunner/praeteritum_futurum/discussions)
 - **Submit code:** Open a pull request
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for development setup instructions.
+See [CONTRIBUTING.md](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/CONTRIBUTING.md) for development setup instructions.
 
 ## License
 
-This project is licensed under the [MIT License](./LICENSE).
+This project is licensed under the [MIT License](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/LICENSE).
 
 ## Development & Transparency
 
 This project was developed in close collaboration with AI assistance (Google's Gemini and JetBrains' Junie) to design, architect, and debug complex NeoForge mechanics, custom item components, and container synchronization.
 
-Check out the [`Gemini/`](./Gemini) directory for the complete chronological devlog, including architectural notes, conversation archives, and **timestamped development screenshots**.
+Check out the [`Gemini/`](https://github.com/TheXTrunner/praeteritum_futurum/tree/main/Gemini) directory for the complete chronological devlog, including architectural notes, conversation archives, and **timestamped development screenshots**.

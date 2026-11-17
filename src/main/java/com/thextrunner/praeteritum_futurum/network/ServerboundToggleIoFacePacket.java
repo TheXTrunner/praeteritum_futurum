@@ -25,8 +25,11 @@ import java.util.Map;
  * <p>
  * The RelativeSide enum represents the four directions relative to the machine's facing
  * (Front, Back, Left, Right), independent of the machine's actual rotation.
+ * <p>
+ * The {@code shiftHeld} flag indicates whether the player held shift, allowing the server
+ * to cycle modes in reverse order.
  */
-public record ServerboundToggleIoFacePacket(int slotIndex, RelativeSide relativeSide, BlockPos blockPos) implements CustomPacketPayload {
+public record ServerboundToggleIoFacePacket(int slotIndex, RelativeSide relativeSide, BlockPos blockPos, boolean shiftHeld) implements CustomPacketPayload {
     public static final Type<ServerboundToggleIoFacePacket> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(PraeteritumFuturumMod.MODID, "toggle_io_face")
     );
@@ -49,6 +52,8 @@ public record ServerboundToggleIoFacePacket(int slotIndex, RelativeSide relative
             ServerboundToggleIoFacePacket::relativeSide,
             BlockPos.STREAM_CODEC,
             ServerboundToggleIoFacePacket::blockPos,
+            StreamCodec.of((buf, b) -> buf.writeBoolean(b), buf -> buf.readBoolean()),
+            ServerboundToggleIoFacePacket::shiftHeld,
             ServerboundToggleIoFacePacket::new
     );
 
@@ -73,7 +78,7 @@ public record ServerboundToggleIoFacePacket(int slotIndex, RelativeSide relative
                 if (stack.getItem() instanceof BaseModuleItem module) {
                     Map<RelativeSide, IoModuleItem.FaceMode> modes = module.getFaceModes(stack);
                     IoModuleItem.FaceMode currentMode = modes.get(packet.relativeSide());
-                    IoModuleItem.FaceMode nextMode = currentMode.next();
+                    IoModuleItem.FaceMode nextMode = packet.shiftHeld() ? currentMode.previous() : currentMode.next();
                     IoModuleItem.setFaceMode(stack, packet.relativeSide(), nextMode);
                     blockEntity.setChanged();
                 }

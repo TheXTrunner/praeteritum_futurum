@@ -20,6 +20,21 @@ All notable changes to Praeteritum Futurum will be documented in this file.
   - Shared UI helpers (`getClickedDirection`, `hasAdjacentSlot`, `isInsideButton`) eliminate code duplication across modules
   - Processing modules now detect only Inventory modules, preventing invalid direction configuration
 - Generic direction-toggle packet handler for all configurable modules via `BaseModuleItem.toggleDirectionMode()`
+- **Blast Module** for faster ore and metal smelting
+  - Uses `RecipeType.BLASTING` with 100-tick cook time (faster than Smelting Module)
+  - Crafted with a Blast Furnace and Refined Scrap
+- **Smoker Module** for faster food cooking
+  - Uses `RecipeType.SMOKING` with 100-tick cook time (faster than Smelting Module)
+  - Crafted with a Smoker and Refined Scrap
+- **Jukebox Module** for automated music disc playback
+  - Plays music discs with sound and vanilla song title subtitles
+  - Playlist building from connected external inventories via IO modules
+  - Queue mode: plays discs in strict order, looping when finished
+  - Shuffle mode: shuffles playlist once, plays through, then reshuffles
+  - Disc lifecycle: extracts disc from chest, plays it, returns it after playback
+  - Disc retention: holds finished disc in module slot when no output inventories are available, auto-returns when a chest appears
+  - Single-disc auto-replay when it is the only disc in any connected inventory
+  - Uses `c:music_discs` Common Tags for disc detection
 - **Husk sand drops:** Husks have a chance to drop sand on death, with configurable drop chance and amount
 
 ### Changed
@@ -29,8 +44,11 @@ All notable changes to Praeteritum Futurum will be documented in this file.
   - All configurable module overlays, NBT config maps, and adjacent-module detection now use `GridDirection`
 - **Slot mode cycle is now declarative** via `getSupportedModes()` in `ProcessingModuleItem`
   - Each module declares which `SlotMode` values it supports (e.g., Smelting uses INPUT/FUEL/OUTPUT; Brewing uses POTION/INGREDIENT)
-  - The base `getNextMode()` iterates only over supported modes, so modules never cycle into modes they don't use
-  - Per-mode limits are controlled by `getMaxForMode()`, eliminating duplicate `getNextMode()` implementations across subclasses
+  - The base `getCycledMode()` iterates only over supported modes, so modules never cycle into modes they don't use
+  - Per-mode limits are controlled by `getMaxForMode()`, eliminating duplicate cycling logic across subclasses
+- **ProcessingModuleItem NBT save/restore** now uses a stalled-flag guard instead of a slot-empty check, fixing mid-progress module pickup for all processing modules (Smelting, Blast, Smoker, Brewing)
+- **MachineFrameworkBlockEntity data channels** increased from 4 to 6 to support module-specific state (e.g., Jukebox stalled flag and shuffle cycle)
+- **Machine UI click behavior** is now consistent: holding a valid item for a module places it directly; empty hand or invalid item opens the config overlay
 
 ## [0.1.2] - 2026-11-15
 
@@ -59,14 +77,6 @@ All notable changes to Praeteritum Futurum will be documented in this file.
   - Yool rotation toggle configuration
   - Anvil Module max repair cost: override the "Too Expensive" limit (0 = no limit)
 - Various internal logic improvements to machine and module behavior
-
-### Deferred
-- **Block Manipulator Module** has been deferred to post-0.1.2 for continued development
-  - The module is fully implemented locally but held back from this release
-  - Will be included in a future release (0.1.3+)
-- **Redstone Module** — a programmable logic circuit with a 6×9 (54-slot) circuit editor
-  - `RedstoneCircuit` and `RedstoneComponent` API classes for custom circuit-based modules
-  - Signal propagation, rotation, and wall attachment support
 
 ## [0.1.1] - 2026-10-30
 

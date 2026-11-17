@@ -58,3 +58,13 @@ jobs:
         with:
           files: build/libs/*.jar
           generate_release_notes: true
+
+      - name: Publish to CurseForge
+        env:
+          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+        run: ./gradlew curseforge
+
+      - name: Publish to Modrinth
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+        run: ./gradlew modrinth

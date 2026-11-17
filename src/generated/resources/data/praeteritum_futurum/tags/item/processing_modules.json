@@ -1,11 +1,14 @@
 {
   "values": [
     "praeteritum_futurum:smelting_module",
+    "praeteritum_futurum:blast_module",
+    "praeteritum_futurum:smoker_module",
     "praeteritum_futurum:stonecutter_module",
     "praeteritum_futurum:composter_module",
     "praeteritum_futurum:grindstone_module",
     "praeteritum_futurum:cartography_module",
     "praeteritum_futurum:anvil_module",
-    "praeteritum_futurum:brewing_module"
+    "praeteritum_futurum:brewing_module",
+    "praeteritum_futurum:jukebox_module"
   ]
 }
