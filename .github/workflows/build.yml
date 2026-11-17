@@ -78,7 +78,7 @@ jobs:
 
       - name: Publish to CurseForge
         env:
-          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_TOKEN }}
         run: ./gradlew curseforge
 
       - name: Publish to Modrinth
