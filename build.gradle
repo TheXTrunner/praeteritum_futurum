@@ -209,13 +209,13 @@ tasks.register('curseforge') {
         def changelog = new File('CHANGELOG.md').text
 
         // Build metadata JSON with required fields
+        // Note: gameVersions requires numeric IDs from the CurseForge API, not version strings.
+        // gameVersionNames accepts strings but is optional — versions can be set manually on CurseForge.
         def metadata = [
             changelog     : changelog,
             changelogType : 'markdown',
             displayName   : "Praeteritum Futurum v${project.version}",
-            releaseType   : 'release',
-            gameVersions  : [project.minecraft_version],
-            gameVersionNames: [project.minecraft_version]
+            releaseType   : 'release'
         ]
         def metadataJson = new groovy.json.JsonBuilder(metadata).toString()
 
