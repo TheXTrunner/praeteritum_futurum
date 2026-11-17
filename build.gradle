@@ -180,8 +180,7 @@ idea {
 // ======================
 // CurseForge Publishing
 // ======================
-// Handled by the itsmeow/curseforge-upload GitHub Action in .github/workflows/build.yml.
-// This task is kept as a fallback for local testing.
+// Used by .github/workflows/build.yml for CurseForge uploads.
 // The CURSEFORGE_API_KEY environment variable must be set (via GitHub Secrets in CI).
 // Run with: ./gradlew curseforge
 

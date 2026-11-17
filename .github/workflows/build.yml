@@ -69,9 +69,6 @@ jobs:
           fi
           # Write to a file for the release step
           echo "$CHANGELOG" > release_body.md
-          # Also write to a temp file for CurseForge action
-          mkdir -p .ci
-          echo "$CHANGELOG" > .ci/changelog.md
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -80,17 +77,10 @@ jobs:
           body_path: release_body.md
 
       - name: Publish to CurseForge
-        uses: itsmeow/curseforge-upload@v3
-        with:
-          token: ${{ secrets.CURSEFORGE_TOKEN }}
-          project_id: 1774651
-          game_endpoint: minecraft
-          file_path: build/libs/*.jar
-          game_versions: 1.21.1
-          release_type: beta
-          changelog_file: .ci/changelog.md
-          changelog_type: markdown
-          display_name: Praeteritum Futurum v${{ github.ref_name }}
+        continue-on-error: true
+        env:
+          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_TOKEN }}
+        run: ./gradlew curseforge
 
       - name: Publish to Modrinth
         continue-on-error: true
