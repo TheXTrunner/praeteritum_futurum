@@ -4,7 +4,12 @@ All notable changes to Praeteritum Futurum will be documented in this file.
 
 [Project README](README.md) | [Documentation index](docs/README.md)
 
-## [Unreleased] - 0.1.3, In Development
+## [Unreleased]
+
+### Added
+- Nothing yet
+
+## [0.1.3] - 2026-11-17
 
 ### Added
 - **Ejection Module** for ejecting items from the machine to the world

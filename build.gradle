@@ -180,6 +180,8 @@ idea {
 // ======================
 // CurseForge Publishing
 // ======================
+// Handled by the itsmeow/curseforge-upload GitHub Action in .github/workflows/build.yml.
+// This task is kept as a fallback for local testing.
 // The CURSEFORGE_API_KEY environment variable must be set (via GitHub Secrets in CI).
 // Run with: ./gradlew curseforge
 
@@ -196,6 +198,9 @@ tasks.register('curseforge') {
             throw new GradleException('JAR file not found: ' + jarFile.path)
         }
 
+        // Extract only the current version section from CHANGELOG.md
+        def changelog = extractChangelogSection()
+
         // Use the CurseForge legacy upload API: /api/projects/{projectId}/upload-file
         // Requires two multipart fields: "metadata" (JSON) and "file" (the JAR)
         def url = new URL('https://api.curseforge.com/api/projects/1774651/upload-file')
@@ -207,18 +212,17 @@ tasks.register('curseforge') {
         def boundary = '----CurseForgeBoundary' + System.currentTimeMillis()
         connection.setRequestProperty('Content-Type', 'multipart/form-data; boundary=' + boundary)
 
-        def changelog = new File('CHANGELOG.md').text
-
         // Build metadata JSON with required fields
         // Note: gameVersions requires numeric IDs from the CurseForge API, not version strings.
         // gameVersionNames accepts strings but is optional — versions can be set manually on CurseForge.
-        def metadata = [
-            changelog     : changelog,
-            changelogType : 'markdown',
-            displayName   : "Praeteritum Futurum v${project.version}",
-            releaseType   : 'release'
-        ]
-        def metadataJson = new groovy.json.JsonBuilder(metadata).toString()
+        def metadata = new groovy.json.JsonBuilder()
+        metadata {
+            changelog(changelog)
+            changelogType('markdown')
+            displayName("Praeteritum Futurum v${project.version}")
+            releaseType('beta')
+        }
+        def metadataJson = metadata.toString()
 
         // Build multipart request body
         def body = new ByteArrayOutputStream()
@@ -253,6 +257,36 @@ tasks.register('curseforge') {
     }
 }
 
+// Extract the current version section from CHANGELOG.md for publish platforms
+def extractChangelogSection() {
+    def changelogFile = new File('CHANGELOG.md')
+    def lines = changelogFile.readLines()
+    def version = project.version.toString()
+    def startLine = -1
+    def endLine = -1
+
+    for (int i = 0; i < lines.size(); i++) {
+        def line = lines[i]
+        // Match "## [0.1.3]" or "## [Unreleased]"
+        if (line ==~ /## \[.*${version}.*\]/ || line ==~ /## \[Unreleased\]/) {
+            startLine = i
+        } else if (startLine >= 0 && line =~ /^## \[/ && i > startLine) {
+            endLine = i
+            break
+        }
+    }
+
+    if (startLine >= 0) {
+        if (endLine > startLine) {
+            return lines.subList(startLine + 1, endLine).join('\n')
+        } else {
+            return lines.subList(startLine + 1, lines.size()).join('\n')
+        }
+    }
+    // Fallback: return entire file
+    return changelogFile.text
+}
+
 // ======================
 // Modrinth Publishing
 // ======================
@@ -270,10 +304,10 @@ if (modrinthToken && !modrinthToken.isEmpty()) {
         // Version number and name
         versionNumber = project.version
         versionName = "Praeteritum Futurum v${project.version}"
-        versionType = 'release'
+        versionType = 'beta'
 
-        // Changelog
-        changelog = new File('CHANGELOG.md').text
+        // Changelog — only the current version section, not the entire file
+        changelog = extractChangelogSection()
 
         // Game versions and loaders
         gameVersions = [project.minecraft_version]
