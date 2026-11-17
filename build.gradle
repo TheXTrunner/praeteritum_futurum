@@ -182,8 +182,6 @@ idea {
 // ======================
 // The CURSEFORGE_API_KEY environment variable must be set (via GitHub Secrets in CI).
 // Run with: ./gradlew curseforge
-// Note: CurseForgeGradle is applied via buildscript classpath because the latest versions require Java 25.
-// We use version 1.1.28 which is compatible with Java 21.
 
 tasks.register('curseforge') {
     doLast {
@@ -197,30 +195,49 @@ tasks.register('curseforge') {
             throw new GradleException('JAR file not found: ' + jarFile.path)
         }
 
-        // Use the CurseForge upload API directly via HTTP
-        def url = new URL('https://api.curseforge.com/v1/mods/1774651/upload-files')
+        // Use the CurseForge legacy upload API: /api/projects/{projectId}/upload-file
+        // Requires two multipart fields: "metadata" (JSON) and "file" (the JAR)
+        def url = new URL('https://api.curseforge.com/api/projects/1774651/upload-file')
         def connection = url.openConnection()
         connection.doOutput = true
         connection.requestMethod = 'POST'
         connection.setRequestProperty('X-API-Key', apiToken)
-        connection.setRequestProperty('Content-Type', 'multipart/form-data; boundary=----Boundary')
 
-        def boundary = '------Boundary'
+        def boundary = '----CurseForgeBoundary' + System.currentTimeMillis()
+        connection.setRequestProperty('Content-Type', 'multipart/form-data; boundary=' + boundary)
+
         def changelog = new File('CHANGELOG.md').text
+
+        // Build metadata JSON with required fields
+        def metadata = [
+            changelog     : changelog,
+            changelogType : 'markdown',
+            displayName   : "Praeteritum Futurum v${project.version}",
+            releaseType   : 'release',
+            gameVersions  : [project.minecraft_version],
+            gameVersionNames: [project.minecraft_version]
+        ]
+        def metadataJson = new groovy.json.JsonBuilder(metadata).toString()
 
         // Build multipart request body
         def body = new ByteArrayOutputStream()
-        body.write((boundary + '\r\n').getBytes('UTF-8'))
+
+        // Part 1: metadata (JSON)
+        body.write(('--' + boundary + '\r\n').getBytes('UTF-8'))
+        body.write('Content-Disposition: form-data; name="metadata"\r\n'.getBytes('UTF-8'))
+        body.write('Content-Type: application/json\r\n\r\n'.getBytes('UTF-8'))
+        body.write(metadataJson.getBytes('UTF-8'))
+        body.write('\r\n'.getBytes('UTF-8'))
+
+        // Part 2: file (JAR)
+        body.write(('--' + boundary + '\r\n').getBytes('UTF-8'))
         body.write(('Content-Disposition: form-data; name="file"; filename="' + project.name + '-' + project.version + '.jar"\r\n').getBytes('UTF-8'))
-        body.write(('Content-Type: application/java-archive\r\n\r\n').getBytes('UTF-8'))
+        body.write('Content-Type: application/java-archive\r\n\r\n'.getBytes('UTF-8'))
         body.write(jarFile.bytes)
         body.write('\r\n'.getBytes('UTF-8'))
-        body.write((boundary + '\r\n').getBytes('UTF-8'))
-        body.write(('Content-Disposition: form-data; name="changelog"\r\n').getBytes('UTF-8'))
-        body.write(('Content-Type: text/markdown\r\n\r\n').getBytes('UTF-8'))
-        body.write(changelog.getBytes('UTF-8'))
-        body.write('\r\n'.getBytes('UTF-8'))
-        body.write((boundary + '--\r\n').getBytes('UTF-8'))
+
+        // Closing boundary
+        body.write(('--' + boundary + '--\r\n').getBytes('UTF-8'))
 
         connection.outputStream.write(body.toByteArray())
         connection.outputStream.flush()
