@@ -57,11 +57,24 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build
 
+      - name: Extract changelog for release
+        id: changelog
+        run: |
+          # Extract the section between the current version header and the next version header
+          VERSION="${GITHUB_REF#refs/tags/}"
+          CHANGELOG=$(sed -n "/^## \[${VERSION}\]/,/^## \[/p" CHANGELOG.md | sed '$d')
+          # If exact version tag not found, try "Unreleased" section
+          if [ -z "$CHANGELOG" ]; then
+            CHANGELOG=$(sed -n '/^## \[Unreleased\]/,/^## \[/p' CHANGELOG.md | sed '$d')
+          fi
+          # Write to a file for the release step
+          echo "$CHANGELOG" > release_body.md
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: build/libs/*.jar
-          generate_release_notes: true
+          body_path: release_body.md
 
       - name: Publish to CurseForge
         env:
