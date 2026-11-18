@@ -4,20 +4,20 @@ A modular machine and logistics mod for Minecraft on NeoForge. Build custom auto
 
 ## Quick Links
 
-### Players
 - [[Getting-Started]] - Install the mod and learn the basics
 - [[Quick-Start]] - Build your first machine step by step
 - [[Modules]] - Browse all available modules
 - [[Exploration]] - Discover Ruined Outposts and salvage materials
 - [[FAQ]] - Common questions and tips
 
-### Mod Developers
-- [[Module-API-Guide]] - Create custom modules for your own mod
-- [[Architecture]] - Code structure and runtime flow
-- [[Module-Roadmap]] - Planned modules and future features
+## For Developers
 
-### Contributors
-- [[Contributing]] - Development setup and contribution guidelines
+Developer documentation is hosted in the [GitHub repository](https://github.com/TheXTrunner/praeteritum_futurum/tree/main/docs):
+
+- [Module API Guide](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/docs/MODULE-API-GUIDE.md) - Create custom modules for your own mod
+- [Architecture](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/docs/ARCHITECTURE.md) - Code structure and runtime flow
+- [Module Roadmap](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/docs/MODULE-IDEAS.md) - Planned modules and future features
+- [Contributing](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/CONTRIBUTING.md) - Development setup and contribution guidelines
 
 ## Community
 
