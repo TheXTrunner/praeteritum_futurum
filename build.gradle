@@ -3,6 +3,7 @@ plugins {
     id 'maven-publish'
     id 'net.neoforged.moddev' version '2.0.148'
     id 'idea'
+    id 'me.modmuss50.mod-publish-plugin' version '0.7.+'
 }
 
 tasks.named('wrapper', Wrapper).configure {
@@ -173,5 +174,84 @@ idea {
     module {
         downloadSources = true
         downloadJavadoc = true
+    }
+}
+
+// ======================
+// Unified Publishing
+// ======================
+// Uses the mod-publish-plugin (me.modmuss50) for both CurseForge and Modrinth.
+// This is the modern standard for 1.21.1 NeoForge projects.
+//
+// CurseForge: CURSEFORGE_API_KEY environment variable (via GitHub Secrets)
+// Modrinth: MODRINTH_TOKEN environment variable (via GitHub Secrets)
+//
+// Run with: ./gradlew publishMods
+
+// Extract the current version section from CHANGELOG.md for publish platforms
+def extractChangelogSection() {
+    def changelogFile = new File('CHANGELOG.md')
+    def lines = changelogFile.readLines()
+    def version = project.version.toString()
+    def startLine = -1
+
+    // Find the start: prefer the exact version section (e.g., "## [0.1.3]"), fall back to "## [Unreleased]"
+    for (int i = 0; i < lines.size(); i++) {
+        if (lines[i] ==~ /## \[.*${version}.*\]/) {
+            startLine = i
+            break
+        }
+    }
+
+    if (startLine < 0) {
+        for (int i = 0; i < lines.size(); i++) {
+            if (lines[i] ==~ /## \[Unreleased\]/) {
+                startLine = i
+                break
+            }
+        }
+    }
+
+    if (startLine < 0) {
+        // Fallback: return entire file if no matching section is found
+        return changelogFile.text
+    }
+
+    // Find the end of the section (next "## [" header)
+    def end = lines.size()
+    for (int i = startLine + 1; i < lines.size(); i++) {
+        if (lines[i] =~ /^## \[/) {
+            end = i
+            break
+        }
+    }
+
+    // Skip the version header line and any leading blank lines
+    def content = lines.subList(startLine + 1, end)
+    while (!content.isEmpty() && content[0].trim().isEmpty()) {
+        content = content.subList(1, content.size())
+    }
+    return content.join('\n')
+}
+
+publishMods {
+    file = tasks.named("jar").flatMap { it.archiveFile }
+    changelog = extractChangelogSection()
+    type = BETA
+
+    curseforge {
+        projectId = "1774651"
+        accessToken = providers.environmentVariable("CURSEFORGE_API_KEY")
+        minecraftVersions.add("1.21.1")
+        modLoaders.add("neoforge")
+        clientRequired = true
+        serverRequired = true
+    }
+
+    modrinth {
+        projectId = "h8OPiXrV"
+        accessToken = providers.environmentVariable("MODRINTH_TOKEN")
+        minecraftVersions.add("1.21.1")
+        modLoaders.add("neoforge")
     }
 }

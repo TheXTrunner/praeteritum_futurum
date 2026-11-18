@@ -1,10 +1,15 @@
 name: Build
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [main, dev]
+    tags: ['*']
+  pull_request:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    if: "!startsWith(github.ref, 'refs/tags/')"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -34,7 +39,7 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
+    if: (success() || always()) && startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: write
     steps:
@@ -53,8 +58,34 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build
 
+      - name: Extract changelog for GitHub Release
+        id: changelog
+        run: |
+          # Extract the section between the current version header and the next version header
+          # sed removes the version header line and strips leading blank lines
+          VERSION="${GITHUB_REF#refs/tags/}"
+          CHANGELOG=$(sed -n "/^## \[${VERSION}\]/,/^## \[/p" CHANGELOG.md | sed -e '$d' -e '/./,$!d')
+          # If exact version tag not found, try "Unreleased" section
+          if [ -z "$CHANGELOG" ]; then
+            CHANGELOG=$(sed -n '/^## \[Unreleased\]/,/^## \[/p' CHANGELOG.md | sed -e '$d' -e '/./,$!d')
+          fi
+          # Write to a file for the release step
+          echo "$CHANGELOG" > release_body.md
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          name: "Praeteritum Futurum v${{ github.ref_name }}"
           files: build/libs/*.jar
-          generate_release_notes: true
+          body_path: release_body.md
+
+      - name: Publish to CurseForge
+        env:
+          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+        run: ./gradlew publishCurseforge
+
+      # Modrinth already published successfully — re-enable below for future releases
+      # - name: Publish to Modrinth
+      #   env:
+      #     MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+      #   run: ./gradlew publishModrinth

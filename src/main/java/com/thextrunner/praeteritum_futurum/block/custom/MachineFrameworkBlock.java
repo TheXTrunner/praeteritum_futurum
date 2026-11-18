@@ -162,6 +162,9 @@ public class MachineFrameworkBlock extends BaseEntityBlock {
             if (!movedByPiston) {
                 BlockEntity blockEntity = level.getBlockEntity(pos);
                 if (blockEntity instanceof MachineFrameworkBlockEntity frameworkEntity) {
+                    // Run module cleanup actions (e.g., stop playing sounds) before dropping items
+                    frameworkEntity.runAllModuleCleanups();
+
                     net.neoforged.neoforge.items.IItemHandler inventoryHandler = frameworkEntity.getInventoryHandler();
                     for (int i = 0; i < inventoryHandler.getSlots(); i++) {
                         net.minecraft.world.Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), inventoryHandler.getStackInSlot(i));

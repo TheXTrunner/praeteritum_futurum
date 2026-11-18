@@ -1,6 +1,7 @@
 package com.thextrunner.praeteritum_futurum.item.custom;
 
 import com.thextrunner.praeteritum_futurum.PraeteritumFuturumMod;
+import com.thextrunner.praeteritum_futurum.block.GridDirection;
 import com.thextrunner.praeteritum_futurum.block.entity.MachineFrameworkBlockEntity;
 import com.thextrunner.praeteritum_futurum.util.BrewingRecipeItem;
 import net.minecraft.client.gui.GuiGraphics;
@@ -90,21 +91,10 @@ public class BrewingModuleItem extends ProcessingModuleItem {
 
     @Override
     public int getInventorySlotLimit(MachineFrameworkBlockEntity blockEntity, int moduleSlotIndex, int inventorySlotIndex) {
-        Map<Direction, SlotMode> modes = getSlotModes(blockEntity.getModuleHandler().getStackInSlot(moduleSlotIndex), NBT_KEY);
+        Map<GridDirection, SlotMode> modes = getSlotModes(blockEntity.getModuleHandler().getStackInSlot(moduleSlotIndex), NBT_KEY);
 
-        int row = moduleSlotIndex / 9;
-        int col = moduleSlotIndex % 9;
-
-        int[] neighborIndices = {
-                row > 0 ? moduleSlotIndex - 9 : -1,
-                row < 2 ? moduleSlotIndex + 9 : -1,
-                col > 0 ? moduleSlotIndex - 1 : -1,
-                col < 8 ? moduleSlotIndex + 1 : -1
-        };
-        Direction[] dirs = {Direction.UP, Direction.DOWN, Direction.WEST, Direction.EAST};
-
-        for (int i = 0; i < 4; i++) {
-            int adjSlot = neighborIndices[i];
+        for (GridDirection dir : GridDirection.VALUES) {
+            int adjSlot = dir.getAdjacentSlotIndex(moduleSlotIndex);
             if (adjSlot < 0) continue;
 
             ItemStack adjModule = blockEntity.getModuleHandler().getStackInSlot(adjSlot);
@@ -112,7 +102,7 @@ public class BrewingModuleItem extends ProcessingModuleItem {
                 continue;
             }
 
-            SlotMode mode = modes.get(dirs[i]);
+            SlotMode mode = modes.get(dir);
             if (mode == SlotMode.INGREDIENT && adjSlot == inventorySlotIndex) {
                 return 1; // Limit ingredient slot to 1 item for proper queuing
             }
@@ -121,69 +111,31 @@ public class BrewingModuleItem extends ProcessingModuleItem {
     }
 
     @Override
-    public SlotMode getNextMode(ItemStack stack, Direction clickedDir) {
-        Map<Direction, SlotMode> modes = getSlotModes(stack, NBT_KEY);
-        SlotMode current = modes.get(clickedDir);
-
+    public SlotMode[] getSupportedModes() {
         // POTION and INGREDIENT modes for brewing; no OUTPUT since brewing is in-place
-        SlotMode[] allowedModes = {SlotMode.DISABLED, SlotMode.POTION, SlotMode.INGREDIENT};
+        return new SlotMode[]{SlotMode.DISABLED, SlotMode.POTION, SlotMode.INGREDIENT};
+    }
 
-        int currentIndex = 0;
-        for (int i = 0; i < allowedModes.length; i++) {
-            if (allowedModes[i] == current) {
-                currentIndex = i;
-                break;
-            }
-        }
-
-        for (int i = 1; i <= allowedModes.length; i++) {
-            int nextIndex = (currentIndex + i) % allowedModes.length;
-            SlotMode next = allowedModes[nextIndex];
-
-            if (next == SlotMode.DISABLED) {
-                return SlotMode.DISABLED;
-            }
-
-            int currentCount = countSlotMode(stack, next);
-            if (current == next) {
-                currentCount--;
-            }
-
-            // Limit: 3 potion slots, 1 ingredient slot
-            int max = (next == SlotMode.POTION) ? getMaxInputs() : getMaxIngredients();
-            if (currentCount >= max) {
-                continue;
-            }
-
-            return next;
-        }
-        return SlotMode.DISABLED;
+    @Override
+    protected int getMaxForMode(SlotMode mode) {
+        if (mode == SlotMode.POTION) return getMaxInputs();
+        if (mode == SlotMode.INGREDIENT) return getMaxIngredients();
+        return super.getMaxForMode(mode);
     }
 
     @Override
     protected void processModule(Level level, BlockPos pos, MachineFrameworkBlockEntity blockEntity, int slotIndex, ItemStack stack) {
-        Map<Direction, SlotMode> modes = getSlotModes(stack, NBT_KEY);
+        Map<GridDirection, SlotMode> modes = getSlotModes(stack, NBT_KEY);
 
         ItemStackHandler moduleHandler = blockEntity.getModuleHandler();
         ItemStackHandler itemHandler = blockEntity.getInventoryHandler();
-
-        int row = slotIndex / 9;
-        int col = slotIndex % 9;
-
-        int[] neighborIndices = {
-                row > 0 ? slotIndex - 9 : -1,
-                row < 2 ? slotIndex + 9 : -1,
-                col > 0 ? slotIndex - 1 : -1,
-                col < 8 ? slotIndex + 1 : -1
-        };
-        Direction[] dirs = {Direction.UP, Direction.DOWN, Direction.WEST, Direction.EAST};
 
         // Resolve potion slots and ingredient slot by their dedicated modes
         List<Integer> potionSlots = new java.util.ArrayList<>();
         int ingredientSlot = -1;
 
-        for (int i = 0; i < 4; i++) {
-            int adjSlot = neighborIndices[i];
+        for (GridDirection dir : GridDirection.VALUES) {
+            int adjSlot = dir.getAdjacentSlotIndex(slotIndex);
             if (adjSlot < 0) continue;
 
             ItemStack adjModule = moduleHandler.getStackInSlot(adjSlot);
@@ -191,7 +143,7 @@ public class BrewingModuleItem extends ProcessingModuleItem {
                 continue;
             }
 
-            SlotMode mode = modes.get(dirs[i]);
+            SlotMode mode = modes.get(dir);
             if (mode == SlotMode.POTION && potionSlots.size() < getMaxInputs()) {
                 potionSlots.add(adjSlot);
             } else if (mode == SlotMode.INGREDIENT && ingredientSlot == -1) {
@@ -199,7 +151,23 @@ public class BrewingModuleItem extends ProcessingModuleItem {
             }
         }
 
-        // Need at least 3 potion slots and 1 ingredient slot
+        // Auto-detect fuel: if ingredient slot has Blaze Powder and fuel is depleted, use it as fuel
+        // This runs regardless of potion slot config so the module can fuel up even with minimal setup
+        if (ingredientSlot >= 0) {
+            ItemStack ingredientItem = itemHandler.getStackInSlot(ingredientSlot);
+            if (!ingredientItem.isEmpty() && ingredientItem.is(Items.BLAZE_POWDER)) {
+                int fuelTime = blockEntity.getModuleData(slotIndex, 0);
+                if (fuelTime <= 0) {
+                    itemHandler.extractItem(ingredientSlot, 1, false);
+                    int fuelTimeNew = 20;
+                    blockEntity.setModuleData(slotIndex, 0, fuelTimeNew);
+                    blockEntity.setModuleData(slotIndex, 1, fuelTimeNew);
+                    return;
+                }
+            }
+        }
+
+        // Need at least 3 potion slots and 1 ingredient slot for brewing
         if (potionSlots.size() < 3 || ingredientSlot == -1) {
             return;
         }
@@ -223,14 +191,8 @@ public class BrewingModuleItem extends ProcessingModuleItem {
 
         boolean isBurning = fuelTime > 0;
 
-        // Auto-detect: if ingredient slot has Blaze Powder and fuel is depleted, use it as fuel
-        if (ingredientItem.is(Items.BLAZE_POWDER) && !isBurning) {
-            itemHandler.extractItem(ingredientSlot, 1, false);
-            fuelTime = 20;
-            fuelTimeTotal = 20;
-            blockEntity.setModuleData(slotIndex, 0, fuelTime);
-            blockEntity.setModuleData(slotIndex, 1, fuelTimeTotal);
-            isBurning = true;
+        // Item is a brewing ingredient - need fuel to brew
+        if (!isBurning) {
             return;
         }
 

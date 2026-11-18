@@ -25,40 +25,52 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 ModItems.IO_MODULE.get(),
                 ModItems.FILTER_MODULE.get(),
                 ModItems.SMELTING_MODULE.get(),
+                ModItems.BLAST_MODULE.get(),
+                ModItems.SMOKER_MODULE.get(),
                 ModItems.STONECUTTER_MODULE.get(),
                 ModItems.COMPOSTER_MODULE.get(),
                 ModItems.GRINDSTONE_MODULE.get(),
                 ModItems.CARTOGRAPHY_MODULE.get(),
                 ModItems.ANVIL_MODULE.get(),
-                ModItems.BREWING_MODULE.get()
+                ModItems.BREWING_MODULE.get(),
+                ModItems.EJECTION_MODULE.get(),
+                ModItems.JUKEBOX_MODULE.get()
         );
 
         this.tag(ModTags.Items.LOGISTICS_MODULES).add(
                 ModItems.INVENTORY_MODULE.get(),
                 ModItems.IO_MODULE.get(),
-                ModItems.FILTER_MODULE.get()
+                ModItems.FILTER_MODULE.get(),
+                ModItems.EJECTION_MODULE.get()
         );
 
         this.tag(ModTags.Items.CONFIGURABLE_MODULES).add(
                 ModItems.IO_MODULE.get(),
                 ModItems.FILTER_MODULE.get(),
                 ModItems.SMELTING_MODULE.get(),
+                ModItems.BLAST_MODULE.get(),
+                ModItems.SMOKER_MODULE.get(),
                 ModItems.STONECUTTER_MODULE.get(),
                 ModItems.COMPOSTER_MODULE.get(),
                 ModItems.GRINDSTONE_MODULE.get(),
                 ModItems.CARTOGRAPHY_MODULE.get(),
                 ModItems.ANVIL_MODULE.get(),
-                ModItems.BREWING_MODULE.get()
+                ModItems.BREWING_MODULE.get(),
+                ModItems.EJECTION_MODULE.get(),
+                ModItems.JUKEBOX_MODULE.get()
         );
 
         this.tag(ModTags.Items.PROCESSING_MODULES).add(
                 ModItems.SMELTING_MODULE.get(),
+                ModItems.BLAST_MODULE.get(),
+                ModItems.SMOKER_MODULE.get(),
                 ModItems.STONECUTTER_MODULE.get(),
                 ModItems.COMPOSTER_MODULE.get(),
                 ModItems.GRINDSTONE_MODULE.get(),
                 ModItems.CARTOGRAPHY_MODULE.get(),
                 ModItems.ANVIL_MODULE.get(),
-                ModItems.BREWING_MODULE.get()
+                ModItems.BREWING_MODULE.get(),
+                ModItems.JUKEBOX_MODULE.get()
         );
 
         this.tag(ModTags.Items.BLUEPRINTS).add(

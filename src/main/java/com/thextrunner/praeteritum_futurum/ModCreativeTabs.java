@@ -57,12 +57,16 @@ public class ModCreativeTabs {
                         output.accept(ModItems.IO_MODULE.get());
                         output.accept(ModItems.FILTER_MODULE.get());
                         output.accept(ModItems.SMELTING_MODULE.get());
+                        output.accept(ModItems.BLAST_MODULE.get());
+                        output.accept(ModItems.SMOKER_MODULE.get());
                         output.accept(ModItems.STONECUTTER_MODULE.get());
                         output.accept(ModItems.COMPOSTER_MODULE.get());
                         output.accept(ModItems.GRINDSTONE_MODULE.get());
                         output.accept(ModItems.CARTOGRAPHY_MODULE.get());
                         output.accept(ModItems.ANVIL_MODULE.get());
                         output.accept(ModItems.BREWING_MODULE.get());
+                        output.accept(ModItems.EJECTION_MODULE.get());
+                        output.accept(ModItems.JUKEBOX_MODULE.get());
 
                         // Utility items
                         output.accept(ModItems.BLUEPRINT.get());

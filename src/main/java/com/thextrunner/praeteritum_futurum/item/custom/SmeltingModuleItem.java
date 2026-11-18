@@ -1,5 +1,6 @@
 package com.thextrunner.praeteritum_futurum.item.custom;
 
+import com.thextrunner.praeteritum_futurum.block.GridDirection;
 import com.thextrunner.praeteritum_futurum.item.ModItems;
 import com.thextrunner.praeteritum_futurum.PraeteritumFuturumMod;
 import com.thextrunner.praeteritum_futurum.block.entity.MachineFrameworkBlockEntity;
@@ -72,27 +73,16 @@ public class SmeltingModuleItem extends ProcessingModuleItem {
 
     @Override
     protected void processModule(Level level, BlockPos pos, MachineFrameworkBlockEntity blockEntity, int slotIndex, ItemStack stack) {
-        Map<Direction, SlotMode> modes = getSlotModes(stack, NBT_KEY);
+        Map<GridDirection, SlotMode> modes = getSlotModes(stack, NBT_KEY);
         ItemStackHandler moduleHandler = blockEntity.getModuleHandler();
         ItemStackHandler itemHandler = blockEntity.getInventoryHandler();
-
-        int row = slotIndex / 9;
-        int col = slotIndex % 9;
-
-        int[] neighborIndices = {
-                row > 0 ? slotIndex - 9 : -1,
-                row < 2 ? slotIndex + 9 : -1,
-                col > 0 ? slotIndex - 1 : -1,
-                col < 8 ? slotIndex + 1 : -1
-        };
-        Direction[] dirs = {Direction.UP, Direction.DOWN, Direction.WEST, Direction.EAST};
 
         int inputSlot = -1;
         int fuelSlot = -1;
         int outputSlot = -1;
 
-        for (int i = 0; i < 4; i++) {
-            int adjSlot = neighborIndices[i];
+        for (GridDirection dir : GridDirection.VALUES) {
+            int adjSlot = dir.getAdjacentSlotIndex(slotIndex);
             if (adjSlot < 0) continue;
 
             ItemStack adjModule = moduleHandler.getStackInSlot(adjSlot);
@@ -100,7 +90,7 @@ public class SmeltingModuleItem extends ProcessingModuleItem {
                 continue;
             }
 
-            SlotMode mode = modes.get(dirs[i]);
+            SlotMode mode = modes.get(dir);
             if (mode == SlotMode.INPUT && inputSlot == -1) {
                 inputSlot = adjSlot;
             } else if (mode == SlotMode.FUEL && fuelSlot == -1) {
@@ -181,40 +171,13 @@ public class SmeltingModuleItem extends ProcessingModuleItem {
     }
 
     @Override
-    public SlotMode getNextMode(ItemStack stack, Direction clickedDir) {
-        Map<Direction, SlotMode> modes = getSlotModes(stack, NBT_KEY);
-        SlotMode current = modes.get(clickedDir);
-        SlotMode[] values = SlotMode.values();
+    public SlotMode[] getSupportedModes() {
+        return new SlotMode[]{SlotMode.DISABLED, SlotMode.INPUT, SlotMode.FUEL, SlotMode.OUTPUT};
+    }
 
-        SlotMode next;
-        for (int i = 1; i <= values.length; i++) {
-            int nextOrdinal = (current.ordinal() + i) % values.length;
-            next = values[nextOrdinal];
-
-            if (next == SlotMode.DISABLED) {
-                return SlotMode.DISABLED;
-            }
-
-            // Check if we've reached the max for this mode type
-            int currentCount = countSlotMode(stack, next);
-            if (current == next) {
-                currentCount--; // exclude the clicked direction itself
-            }
-
-            // FUEL has no limit from getMaxInputs/Outputs, but we limit to 1
-            int max;
-            if (next == SlotMode.FUEL) {
-                max = 1;
-            } else {
-                max = (next == SlotMode.INPUT) ? getMaxInputs() : getMaxOutputs();
-            }
-
-            if (currentCount >= max) {
-                continue; // skip this mode, limit reached
-            }
-
-            return next;
-        }
-        return SlotMode.DISABLED;
+    @Override
+    protected int getMaxForMode(SlotMode mode) {
+        if (mode == SlotMode.FUEL) return 1;
+        return super.getMaxForMode(mode);
     }
 }

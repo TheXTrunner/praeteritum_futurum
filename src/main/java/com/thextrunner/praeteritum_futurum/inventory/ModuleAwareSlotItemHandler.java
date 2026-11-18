@@ -1,5 +1,6 @@
 package com.thextrunner.praeteritum_futurum.inventory;
 
+import com.thextrunner.praeteritum_futurum.api.module.IItemHandlerModule;
 import com.thextrunner.praeteritum_futurum.block.entity.MachineFrameworkBlockEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -18,13 +19,18 @@ public class ModuleAwareSlotItemHandler extends SlotItemHandler {
 
     @Override
     public boolean mayPlace(@NotNull ItemStack stack) {
-        boolean hasModule = blockEntity.hasInventoryModule(slotIndex);
+        boolean allowed = blockEntity.hasInventoryModule(slotIndex);
+        // Also allow placing into slots with modules that expose their own item handler (e.g., Jukebox Module)
+        if (!allowed && blockEntity.hasItemHandlerModule(slotIndex)) {
+            allowed = true;
+        }
         boolean superValid = super.mayPlace(stack);
-        return hasModule && superValid;
+        return allowed && superValid;
     }
 
     @Override
     public boolean mayPickup(@NotNull Player player) {
-        return blockEntity.hasInventoryModule(slotIndex);
+        // Allow pickup from Inventory modules and any module that exposes its own item handler
+        return blockEntity.hasInventoryModule(slotIndex) || blockEntity.hasItemHandlerModule(slotIndex);
     }
 }

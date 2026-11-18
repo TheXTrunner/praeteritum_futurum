@@ -42,6 +42,7 @@ public class ModTags {
      *   - processing_modules: Smelting, Stonecutter, Composter, Grindstone modules
      *   - configurable_modules: modules that have a config screen
      * - blueprints: the Blueprint utility item
+     * - music_discs: the Common Tags c:music_discs tag for jukebox-playable items
      */
     public static class Items {
         /** All machine modules — parent tag containing all module sub-tags. */
@@ -72,6 +73,12 @@ public class ModTags {
         public static final TagKey<Item> BLUEPRINTS = TagKey.create(
                 Registries.ITEM,
                 ResourceLocation.fromNamespaceAndPath(PraeteritumFuturumMod.MODID, "blueprints")
+        );
+
+        /** Common Tags c:music_discs — all jukebox-playable music discs. */
+        public static final TagKey<Item> MUSIC_DISCS = TagKey.create(
+                Registries.ITEM,
+                ResourceLocation.fromNamespaceAndPath("c", "music_discs")
         );
     }
 

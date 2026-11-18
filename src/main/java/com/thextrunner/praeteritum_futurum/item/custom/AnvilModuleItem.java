@@ -4,6 +4,7 @@ import com.thextrunner.praeteritum_futurum.Config;
 import com.thextrunner.praeteritum_futurum.PraeteritumFuturumMod;
 import com.thextrunner.praeteritum_futurum.api.module.IConfigurableModule;
 import com.thextrunner.praeteritum_futurum.api.module.ITextInputModule;
+import com.thextrunner.praeteritum_futurum.block.GridDirection;
 import com.thextrunner.praeteritum_futurum.block.entity.MachineFrameworkBlockEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -71,8 +72,37 @@ public class AnvilModuleItem extends ProcessingModuleItem implements IConfigurab
     }
 
     @Override
+    public boolean usesCenterSlot() {
+        return true; // ghost target item slot
+    }
+
+    @Override
     public boolean useDefaultConfigSlotClick() {
         return false; // Text input panel is handled by MachineInfoScreen for ITextInputModule
+    }
+
+    @Override
+    public void renderCustomOverlay(GuiGraphics graphics, int slotX, int slotY, ItemStack stack, MachineFrameworkBlockEntity blockEntity, net.minecraft.client.gui.Font font) {
+        Map<GridDirection, SlotMode> modes = getSlotModes(stack, getModuleConfigKey());
+        drawDirectionButtons(graphics, font, slotX, slotY, blockEntity, modes);
+
+        // Center slot — renders as a button that opens the name input panel
+        String name = getExistingText(stack);
+        boolean hasName = !name.isEmpty();
+
+        // Button background: blue when name is set, gray when empty
+        int bgColor = hasName ? 0xFF4466AA : 0xFF666666;
+        int borderColor = hasName ? 0xFF88AAFF : 0xFF999999;
+        graphics.fill(slotX, slotY, slotX + 16, slotY + 16, bgColor);
+        graphics.fill(slotX, slotY, slotX + 16, slotY + 1, borderColor);
+        graphics.fill(slotX, slotY, slotX + 1, slotY + 16, borderColor);
+        graphics.fill(slotX, slotY + 15, slotX + 16, slotY + 16, 0xFF333333);
+        graphics.fill(slotX + 15, slotY, slotX + 16, slotY + 16, 0xFF333333);
+
+        // Label: "A" for anvil
+        graphics.drawCenteredString(font, "A", slotX + 8, slotY + 4, 0xFFFFFF);
+
+        drawCloseButton(graphics, font, slotX, slotY);
     }
 
     @Override
@@ -145,45 +175,13 @@ public class AnvilModuleItem extends ProcessingModuleItem implements IConfigurab
     }
 
     @Override
-    public SlotMode getNextMode(ItemStack stack, Direction clickedDir) {
-        Map<Direction, SlotMode> modes = getSlotModes(stack, NBT_KEY);
-        SlotMode current = modes.get(clickedDir);
-
-        SlotMode[] allowedModes = {SlotMode.DISABLED, SlotMode.INPUT, SlotMode.OUTPUT};
-        int currentIndex = 0;
-        for (int i = 0; i < allowedModes.length; i++) {
-            if (allowedModes[i] == current) {
-                currentIndex = i;
-                break;
-            }
-        }
-
-        for (int i = 1; i <= allowedModes.length; i++) {
-            int nextIndex = (currentIndex + i) % allowedModes.length;
-            SlotMode next = allowedModes[nextIndex];
-
-            if (next == SlotMode.DISABLED) {
-                return SlotMode.DISABLED;
-            }
-
-            int currentCount = countSlotMode(stack, next);
-            if (current == next) {
-                currentCount--;
-            }
-
-            int max = (next == SlotMode.INPUT) ? getMaxInputs() : getMaxOutputs();
-            if (currentCount >= max) {
-                continue;
-            }
-
-            return next;
-        }
-        return SlotMode.DISABLED;
+    public SlotMode[] getSupportedModes() {
+        return new SlotMode[]{SlotMode.DISABLED, SlotMode.INPUT, SlotMode.OUTPUT};
     }
 
     @Override
     protected void processModule(Level level, BlockPos pos, MachineFrameworkBlockEntity blockEntity, int slotIndex, ItemStack stack) {
-        Map<Direction, SlotMode> modes = getSlotModes(stack, NBT_KEY);
+        Map<GridDirection, SlotMode> modes = getSlotModes(stack, NBT_KEY);
         ResolvedIoSlots resolved = ProcessingModuleItem.resolveAdjacentIoSlots(blockEntity, slotIndex, modes);
 
         List<Integer> inputSlots = resolved.inputs();

@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "D": {
+      "item": "minecraft:dispenser"
+    },
+    "R": {
+      "item": "praeteritum_futurum:refined_scrap"
+    }
+  },
+  "pattern": [
+    " R ",
+    "RDR",
+    " R "
+  ],
+  "result": {
+    "count": 1,
+    "id": "praeteritum_futurum:ejection_module"
+  }
+}
