@@ -4,11 +4,6 @@ All notable changes to Praeteritum Futurum will be documented in this file.
 
 [Project README](README.md) | [Documentation index](docs/README.md)
 
-## [Unreleased]
-
-### Added
-- Nothing yet
-
 ## [0.1.3] - 2026-11-17
 
 ### Added

@@ -1,6 +1,6 @@
 # Praeteritum Futurum
 
-[![CurseForge](https://cf.way2muchnoise.eu/short/praeteritum-futurum.svg)](https://www.curseforge.com/minecraft/mc-mods/praeteritum-futurum)<br>
+[![CurseForge](https://cf.way2muchnoise.eu/short_1774651.svg)](https://www.curseforge.com/minecraft/mc-mods/praeteritum-futurum)
 [![Modrinth](https://img.shields.io/modrinth/dt/praeteritum-futurum?label=modrinth)](https://modrinth.com/mod/praeteritum-futurum)<br>
 [![Build](https://github.com/TheXTrunner/praeteritum_futurum/actions/workflows/build.yml/badge.svg)](https://github.com/TheXTrunner/praeteritum_futurum/actions/workflows/build.yml)
 
