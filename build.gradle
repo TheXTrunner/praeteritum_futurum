@@ -222,17 +222,18 @@ publishMods {
     file = tasks.named("jar").flatMap { it.archiveFile }
     changelog = extractChangelogSection()
     type = BETA
-    modLoaders.add("neoforge")
 
     curseforge {
         projectId = "1774651"
         accessToken = providers.environmentVariable("CURSEFORGE_API_KEY")
         minecraftVersions.add("1.21.1")
+        modLoaders.add("neoforge")
     }
 
     modrinth {
-        projectId = "praeteritum-futurum"
+        projectId = "h8OPiXrV"
         accessToken = providers.environmentVariable("MODRINTH_TOKEN")
         minecraftVersions.add("1.21.1")
+        modLoaders.add("neoforge")
     }
 }
