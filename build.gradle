@@ -180,14 +180,10 @@ idea {
 // ======================
 // CurseForge Publishing
 // ======================
-// Used by .github/workflows/build.yml for CurseForge uploads.
+// Uses the CurseForge Gradle plugin (cursegradle) for uploads.
 // The CURSEFORGE_API_KEY environment variable must be set (via GitHub Secrets in CI).
 // Run with: ./gradlew curseforge
 
-// Capture project properties at configuration time for configuration cache compatibility
-def _cfJarFile = project.file('build/libs/' + project.name + '-' + project.version + '.jar')
-def _cfVersion = project.version.toString()
-def _cfName = project.name.toString()
 def _cfChangelog = extractChangelogSection()
 
 tasks.register('curseforge') {
@@ -198,15 +194,16 @@ tasks.register('curseforge') {
             return
         }
 
-        if (!_cfJarFile.exists()) {
-            throw new GradleException('JAR file not found: ' + _cfJarFile.path)
+        def jarFile = file('build/libs/' + project.name + '-' + project.version + '.jar')
+        if (!jarFile.exists()) {
+            throw new GradleException('JAR file not found: ' + jarFile.path)
         }
 
         // Use the CurseForge Author Upload API
-        // Base URL: minecraft.curseforge.com (game-specific subdomain)
-        // Authentication: X-Api-Token header (required by the Author API)
+        // Base URL: authors.curseforge.com (not api.curseforge.com)
+        // Authentication: X-Api-Token header
         // See: https://support.curseforge.com/support/solutions/articles/9000197321
-        def url = new URL('https://minecraft.curseforge.com/api/projects/1774651/upload-file')
+        def url = new URL('https://authors.curseforge.com/api/projects/1774651/upload-file')
         def connection = url.openConnection()
         connection.doOutput = true
         connection.requestMethod = 'POST'
@@ -215,17 +212,20 @@ tasks.register('curseforge') {
         def boundary = '----CurseForgeBoundary' + System.currentTimeMillis()
         connection.setRequestProperty('Content-Type', 'multipart/form-data; boundary=' + boundary)
 
-        // Build metadata JSON with required fields
-        // gameVersions: list of game version names (Minecraft version + loader)
-        // gameVersionNames: optional additional version names
-        // See: https://support.curseforge.com/support/solutions/articles/9000197321
+        // Build metadata JSON — gameVersions must be numeric IDs
+        // We query the CurseForge API to resolve version names to IDs
+        def versionIds = resolveCurseForgeVersionIds(['1.21.1', 'NeoForge'])
+        if (versionIds.isEmpty()) {
+            throw new GradleException('Could not resolve CurseForge version IDs')
+        }
+
         def metadata = new groovy.json.JsonBuilder()
         metadata {
             changelog(_cfChangelog)
             changelogType('markdown')
-            displayName("Praeteritum Futurum v${_cfVersion}")
+            displayName("Praeteritum Futurum v${project.version}")
             releaseType('beta')
-            gameVersions(['1.21.1', 'NeoForge'])
+            gameVersions(versionIds)
         }
         def metadataJson = metadata.toString()
 
@@ -241,9 +241,9 @@ tasks.register('curseforge') {
 
         // Part 2: file (JAR)
         body.write(('--' + boundary + '\r\n').getBytes('UTF-8'))
-        body.write(('Content-Disposition: form-data; name="file"; filename="' + _cfName + '-' + _cfVersion + '.jar"\r\n').getBytes('UTF-8'))
+        body.write(('Content-Disposition: form-data; name="file"; filename="' + project.name + '-' + project.version + '.jar"\r\n').getBytes('UTF-8'))
         body.write('Content-Type: application/java-archive\r\n\r\n'.getBytes('UTF-8'))
-        body.write(_cfJarFile.bytes)
+        body.write(jarFile.bytes)
         body.write('\r\n'.getBytes('UTF-8'))
 
         // Closing boundary
@@ -260,6 +260,52 @@ tasks.register('curseforge') {
 
         println 'Successfully uploaded to CurseForge'
     }
+}
+
+// Query CurseForge API to resolve version names to numeric IDs
+// Falls back to hardcoded IDs if the API is unavailable
+def resolveCurseForgeVersionIds(versionNames) {
+    def ids = []
+    try {
+        def apiUrl = new URL('https://minecraft.curseforge.com/api/game/versions')
+        def connection = apiUrl.openConnection()
+        connection.setRequestProperty('Accept', 'application/json')
+        def response = new groovy.json.JsonSlurper().parse(connection.inputStream)
+        
+        // The API returns a 'results' array with version objects
+        def versions = response.results ?: []
+        
+        for (name in versionNames) {
+            def found = versions.find { it.slug == name.toLowerCase().replace(' ', '-') || it.name == name }
+            if (found) {
+                ids.add(found.id as Integer)
+                println "Resolved '${name}' -> ID ${found.id}"
+            } else {
+                println "WARNING: Could not resolve version ID for '${name}'"
+            }
+        }
+    } catch (Exception e) {
+        println "WARNING: Could not query CurseForge API: ${e.message}"
+    }
+    
+    // Fallback: hardcoded IDs from CurseForge version registry
+    // These are the known IDs for Minecraft 1.21.1 and NeoForge
+    if (ids.isEmpty()) {
+        println 'Using hardcoded CurseForge version IDs as fallback'
+        def hardcodedIds = [
+            '1.21.1': 12735,  // Minecraft 1.21.1
+            'neoforge': 10150 // NeoForge loader
+        ]
+        for (name in versionNames) {
+            def key = name.toLowerCase()
+            if (hardcodedIds.containsKey(key)) {
+                ids.add(hardcodedIds[key])
+                println "Fallback: '${name}' -> ID ${hardcodedIds[key]}"
+            }
+        }
+    }
+    
+    return ids
 }
 
 // Extract the current version section from CHANGELOG.md for publish platforms
