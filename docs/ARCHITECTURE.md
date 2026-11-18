@@ -4,6 +4,8 @@
 
 This is a code-oriented map of the mod for contributors and module authors. It describes the current implementation, rather than a design proposal. For setup and build commands, see [CONTRIBUTING.md](../CONTRIBUTING.md); for the public extension workflow, see the [Module API Guide](MODULE-API-GUIDE.md).
 
+> **Player-facing version:** A simplified overview of how modules work is available on the [GitHub Wiki - Architecture](https://github.com/TheXTrunner/praeteritum_futurum/wiki/Architecture). This document contains the full code-level details for contributors.
+
 ## Platform and Entry Points
 
 - Minecraft 1.21.1, NeoForge, Java 21, and Gradle.
