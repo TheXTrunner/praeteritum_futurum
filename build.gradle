@@ -216,7 +216,8 @@ tasks.register('curseforge') {
         connection.setRequestProperty('Content-Type', 'multipart/form-data; boundary=' + boundary)
 
         // Build metadata JSON with required fields
-        // gameVersionNames specifies the Minecraft version and loader as strings
+        // gameVersions: list of game version names (Minecraft version + loader)
+        // gameVersionNames: optional additional version names
         // See: https://support.curseforge.com/support/solutions/articles/9000197321
         def metadata = new groovy.json.JsonBuilder()
         metadata {
@@ -224,7 +225,7 @@ tasks.register('curseforge') {
             changelogType('markdown')
             displayName("Praeteritum Futurum v${_cfVersion}")
             releaseType('beta')
-            gameVersionNames(['1.21.1', 'NeoForge'])
+            gameVersions(['1.21.1', 'NeoForge'])
         }
         def metadataJson = metadata.toString()
 
