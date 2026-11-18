@@ -62,11 +62,12 @@ jobs:
         id: changelog
         run: |
           # Extract the section between the current version header and the next version header
+          # sed removes the version header line and strips leading blank lines
           VERSION="${GITHUB_REF#refs/tags/}"
-          CHANGELOG=$(sed -n "/^## \[${VERSION}\]/,/^## \[/p" CHANGELOG.md | sed '$d')
+          CHANGELOG=$(sed -n "/^## \[${VERSION}\]/,/^## \[/p" CHANGELOG.md | sed -e '$d' -e '/./,$!d')
           # If exact version tag not found, try "Unreleased" section
           if [ -z "$CHANGELOG" ]; then
-            CHANGELOG=$(sed -n '/^## \[Unreleased\]/,/^## \[/p' CHANGELOG.md | sed '$d')
+            CHANGELOG=$(sed -n '/^## \[Unreleased\]/,/^## \[/p' CHANGELOG.md | sed -e '$d' -e '/./,$!d')
           fi
           # Write to a file for the release step
           echo "$CHANGELOG" > release_body.md
@@ -74,6 +75,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          name: "Praeteritum Futurum v${{ github.ref_name }}"
           files: build/libs/*.jar
           body_path: release_body.md
 
