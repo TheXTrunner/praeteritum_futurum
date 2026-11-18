@@ -2,13 +2,16 @@
 
 ## Players
 - [[Home]]
-- [[Getting Started]]
+- [[Getting-Started]]
+- [[Quick-Start]]
 - [[Modules]]
+- [[Exploration]]
+- [[FAQ]]
 
 ## Developers
+- [[Module-API-Guide]]
 - [[Architecture]]
-- [[Module API Guide]]
-- [[Module Roadmap]]
+- [[Module-Roadmap]]
 - [[Contributing]]
 
 ## Links

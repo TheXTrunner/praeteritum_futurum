@@ -4,7 +4,7 @@ Modules planned for future implementation, organized by type. The Redstone Modul
 
 ## Implemented on Dev (New Engine System)
 
-These modules are implemented on the dev branch and introduce a fundamentally new engine system: the Redstone Module's programmable circuit system. Block Manipulator and Piston are part of this same engine overhaul. Work on this system is paused temporarily but ongoing.
+These modules are being developed and introduce a new engine system based on programmable redstone circuits. Work is ongoing.
 
 ### Block Manipulator Module
 
@@ -22,14 +22,14 @@ These modules are implemented on the dev branch and introduce a fundamentally ne
 
 ### Redstone Module
 
-**Summary:** A programmable logic circuit with a 6×9 (54-slot) circuit editor for custom redstone logic. This is the foundation for many future modules.
+**Summary:** A programmable logic circuit with a 6x9 (54-slot) circuit editor for custom redstone logic. This is the foundation for many future modules.
 
 **Implemented mechanics:**
-- `RedstoneCircuit` and `RedstoneComponent` API classes for custom circuit-based modules
+- Programmable circuit editor for custom redstone logic
 - Signal propagation, rotation, and wall attachment support
 - Custom config screen for circuit editing
 
-**Notes:** Core of the new engine system. Future modules that hook into this system are marked with 🔴 below.
+**Notes:** Core of the new engine system. Future modules that hook into this system are marked with a red dot below.
 
 ### Piston Module
 
@@ -120,7 +120,7 @@ These modules automate existing vanilla Minecraft mechanics and are planned for 
 
 **Notes:** Needs to determine how to handle bee spawning and hive fullness detection. The module should prevent bees from leaving the hive structure and manage the pollination cycle internally.
 
-### Note Block Module 🔴
+### Note Block Module
 
 **GitHub Issue:** [#19](https://github.com/TheXTrunner/praeteritum_futurum/issues/19)
 
@@ -134,7 +134,7 @@ These modules automate existing vanilla Minecraft mechanics and are planned for 
 - Tempo/rate control: how fast does it cycle through notes?
 - Can multiple Note Block modules sync to play harmonies?
 
-**Notes:** Will hook into the Redstone Module's circuit system (🔴) for programmable melody sequences. Note blocks are a vanilla Minecraft mechanic.
+**Notes:** Will hook into the Redstone Module's circuit system for programmable melody sequences. Note blocks are a vanilla Minecraft mechanic.
 
 ## Non-Vanilla Modules (Post 1.0.0)
 
@@ -168,7 +168,7 @@ These modules require new items, non-vanilla mechanics, or custom design beyond 
 - Tool/weapon upgrade paths (e.g., adding enchantment-like properties through materials)
 - Future new armor tiers or materials?
 
-### RC Module (Remote Signal) 🔴
+### RC Module (Remote Signal)
 
 **Summary:** A module that enables remote signal activation without physical connections.
 
@@ -178,7 +178,7 @@ These modules require new items, non-vanilla mechanics, or custom design beyond 
 - Supports both momentary (pulse) and toggle (latch) signal modes.
 - Configurable range limit for balance.
 
-**Notes:** Will hook into the Redstone Module's circuit system (🔴) for signal transmission logic.
+**Notes:** Will hook into the Redstone Module's circuit system for signal transmission logic.
 
 ### Woodcutter Module
 
