@@ -1,0 +1,53 @@
+title: "[IDEA] "
+labels: ["idea"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Propose an Idea
+        Have an idea for Praeteritum Futurum? Share it below so the community can discuss it.
+
+  - type: textarea
+    id: idea-summary
+    attributes:
+      label: Idea Summary
+      description: Brief description of your idea
+    validations:
+      required: true
+
+  - type: checkboxes
+    attributes:
+      label: Component Category
+      description: Which area does this idea relate to?
+      options:
+        - label: Modular Machine Framework
+        - label: New Module Type
+        - label: Wrench (Yool) Mechanics
+        - label: Logistics / IO Modules
+        - label: Exploration / Structures
+        - label: Visuals / UI / Tooltips
+        - label: Other
+
+  - type: textarea
+    id: how-it-works
+    attributes:
+      label: How It Would Work
+      description: Describe how this idea would function in-game
+    validations:
+      required: true
+
+  - type: textarea
+    id: why-useful
+    attributes:
+      label: Why It Would Be Useful
+      description: Explain the benefit or problem it solves
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Reference screenshots, similar mods, or related discussions
+    validations:
+      required: false

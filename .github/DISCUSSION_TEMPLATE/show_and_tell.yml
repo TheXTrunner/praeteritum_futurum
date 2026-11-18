@@ -1,0 +1,40 @@
+title: "[SHOW] "
+labels: ["show-and-tell"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Show and Tell
+        Share your Praeteritum Futurum builds, setups, and creations with the community!
+
+  - type: input
+    id: build-name
+    attributes:
+      label: What Did You Build?
+      description: Give your build a name and brief description
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots or Videos
+      description: Share images or links to your creation
+    validations:
+      required: false
+
+  - type: textarea
+    id: machine-setup
+    attributes:
+      label: Machine Setup Details
+      description: Describe the modules, configurations, or clever tricks you used
+    validations:
+      required: false
+
+  - type: textarea
+    id: tips
+    attributes:
+      label: Tips for Others
+      description: Optional: share advice for anyone trying to replicate your build
+    validations:
+      required: false
