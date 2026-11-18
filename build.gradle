@@ -4,7 +4,6 @@ plugins {
     id 'net.neoforged.moddev' version '2.0.148'
     id 'idea'
     id 'com.modrinth.minotaur' version '2.+'
-    id 'com.matthewprenger.cursegradle' version '1.4.0'
 }
 
 tasks.named('wrapper', Wrapper).configure {
@@ -181,29 +180,95 @@ idea {
 // ======================
 // CurseForge Publishing
 // ======================
-// Uses the official CurseGradle plugin (com.matthewprenger.cursegradle).
+// Manual HTTP upload to the CurseForge Author Upload API.
 // The CURSEFORGE_API_KEY environment variable must be set (via GitHub Secrets in CI).
 // Run with: ./gradlew curseforge
+//
+// API docs: https://support.curseforge.com/support/solutions/articles/9000197321
+//
+// Uses gameVersionNames with human-readable strings instead of numeric IDs.
+// CurseForge resolves the names to internal IDs automatically.
 
-def curseforgeApiKey = System.getenv('CURSEFORGE_API_KEY')
-if (curseforgeApiKey && !curseforgeApiKey.isEmpty()) {
-    curseforge {
-        apiKey = curseforgeApiKey
-        project {
-            id = '1774651'
-            changelog = extractChangelogSection()
-            changelogType = 'markdown'
-            releaseType = 'beta'
-            addGameVersion '1.21.1'
-            addGameVersion 'NeoForge'
+// Capture project properties at configuration time for Gradle configuration cache compatibility
+def _cfChangelog = extractChangelogSection()
+def _cfVersion = project.version.toString()
+def _cfName = project.name.toString()
+def _cfJar = layout.buildDirectory.file("libs/${_cfName}-${_cfVersion}.jar")
 
-            mainArtifact(layout.buildDirectory.file("libs/${project.name}-${project.version}.jar").get().asFile) {
-                displayName = "Praeteritum Futurum v${project.version}"
-            }
+tasks.register('curseforge') {
+    inputs.file(_cfJar)
+
+    doLast {
+        def apiToken = System.getenv('CURSEFORGE_API_KEY')
+        if (!apiToken || apiToken.isEmpty()) {
+            println 'WARNING: CURSEFORGE_API_KEY not set — skipping CurseForge upload'
+            return
         }
+
+        def jarFile = _cfJar.get().asFile
+        if (!jarFile.exists()) {
+            throw new GradleException('JAR file not found: ' + jarFile.path)
+        }
+
+        // CurseForge Author Upload API
+        // Endpoint: minecraft.curseforge.com (game-specific subdomain)
+        // Auth: X-Api-Token header
+        def url = new URL('https://minecraft.curseforge.com/api/projects/1774651/upload-file')
+        def connection = url.openConnection()
+        connection.doOutput = true
+        connection.requestMethod = 'POST'
+        connection.setRequestProperty('X-Api-Token', apiToken)
+
+        def boundary = '----CurseForgeBoundary' + System.currentTimeMillis()
+        connection.setRequestProperty('Content-Type', 'multipart/form-data; boundary=' + boundary)
+
+        // Build metadata JSON
+        // gameVersionNames: human-readable version names (Minecraft version + loader)
+        // CurseForge resolves these to the correct internal IDs automatically
+        def metadata = new groovy.json.JsonBuilder()
+        metadata {
+            changelog(_cfChangelog)
+            changelogType('markdown')
+            displayName("Praeteritum Futurum v${_cfVersion}")
+            releaseType('beta')
+            gameVersionNames(['1.21.1', 'NeoForge'])
+        }
+        def metadataJson = metadata.toString()
+
+        println 'CurseForge upload metadata:'
+        println metadataJson
+
+        // Build multipart request body
+        def body = new ByteArrayOutputStream()
+
+        // Part 1: metadata (JSON)
+        body.write(('--' + boundary + '\r\n').getBytes('UTF-8'))
+        body.write('Content-Disposition: form-data; name="metadata"\r\n'.getBytes('UTF-8'))
+        body.write('Content-Type: application/json\r\n\r\n'.getBytes('UTF-8'))
+        body.write(metadataJson.getBytes('UTF-8'))
+        body.write('\r\n'.getBytes('UTF-8'))
+
+        // Part 2: file (JAR)
+        body.write(('--' + boundary + '\r\n').getBytes('UTF-8'))
+        body.write(('Content-Disposition: form-data; name="file"; filename="' + _cfName + '-' + _cfVersion + '.jar"\r\n').getBytes('UTF-8'))
+        body.write('Content-Type: application/java-archive\r\n\r\n'.getBytes('UTF-8'))
+        body.write(jarFile.bytes)
+        body.write('\r\n'.getBytes('UTF-8'))
+
+        // Closing boundary
+        body.write(('--' + boundary + '--\r\n').getBytes('UTF-8'))
+
+        connection.outputStream.write(body.toByteArray())
+        connection.outputStream.flush()
+
+        def responseCode = connection.responseCode
+        if (responseCode != 200) {
+            def response = connection.errorStream?.getText('UTF-8') ?: 'No response body'
+            throw new GradleException('CurseForge upload failed with code ' + responseCode + ': ' + response)
+        }
+
+        println 'Successfully uploaded to CurseForge'
     }
-} else {
-    println 'WARNING: CURSEFORGE_API_KEY not set — CurseForge publishing disabled'
 }
 
 // Extract the current version section from CHANGELOG.md for publish platforms
