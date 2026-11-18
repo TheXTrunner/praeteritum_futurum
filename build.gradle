@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
     id 'net.neoforged.moddev' version '2.0.148'
     id 'idea'
-    id 'com.modrinth.minotaur' version '2.+'
+    id 'me.modmuss50.mod-publish-plugin' version '0.7.+'
 }
 
 tasks.named('wrapper', Wrapper).configure {
@@ -178,98 +178,15 @@ idea {
 }
 
 // ======================
-// CurseForge Publishing
+// Unified Publishing
 // ======================
-// Manual HTTP upload to the CurseForge Author Upload API.
-// The CURSEFORGE_API_KEY environment variable must be set (via GitHub Secrets in CI).
-// Run with: ./gradlew curseforge
+// Uses the mod-publish-plugin (me.modmuss50) for both CurseForge and Modrinth.
+// This is the modern standard for 1.21.1 NeoForge projects.
 //
-// API docs: https://support.curseforge.com/support/solutions/articles/9000197321
+// CurseForge: CURSEFORGE_API_KEY environment variable (via GitHub Secrets)
+// Modrinth: MODRINTH_TOKEN environment variable (via GitHub Secrets)
 //
-// Uses gameVersionNames with human-readable strings instead of numeric IDs.
-// CurseForge resolves the names to internal IDs automatically.
-
-// Capture project properties at configuration time for Gradle configuration cache compatibility
-def _cfChangelog = extractChangelogSection()
-def _cfVersion = project.version.toString()
-def _cfName = project.name.toString()
-def _cfJar = layout.buildDirectory.file("libs/${_cfName}-${_cfVersion}.jar")
-
-tasks.register('curseforge') {
-    inputs.file(_cfJar)
-
-    doLast {
-        def apiToken = System.getenv('CURSEFORGE_API_KEY')
-        if (!apiToken || apiToken.isEmpty()) {
-            println 'WARNING: CURSEFORGE_API_KEY not set — skipping CurseForge upload'
-            return
-        }
-
-        def jarFile = _cfJar.get().asFile
-        if (!jarFile.exists()) {
-            throw new GradleException('JAR file not found: ' + jarFile.path)
-        }
-
-        // CurseForge Author Upload API
-        // Endpoint: minecraft.curseforge.com (game-specific subdomain)
-        // Auth: X-Api-Token header
-        def url = new URL('https://minecraft.curseforge.com/api/projects/1774651/upload-file')
-        def connection = url.openConnection()
-        connection.doOutput = true
-        connection.requestMethod = 'POST'
-        connection.setRequestProperty('X-Api-Token', apiToken)
-
-        def boundary = '----CurseForgeBoundary' + System.currentTimeMillis()
-        connection.setRequestProperty('Content-Type', 'multipart/form-data; boundary=' + boundary)
-
-        // Build metadata JSON
-        // gameVersionNames: human-readable version names (Minecraft version + loader)
-        // CurseForge resolves these to the correct internal IDs automatically
-        def metadata = new groovy.json.JsonBuilder()
-        metadata {
-            changelog(_cfChangelog)
-            changelogType('markdown')
-            displayName("Praeteritum Futurum v${_cfVersion}")
-            releaseType('beta')
-            gameVersionNames(['1.21.1', 'NeoForge'])
-        }
-        def metadataJson = metadata.toString()
-
-        println 'CurseForge upload metadata:'
-        println metadataJson
-
-        // Build multipart request body
-        def body = new ByteArrayOutputStream()
-
-        // Part 1: metadata (JSON)
-        body.write(('--' + boundary + '\r\n').getBytes('UTF-8'))
-        body.write('Content-Disposition: form-data; name="metadata"\r\n'.getBytes('UTF-8'))
-        body.write('Content-Type: application/json\r\n\r\n'.getBytes('UTF-8'))
-        body.write(metadataJson.getBytes('UTF-8'))
-        body.write('\r\n'.getBytes('UTF-8'))
-
-        // Part 2: file (JAR)
-        body.write(('--' + boundary + '\r\n').getBytes('UTF-8'))
-        body.write(('Content-Disposition: form-data; name="file"; filename="' + _cfName + '-' + _cfVersion + '.jar"\r\n').getBytes('UTF-8'))
-        body.write('Content-Type: application/java-archive\r\n\r\n'.getBytes('UTF-8'))
-        body.write(jarFile.bytes)
-        body.write('\r\n'.getBytes('UTF-8'))
-
-        // Closing boundary
-        body.write(('--' + boundary + '--\r\n').getBytes('UTF-8'))
-
-        connection.outputStream.write(body.toByteArray())
-        connection.outputStream.flush()
-
-        def responseCode = connection.responseCode
-        if (responseCode != 200) {
-            def response = connection.errorStream?.getText('UTF-8') ?: 'No response body'
-            throw new GradleException('CurseForge upload failed with code ' + responseCode + ': ' + response)
-        }
-
-        println 'Successfully uploaded to CurseForge'
-    }
-}
+// Run with: ./gradlew publishMods
 
 // Extract the current version section from CHANGELOG.md for publish platforms
 def extractChangelogSection() {
@@ -301,47 +218,21 @@ def extractChangelogSection() {
     return changelogFile.text
 }
 
-// ======================
-// Modrinth Publishing
-// ======================
-// The MODRINTH_TOKEN environment variable must be set (via GitHub Secrets in CI).
-// Run with: ./gradlew modrinth
-def modrinthToken = System.getenv('MODRINTH_TOKEN')
-if (modrinthToken && !modrinthToken.isEmpty()) {
+publishMods {
+    file = tasks.named("jar").flatMap { it.archiveFile }
+    changelog = extractChangelogSection()
+    type = BETA
+    modLoaders.add("neoforge")
+
+    curseforge {
+        projectId = "1774651"
+        accessToken = providers.environmentVariable("CURSEFORGE_API_KEY")
+        minecraftVersions.add("1.21.1")
+    }
+
     modrinth {
-        // Your Modrinth access token — NEVER hardcode it. Use the environment variable from GitHub Secrets.
-        token = modrinthToken
-
-        // Your Modrinth project ID (the slug from your project URL)
-        projectId = 'praeteritum-futurum'
-
-        // Version number and name
-        versionNumber = project.version
-        versionName = "Praeteritum Futurum v${project.version}"
-        versionType = 'beta'
-
-        // Changelog — only the current version section, not the entire file
-        changelog = extractChangelogSection()
-
-        // Game versions and loaders
-        gameVersions = [project.minecraft_version]
-        loaders = ['neoforge']
-
-        // Upload the built JAR
-        uploadFile = project.file('build/libs/' + project.name + '-' + project.version + '.jar')
-
-        // Sync the project body (description) from README.md on each publish
-        // Requires MODRINTH_TOKEN with PROJECT_WRITE scope
-        syncBodyFrom = new File('README.md').text
+        projectId = "praeteritum-futurum"
+        accessToken = providers.environmentVariable("MODRINTH_TOKEN")
+        minecraftVersions.add("1.21.1")
     }
-
-    // Ensure the project body (description) syncs with Modrinth on every publish
-    tasks.named('modrinth') {
-        mustRunAfter 'modrinthSyncBody'
-    }
-    tasks.named('modrinthSyncBody') {
-        // Sync body runs before modrinth upload
-    }
-} else {
-    println 'WARNING: MODRINTH_TOKEN not set — Modrinth publishing disabled'
 }

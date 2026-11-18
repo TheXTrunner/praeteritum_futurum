@@ -58,16 +58,7 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build
 
-      - name: Setup environment checks
-        run: |
-          if [ -n "${{ secrets.CURSEFORGE_API_KEY }}" ]; then
-            echo "HAS_CURSEFORGE=true" >> $GITHUB_ENV
-          fi
-          if [ -n "${{ secrets.MODRINTH_TOKEN }}" ]; then
-            echo "HAS_MODRINTH=true" >> $GITHUB_ENV
-          fi
-
-      - name: Extract changelog for release
+      - name: Extract changelog for GitHub Release
         id: changelog
         run: |
           # Extract the section between the current version header and the next version header
@@ -86,30 +77,8 @@ jobs:
           files: build/libs/*.jar
           body_path: release_body.md
 
-      - name: Publish to CurseForge
-        continue-on-error: true
-        if: env.HAS_CURSEFORGE
+      - name: Publish to CurseForge and Modrinth
         env:
           CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
-        run: ./gradlew curseforge
-
-      # Modrinth publishing disabled while testing CurseForge — re-enable after CurseForge is working
-      # - name: Check if Modrinth version already exists
-      #   id: modrinth-check
-      #   if: env.HAS_MODRINTH
-      #   run: |
-      #     TAG="${GITHUB_REF#refs/tags/}"
-      #     EXISTS=$(curl -s "https://api.modrinth.com/v2/project/praeteritum-futurum/version" | jq -r ".[] | select(.version_number == \"$TAG\") | .id")
-      #     if [ -n "$EXISTS" ]; then
-      #       echo "skip=true" >> $GITHUB_OUTPUT
-      #       echo "Version $TAG already exists on Modrinth (id: $EXISTS) — skipping upload"
-      #     else
-      #       echo "skip=false" >> $GITHUB_OUTPUT
-      #     fi
-
-      # - name: Publish to Modrinth
-      #   continue-on-error: true
-      #   if: steps.modrinth-check.outputs.skip != 'true'
-      #   env:
-      #     MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
-      #   run: ./gradlew modrinth
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+        run: ./gradlew publishMods
