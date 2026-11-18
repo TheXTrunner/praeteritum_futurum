@@ -1,19 +1,34 @@
-# Documentation Index
+# Developer Documentation
 
-Use this index to choose a starting point. Each guide links back here, so you can move between the project overview, setup instructions, and topic-specific details without guessing where a subject belongs.
+This folder contains technical documentation for contributors and third-party mod developers. For player-facing documentation, see the [GitHub Wiki](https://github.com/TheXTrunner/praeteritum_futurum/wiki).
 
-## Choose by Task
+## Documentation Structure
 
-| Your task | Start here | Next step |
+| Audience | Location | Content |
 |---|---|---|
-| Learn about or install the mod | [Project README](../README.md) | Check [release history](../CHANGELOG.md) for changes by version. |
-| Build the project or contribute code | [Contributing Guide](../CONTRIBUTING.md) | Use the [Architecture Overview](ARCHITECTURE.md) to locate code, then open the relevant topic guide. |
-| Create a module in another mod | [Module API Guide](MODULE-API-GUIDE.md) | Start with dependency setup, then follow the relevant module example. |
-| Explore future module proposals | [Deferred Module Ideas](MODULE-IDEAS.md) | Check linked GitHub issues for current planning status. |
+| **Players** | [GitHub Wiki](https://github.com/TheXTrunner/praeteritum_futurum/wiki) | Getting started, module reference, quick start guide |
+| **Contributors** | `docs/` (this folder) | Code architecture, API reference, internal roadmap |
+| **Third-party modders** | `docs/MODULE-API-GUIDE.md` | Full API guide for creating custom modules |
+
+## Files in This Folder
+
+| File | Purpose |
+|---|---|
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Code-oriented map: package structure, class relationships, runtime behavior |
+| [MODULE-API-GUIDE.md](MODULE-API-GUIDE.md) | Step-by-step guide for third-party modders creating custom modules |
+| [MODULE-IDEAS.md](MODULE-IDEAS.md) | Internal roadmap of planned modules (not public-facing) |
+
+## Keeping Docs in Sync
+
+The wiki mirrors the architecture and API guide for public consumption. When you make changes to the code:
+
+1. Update the relevant file in `docs/` first (source of truth).
+2. Apply the same changes to the corresponding wiki page so the public wiki stays accurate.
+3. The wiki repo is cloned at `E:\Projects\praeteritum_futurum.wiki` - push changes there after updating `docs/`.
 
 ## Contributor Workflow
 
-1. Read the [README](../README.md) for the project overview and player-facing features.
-2. If you plan to change the code, follow [CONTRIBUTING.md](../CONTRIBUTING.md) to set up, build, and run the project.
-3. Open the focused guide for the area you are changing.
-4. Update the relevant guide when a code change changes player behavior, a test procedure, or the meaning of a log message.
+1. Read the [project README](../README.md) for the mod overview.
+2. Follow [CONTRIBUTING.md](../CONTRIBUTING.md) to set up, build, and run the project.
+3. Open [ARCHITECTURE.md](ARCHITECTURE.md) to locate the code you need to change.
+4. Open [MODULE-API-GUIDE.md](MODULE-API-GUIDE.md) if you are creating a custom module from another mod.

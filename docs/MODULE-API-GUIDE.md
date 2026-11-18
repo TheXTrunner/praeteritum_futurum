@@ -4,6 +4,8 @@
 
 This guide walks through creating custom modules for the **Praeteritum Futurum** Machine Framework. Modules are items placed in its 27-slot grid, each providing specialized functionality (smelting, filtering, IO control, etc.). Start with dependency setup, then follow the base-class and complete-module examples. The guide targets third-party mod developers familiar with Java, Gradle, and NeoForge.
 
+> **Lighter version:** A summary of the module API is available on the [GitHub Wiki - Module API Guide](https://github.com/TheXTrunner/praeteritum_futurum/wiki/Module-API-Guide). This document contains the full code-level reference with complete examples.
+
 ---
 
 ## Table of Contents
@@ -329,7 +331,7 @@ public void handleCustomClick(double mouseX, double mouseY, int slotX, int slotY
 
 **When it runs:** Validation runs when the player clicks the overlay, so stale configs are cleaned up immediately. The method returns `true` if any direction was reset, `false` if all configs were already valid.
 
-**Built-in usage:** The Processing Module, Jukebox Module, and Ejection Module all use this pattern. If you place a Processing Module adjacent to an Inventory Module, set a direction to INPUT, then replace the Inventory Module with something else, the direction config will automatically reset to DISABLED the next time you open the overlay.
+**Built-in usage:** The Processing Module, Jukebox Module, and Ejection Module all use this pattern. If you place a Processing Module adjacent to an Inventory Module, set a direction to INPUT, then replace the Inventory Module with something else, the direction config will automatically reset to "DISABLED" the next time you open the overlay.
 
 ---
 
@@ -402,7 +404,7 @@ Called every tick before `processModule()`. Restores saved channels from NBT whe
 
 #### Clear (`clearProgressData`)
 
-Removes the `ModuleChannels` NBT from the module item. Call this when a processing operation completes successfully and you don't want the progress to carry over.
+Removes the `ModuleChannels` NBT from the module item. Call this when a processing operation completes successfully, and you don't want the progress to carry over.
 
 ### Common Pitfalls
 
