@@ -1,7 +1,9 @@
 # Praeteritum Futurum
 
 [![CurseForge](https://cf.way2muchnoise.eu/short_1774651.svg)](https://www.curseforge.com/minecraft/mc-mods/praeteritum-futurum)
-[![Modrinth](https://img.shields.io/modrinth/dt/praeteritum-futurum?label=modrinth)](https://modrinth.com/mod/praeteritum-futurum)<br>
+[![Modrinth](https://img.shields.io/modrinth/dt/praeteritum-futurum?label=modrinth)](https://modrinth.com/mod/praeteritum-futurum)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Minecraft](https://img.shields.io/badge/Minecraft-1.21.1-blue.svg)](https://minecraft.net)<br>
 [![Build](https://github.com/TheXTrunner/praeteritum_futurum/actions/workflows/build.yml/badge.svg)](https://github.com/TheXTrunner/praeteritum_futurum/actions/workflows/build.yml)
 
 A modular machine and logistics mod for Minecraft on NeoForge. Build custom automation pipelines by configuring a single Machine Framework block with interchangeable modules; no need for dozens of specialized machines.
@@ -46,6 +48,8 @@ The mod also includes exploration elements: discover **Ruined Outpost** structur
 - **Yool wrench** for rotating directional blocks and hoppers (sneak + right-click on a Machine Framework to safely break and drop it)
 - **Salvage Scrap** and **Refined Scrap** crafting materials
 - **Strange Artifact** dropped from advanced salvage blocks
+
+### Miscellaneous
 - **Husk sand drops:** Husks have a chance to drop sand on death, reflecting their desert biome origin
 
 ### Configuration

@@ -2,7 +2,7 @@
 
 Thank you for your interest in contributing! This mod is developed with AI assistance (Google's Gemini and JetBrains' Junie), and contributions from the community are welcome.
 
-For the project overview and player-facing features, start with the [README](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/README.md). Use the [documentation index](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/docs/README.md) to find focused guides; the [architecture overview](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/docs/ARCHITECTURE.md) maps the major code areas and runtime flow.
+For the project overview and player-facing features, start with the [README](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/README.md). Player-facing documentation (Quick Start, module guides, FAQ) lives on the [GitHub Wiki](https://github.com/TheXTrunner/praeteritum_futurum/wiki). Use the [documentation index](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/docs/README.md) to find focused developer guides; the [architecture overview](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/docs/ARCHITECTURE.md) maps the major code areas and runtime flow.
 
 ## Development Setup
 
