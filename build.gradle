@@ -193,11 +193,23 @@ def extractChangelogSection() {
     def changelogFile = new File('CHANGELOG.md')
     def lines = changelogFile.readLines()
     def version = project.version.toString()
+    def startLine = -1
 
     // Find the start: prefer the exact version section (e.g., "## [0.1.3]"), fall back to "## [Unreleased]"
-    def startLine = lines.findIndex { it ==~ /## \[.*${version}.*\]/ }
+    for (int i = 0; i < lines.size(); i++) {
+        if (lines[i] ==~ /## \[.*${version}.*\]/) {
+            startLine = i
+            break
+        }
+    }
+
     if (startLine < 0) {
-        startLine = lines.findIndex { it ==~ /## \[Unreleased\]/ }
+        for (int i = 0; i < lines.size(); i++) {
+            if (lines[i] ==~ /## \[Unreleased\]/) {
+                startLine = i
+                break
+            }
+        }
     }
 
     if (startLine < 0) {
@@ -206,14 +218,18 @@ def extractChangelogSection() {
     }
 
     // Find the end of the section (next "## [" header)
-    def endLine = lines.subList(startLine + 1, lines.size()).findIndex { it =~ /^## \[/ }
-    def end = (endLine >= 0) ? startLine + 1 + endLine : lines.size()
+    def end = lines.size()
+    for (int i = startLine + 1; i < lines.size(); i++) {
+        if (lines[i] =~ /^## \[/) {
+            end = i
+            break
+        }
+    }
 
     // Skip the version header line and any leading blank lines
     def content = lines.subList(startLine + 1, end)
-    def firstNonBlank = content.findIndex { !it.trim().isEmpty() }
-    if (firstNonBlank > 0) {
-        content = content.subList(firstNonBlank, content.size())
+    while (!content.isEmpty() && content[0].trim().isEmpty()) {
+        content = content.subList(1, content.size())
     }
     return content.join('\n')
 }
