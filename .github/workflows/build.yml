@@ -77,8 +77,13 @@ jobs:
           files: build/libs/*.jar
           body_path: release_body.md
 
-      - name: Publish to CurseForge and Modrinth
+      - name: Publish to CurseForge
         env:
           CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
-          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
-        run: ./gradlew publishMods
+        run: ./gradlew publishCurseforge
+
+      # Modrinth already published successfully — re-enable below for future releases
+      # - name: Publish to Modrinth
+      #   env:
+      #     MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+      #   run: ./gradlew publishModrinth
