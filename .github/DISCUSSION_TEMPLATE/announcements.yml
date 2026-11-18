@@ -10,8 +10,8 @@ body:
   - type: textarea
     id: whats-new
     attributes:
-      label: What's New
-      description: Brief summary of the announcement
+      label: "What's New"
+      description: "Brief summary of the announcement"
     validations:
       required: true
 
@@ -19,14 +19,14 @@ body:
     id: details
     attributes:
       label: Details
-      description: Expand on the announcement with more context, links, or screenshots
+      description: "Expand on the announcement with more context, links, or screenshots"
     validations:
       required: false
 
   - type: textarea
     id: whats-next
     attributes:
-      label: What's Next
-      description: Optional: mention upcoming plans or what users should do
+      label: "What's Next"
+      description: "Optional: mention upcoming plans or what users should do"
     validations:
       required: false
