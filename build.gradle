@@ -202,14 +202,14 @@ tasks.register('curseforge') {
             throw new GradleException('JAR file not found: ' + _cfJarFile.path)
         }
 
-        // Use the CurseForge author upload API: /api/projects/{projectId}/upload-file
-        // Base URL: authors.curseforge.com (not api.curseforge.com)
-        // Authentication: X-Api-Token header (not X-API-Key)
-        def url = new URL('https://authors.curseforge.com/api/projects/1774651/upload-file')
+        // Use the CurseForge upload API via the game-specific subdomain
+        // Base URL: minecraft.curseforge.com (not api.curseforge.com or authors.curseforge.com)
+        // Authentication: X-API-Key header
+        def url = new URL('https://minecraft.curseforge.com/api/projects/1774651/upload-file')
         def connection = url.openConnection()
         connection.doOutput = true
         connection.requestMethod = 'POST'
-        connection.setRequestProperty('X-Api-Token', apiToken)
+        connection.setRequestProperty('X-API-Key', apiToken)
 
         def boundary = '----CurseForgeBoundary' + System.currentTimeMillis()
         connection.setRequestProperty('Content-Type', 'multipart/form-data; boundary=' + boundary)
