@@ -50,8 +50,7 @@ Copy configurations across machines:
 - Use the blueprint to replicate the configuration on another machine
 - Place a configured module or blueprint alone in any crafting grid to reset it (Data Cleaning recipe)
 
-## For Mod Developers
+## More Information
 
-Want to create custom modules for your own mod? See the [[Module API Guide]] for detailed instructions.
-
-Check the [[Module Roadmap]] for planned modules.
+- [[FAQ]] - Common questions about modules and configuration
+- [[Module-Roadmap]] - See what modules are planned for the future
