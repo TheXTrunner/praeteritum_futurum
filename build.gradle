@@ -192,9 +192,15 @@ idea {
 //   1.21.1  → 12735  (Minecraft game version)
 //   NeoForge → 10150  (mod loader)
 
+// Capture project properties at configuration time for Gradle configuration cache compatibility
 def _cfChangelog = extractChangelogSection()
+def _cfVersion = project.version.toString()
+def _cfName = project.name.toString()
+def _cfJar = layout.buildDirectory.file("libs/${_cfName}-${_cfVersion}.jar")
 
 tasks.register('curseforge') {
+    inputs.file(_cfJar)
+
     doLast {
         def apiToken = System.getenv('CURSEFORGE_API_KEY')
         if (!apiToken || apiToken.isEmpty()) {
@@ -202,7 +208,7 @@ tasks.register('curseforge') {
             return
         }
 
-        def jarFile = file('build/libs/praeteritum_futurum-0.1.3.jar')
+        def jarFile = _cfJar.get().asFile
         if (!jarFile.exists()) {
             throw new GradleException('JAR file not found: ' + jarFile.path)
         }
@@ -221,18 +227,16 @@ tasks.register('curseforge') {
 
         // Build metadata JSON
         // gameVersions: numeric IDs from CurseForge Game Versions API
-        // gameVersionNames: optional loader-specific version names
         def metadata = new groovy.json.JsonBuilder()
         metadata {
             changelog(_cfChangelog)
             changelogType('markdown')
-            displayName('Praeteritum Futurum v0.1.3')
+            displayName("Praeteritum Futurum v${_cfVersion}")
             releaseType('beta')
             gameVersions([12735, 10150])
         }
         def metadataJson = metadata.toString()
 
-        // DEBUG: print the exact metadata JSON being sent
         println 'CurseForge upload metadata:'
         println metadataJson
 
@@ -248,7 +252,7 @@ tasks.register('curseforge') {
 
         // Part 2: file (JAR)
         body.write(('--' + boundary + '\r\n').getBytes('UTF-8'))
-        body.write(('Content-Disposition: form-data; name="file"; filename="praeteritum_futurum-0.1.3.jar"\r\n').getBytes('UTF-8'))
+        body.write(('Content-Disposition: form-data; name="file"; filename="' + _cfName + '-' + _cfVersion + '.jar"\r\n').getBytes('UTF-8'))
         body.write('Content-Type: application/java-archive\r\n\r\n'.getBytes('UTF-8'))
         body.write(jarFile.bytes)
         body.write('\r\n'.getBytes('UTF-8'))
