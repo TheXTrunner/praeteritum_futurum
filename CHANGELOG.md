@@ -58,7 +58,7 @@ All notable changes to Praeteritum Futurum will be documented in this file.
 - **Brewing Module** for automated potion brewing
   - 3 potion slots with in-place brewing, 1 ingredient slot for both fuel and ingredients
   - Dedicated `POTION` and `INGREDIENT` slot modes for clear labeling
-  - Uses a hardcoded vanilla recipe map because the NeoForge `PotionBrewing` API is unavailable for this use in 1.21.1. Mod-added potions are not supported by the built-in module; the [Module API Guide](docs/MODULE-API-GUIDE.md#12-creating-a-custom-brewing-module) describes an add-on approach.
+  - Uses a hardcoded vanilla recipe map because the NeoForge `PotionBrewing` API is unavailable for this use in 1.21.1. Mod-added potions are not supported by the built-in module; the [Module API Guide](docs/MODULE-API-GUIDE.md#13-creating-a-custom-brewing-module) describes an add-on approach.
 - **Cartography Module** for map cloning, zoom-out, and locking operations
 - **Anvil Module** for item repair, enchantment combining, and renaming
   - Text input panel for configuring custom names directly in the machine UI
