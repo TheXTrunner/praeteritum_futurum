@@ -186,11 +186,8 @@ idea {
 //
 // API docs: https://support.curseforge.com/support/solutions/articles/9000197321
 //
-// The metadata JSON requires gameVersions as numeric IDs. The IDs below are from the
-// CurseForge Game Versions API (GET /api/game/versions) and are the standard version
-// registry used by the CurseForge-version-identifier project.
-//   1.21.1  → 12735  (Minecraft game version)
-//   NeoForge → 10150  (mod loader)
+// Uses gameVersionNames with human-readable strings instead of numeric IDs.
+// CurseForge resolves the names to internal IDs automatically.
 
 // Capture project properties at configuration time for Gradle configuration cache compatibility
 def _cfChangelog = extractChangelogSection()
@@ -226,14 +223,15 @@ tasks.register('curseforge') {
         connection.setRequestProperty('Content-Type', 'multipart/form-data; boundary=' + boundary)
 
         // Build metadata JSON
-        // gameVersions: numeric IDs from CurseForge Game Versions API
+        // gameVersionNames: human-readable version names (Minecraft version + loader)
+        // CurseForge resolves these to the correct internal IDs automatically
         def metadata = new groovy.json.JsonBuilder()
         metadata {
             changelog(_cfChangelog)
             changelogType('markdown')
             displayName("Praeteritum Futurum v${_cfVersion}")
             releaseType('beta')
-            gameVersions([12735, 10150])
+            gameVersionNames(['1.21.1', 'NeoForge'])
         }
         def metadataJson = metadata.toString()
 
