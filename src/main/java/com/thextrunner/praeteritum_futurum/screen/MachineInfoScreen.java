@@ -80,9 +80,30 @@ public class MachineInfoScreen extends AbstractContainerScreen<MachineInfoMenu> 
             return;
         }
 
-        super.renderSlot(graphics, slot);
-
+        // Check if the module wants to hide its slot item (e.g., Jukebox Module hides the disc)
+        boolean hideItem = false;
         if (slot.index < 27) {
+            MachineFrameworkBlockEntity blockEntity = this.menu.getBlockEntity();
+            if (blockEntity != null) {
+                ItemStack moduleStack = blockEntity.getModuleHandler().getStackInSlot(slot.index);
+                if (moduleStack.getItem() instanceof BaseModuleItem baseModule) {
+                    hideItem = baseModule.hidesSlotItemInMachineScreen(moduleStack, blockEntity, slot.index);
+                }
+            }
+        }
+
+        if (hideItem) {
+            // Temporarily clear the slot item so super.renderSlot() only draws the background
+            ItemStack saved = slot.getItem();
+            slot.set(ItemStack.EMPTY);
+            super.renderSlot(graphics, slot);
+            slot.set(saved); // Restore the item
+        } else {
+            super.renderSlot(graphics, slot);
+        }
+
+        // Skip rendering the module overlay for the slot that currently has the config overlay open
+        if (slot.index < 27 && slot.index != configuringSlotIndex) {
             MachineFrameworkBlockEntity blockEntity = this.menu.getBlockEntity();
             if (blockEntity != null) {
                 ItemStack moduleStack = blockEntity.getModuleHandler().getStackInSlot(slot.index);
@@ -162,10 +183,8 @@ public class MachineInfoScreen extends AbstractContainerScreen<MachineInfoMenu> 
                 int renderY = slot.y + this.topPos;
 
                 if (moduleStack.getItem() instanceof BaseModuleItem baseModule) {
-                    // Set overlay slot index for ProcessingModuleItem so border-aware rendering works
-                    if (baseModule instanceof com.thextrunner.praeteritum_futurum.item.custom.ProcessingModuleItem processingModule) {
-                        processingModule.setOverlaySlotIndex(configuringSlotIndex);
-                    }
+                    // Set overlay slot index so border-aware rendering and adjacent-module detection work
+                    baseModule.setOverlaySlotIndex(configuringSlotIndex);
                     baseModule.renderCustomOverlay(guiGraphics, renderX, renderY, moduleStack, blockEntity, this.font);
                 } else {
                     configuringSlotIndex = -1;
@@ -225,7 +244,10 @@ public class MachineInfoScreen extends AbstractContainerScreen<MachineInfoMenu> 
         int fieldWidth = panelWidth - btnWidth * 2 - 16; // space between buttons and field
 
         textInputField = new EditBox(this.font, fieldX, fieldY, fieldWidth, 16, Component.empty());
-        textInputField.setHint(textModule.getTextInputHint());
+        Component hint = textModule.getTextInputHint();
+        if (hint != null) {
+            textInputField.setHint(hint);
+        }
         textInputField.setFilter(s -> s.length() <= textModule.getMaxTextLength());
         textInputField.setBordered(true);
         textInputField.setValue(textInputExistingText);
@@ -438,7 +460,9 @@ public class MachineInfoScreen extends AbstractContainerScreen<MachineInfoMenu> 
                 int slotY = slot.y + this.topPos;
 
                 if (moduleStack.getItem() instanceof BaseModuleItem baseModule) {
-                    if (baseModule.isInsideOverlay(mouseX, mouseY, slotX, slotY)) {
+                    boolean insideOverlay = baseModule.isInsideOverlay(mouseX, mouseY, slotX, slotY);
+
+                    if (insideOverlay) {
                         lastClickWasOverlay = true;
                         this.setDragging(false);
 
@@ -521,7 +545,6 @@ public class MachineInfoScreen extends AbstractContainerScreen<MachineInfoMenu> 
     @SuppressWarnings("DataFlowIssue")//that of nullable warning for "slot" is annoying and nothing to worry about
     @Override
     protected void slotClicked(@Nullable Slot slot, int slotId, int mouseButton, @NotNull ClickType type) {
-
         if (type == ClickType.QUICK_CRAFT) {
             super.slotClicked(slot, slotId, mouseButton, type);
             return;
@@ -549,8 +572,20 @@ public class MachineInfoScreen extends AbstractContainerScreen<MachineInfoMenu> 
         }
 
         // Prevent container interaction and duplicate sounds when clicking buttons on the active config slot
+        boolean centerSlotInteractionAllowed = false;
         if (configuringSlotIndex >= 0 && slot != null && slot.index == configuringSlotIndex) {
-            return;
+            // Allow center slot interaction for modules that need it (e.g., Jukebox Module disc slot)
+            MachineFrameworkBlockEntity blockEntity = menu.getBlockEntity();
+            if (blockEntity != null) {
+                ItemStack moduleStack = blockEntity.getModuleHandler().getStackInSlot(slot.index);
+                if (moduleStack.getItem() instanceof BaseModuleItem baseModule && baseModule.allowsCenterSlotInteraction()) {
+                    centerSlotInteractionAllowed = true;
+                } else {
+                    return;
+                }
+            } else {
+                return;
+            }
         }
 
         if (slot != null && slot.index < 27) {
@@ -561,17 +596,44 @@ public class MachineInfoScreen extends AbstractContainerScreen<MachineInfoMenu> 
                 if (moduleStack.getItem() instanceof BaseModuleItem baseModule) {
                     if (baseModule.opensInlineOverlay()) {
                         if (configuringSlotIndex != slot.index) {
-                            if (this.minecraft != null && this.minecraft.player != null) {
-                                this.minecraft.player.playNotifySound(
-                                        SoundEvents.UI_BUTTON_CLICK.value(),
-                                        net.minecraft.sounds.SoundSource.PLAYERS,
-                                        0.5F,
-                                        1.0F
-                                );
+                            // If the module has an interactable inventory slot and the player is
+                            // holding a valid item for it, place the item directly instead of
+                            // opening the config overlay — this makes the behavior consistent
+                            // regardless of whether the overlay was already open.
+                            if (baseModule.hasInteractableInventorySlot() && this.minecraft != null && this.minecraft.player != null) {
+                                ItemStack carried = this.minecraft.player.containerMenu.getCarried();
+                                if (baseModule.isItemValidForSlot(carried, blockEntity, slot.index)) {
+                                    // Fall through to super.slotClicked() to place the item
+                                    // (skip the overlay-open logic below)
+                                } else {
+                                    this.minecraft.player.playNotifySound(
+                                            SoundEvents.UI_BUTTON_CLICK.value(),
+                                            net.minecraft.sounds.SoundSource.PLAYERS,
+                                            0.5F,
+                                            1.0F
+                                    );
+                                    configuringSlotIndex = slot.index;
+                                    return;
+                                }
+                            } else {
+                                if (this.minecraft != null && this.minecraft.player != null) {
+                                    this.minecraft.player.playNotifySound(
+                                            SoundEvents.UI_BUTTON_CLICK.value(),
+                                            net.minecraft.sounds.SoundSource.PLAYERS,
+                                            0.5F,
+                                            1.0F
+                                    );
+                                }
+                                configuringSlotIndex = slot.index;
+                                return;
                             }
-                            configuringSlotIndex = slot.index;
                         }
-                        return;
+                        // Overlay already open — if the module allows center slot interaction,
+                        // let the click through so the player can interact with the module's inventory slot
+                        if (!baseModule.allowsCenterSlotInteraction()) {
+                            return;
+                        }
+                        // Otherwise, fall through to super.slotClicked() below
                     }
                 }
 
@@ -590,7 +652,8 @@ public class MachineInfoScreen extends AbstractContainerScreen<MachineInfoMenu> 
             }
         }
 
-        if (configuringSlotIndex >= 0) {
+        // If center slot interaction is allowed, skip the configuringSlotIndex guard
+        if (configuringSlotIndex >= 0 && !centerSlotInteractionAllowed) {
             return;
         }
 

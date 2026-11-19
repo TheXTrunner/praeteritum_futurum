@@ -1,5 +1,7 @@
 package com.thextrunner.praeteritum_futurum.item.custom;
 
+import com.thextrunner.praeteritum_futurum.api.module.CyclingMode;
+import com.thextrunner.praeteritum_futurum.block.GridDirection;
 import com.thextrunner.praeteritum_futurum.item.ModItems;
 import com.thextrunner.praeteritum_futurum.block.entity.MachineFrameworkBlockEntity;
 import com.thextrunner.praeteritum_futurum.network.ServerboundSetModuleConfigItemPacket;
@@ -28,26 +30,6 @@ import java.util.Map;
 
 public abstract class ProcessingModuleItem extends BaseModuleItem {
 
-    /**
-     * Stores the slot index during overlay rendering so border-aware button rendering works.
-     * Set by the overlay renderer before calling renderCustomOverlay.
-     */
-    private int overlaySlotIndex = -1;
-
-    /**
-     * Returns the slot index for overlay rendering. Set by the overlay renderer.
-     */
-    protected int getOverlaySlotIndex() {
-        return overlaySlotIndex;
-    }
-
-    /**
-     * Sets the slot index for overlay rendering. Called by the overlay renderer.
-     */
-    public void setOverlaySlotIndex(int index) {
-        this.overlaySlotIndex = index;
-    }
-
     @Override
     public void renderModuleOverlay(GuiGraphics graphics, Slot slot, ItemStack stack, MachineFrameworkBlockEntity blockEntity) {
         float progress = getProgressPercent(stack, blockEntity, slot.index);
@@ -71,10 +53,6 @@ public abstract class ProcessingModuleItem extends BaseModuleItem {
         return center || up || down || west || east || close;
     }
 
-    @Override
-    public boolean isCloseButton(double mouseX, double mouseY, int slotX, int slotY) {
-        return mouseX >= slotX - 18 && mouseX <= slotX - 2 && mouseY >= slotY - 18 && mouseY <= slotY - 2;
-    }
 
     /**
      * Calculates the progress percentage for rendering custom progress bars.
@@ -88,7 +66,7 @@ public abstract class ProcessingModuleItem extends BaseModuleItem {
         return 0.0F;
     }
 
-    public enum SlotMode {
+    public enum SlotMode implements CyclingMode<SlotMode> {
         DISABLED("D", 0xFF555555),  // False / Disabled (Dark Gray)
         INPUT("I", 0xFF3366CC),     // True / Input (Blue)
         FUEL("F", 0xFFCC9933),      // True / Fuel (Amber/Orange)
@@ -112,8 +90,12 @@ public abstract class ProcessingModuleItem extends BaseModuleItem {
             return color;
         }
 
-        public SlotMode next() {
+        @Override public SlotMode next() {
             return values()[(ordinal() + 1) % values().length];
+        }
+
+        @Override public SlotMode previous() {
+            return values()[(ordinal() - 1 + values().length) % values().length];
         }
     }
 
@@ -132,7 +114,7 @@ public abstract class ProcessingModuleItem extends BaseModuleItem {
 
     @Override
     public void appendHoverText(@NotNull ItemStack stack, @NotNull net.minecraft.world.item.Item.TooltipContext context, @NotNull List<Component> tooltipComponents, @NotNull TooltipFlag tooltipFlag) {
-        Map<Direction, SlotMode> modes = getSlotModes(stack, getModuleConfigKey());
+        Map<GridDirection, SlotMode> modes = getSlotModes(stack, getModuleConfigKey());
         boolean configured = false;
         for (SlotMode mode : modes.values()) {
             if (mode != SlotMode.DISABLED) {
@@ -173,6 +155,39 @@ public abstract class ProcessingModuleItem extends BaseModuleItem {
     }
 
     /**
+     * Returns the list of slot modes this module supports in its direction-button cycle.
+     * <p>
+     * Each subclass overrides this method to declare which modes appear when the player
+     * clicks a direction button. The base {@link #getCycledMode(ItemStack, GridDirection, boolean)}
+     * method iterates only over these supported modes, so a Smelting Module will never
+     * cycle into POTION or INGREDIENT modes that belong to the Brewing Module.
+     * <p>
+     * The default implementation returns all {@link SlotMode} values. Override to restrict
+     * the cycle to the modes your module actually uses.
+     *
+     * @return An array of supported slot modes in cycle order (DISABLED should be first)
+     */
+    public SlotMode[] getSupportedModes() {
+        return SlotMode.values();
+    }
+
+    /**
+     * Returns the maximum count for a given slot mode.
+     * <p>
+     * Used by {@link #getCycledMode(ItemStack, GridDirection, boolean)} to enforce slot limits.
+     * Override in subclasses that have special modes (e.g., FUEL with a fixed limit
+     * separate from INPUT/OUTPUT).
+     *
+     * @param mode The slot mode to get the max count for
+     * @return The maximum number of slots that can be configured to this mode
+     */
+    protected int getMaxForMode(SlotMode mode) {
+        if (mode == SlotMode.INPUT) return getMaxInputs();
+        if (mode == SlotMode.OUTPUT) return getMaxOutputs();
+        return Integer.MAX_VALUE;
+    }
+
+    /**
      * Counts how many slots are currently configured as INPUT or OUTPUT
      * in the given module stack's slot mode map.
      *
@@ -181,7 +196,7 @@ public abstract class ProcessingModuleItem extends BaseModuleItem {
      * @return The number of directions currently set to the given mode
      */
     protected int countSlotMode(ItemStack stack, SlotMode mode) {
-        Map<Direction, SlotMode> modes = getSlotModes(stack, getModuleConfigKey());
+        Map<GridDirection, SlotMode> modes = getSlotModes(stack, getModuleConfigKey());
         int count = 0;
         for (SlotMode m : modes.values()) {
             if (m == mode) count++;
@@ -190,7 +205,32 @@ public abstract class ProcessingModuleItem extends BaseModuleItem {
     }
 
     @Override
+    public java.util.List<BaseModuleItem.AdjacentModuleType> getAllowedAdjacentModuleTypes() {
+        return java.util.List.of(BaseModuleItem.AdjacentModuleType.INVENTORY);
+    }
+
+    @Override
+    public boolean isDirectionConfigured(ItemStack stack, GridDirection dir) {
+        Map<GridDirection, SlotMode> modes = getSlotModes(stack, getModuleConfigKey());
+        return modes.get(dir) != SlotMode.DISABLED;
+    }
+
+    @Override
+    public void resetDirection(ItemStack stack, GridDirection dir, MachineFrameworkBlockEntity blockEntity, int slotIndex) {
+        setSlotMode(stack, dir, SlotMode.DISABLED, getModuleConfigKey());
+    }
+
+    @Override
+    public void resetDirectionMode(ItemStack stack, GridDirection dir, MachineFrameworkBlockEntity blockEntity, int slotIndex) {
+        // Server-side reset — set the direction mode to DISABLED
+        setSlotMode(stack, dir, SlotMode.DISABLED, getModuleConfigKey());
+    }
+
+    @Override
     public void handleCustomClick(double mouseX, double mouseY, int slotX, int slotY, ItemStack stack, MachineFrameworkBlockEntity blockEntity, int slotIndex, net.minecraft.client.Minecraft minecraft) {
+        // Validate config — auto-disable directions that are no longer valid
+        validateAndSyncDirectionConfig(stack, blockEntity, slotIndex);
+
         // 1. Center config ghost slot click
         if (hasConfigSlot() && mouseX >= slotX && mouseX < slotX + 16 && mouseY >= slotY && mouseY < slotY + 16) {
             if (minecraft.player != null) {
@@ -209,55 +249,28 @@ public abstract class ProcessingModuleItem extends BaseModuleItem {
             return;
         }
 
-        Direction clickedDir = getProcessingClickedDirection(slotX, slotY, mouseX, mouseY, slotIndex);
+        GridDirection clickedDir = getClickedDirection(slotX, slotY, mouseX, mouseY, slotIndex);
         if (clickedDir != null) {
+            // Check if the adjacent module type is allowed for configuration
+            BaseModuleItem.AdjacentModuleType adjType = BaseModuleItem.getAdjacentModuleType(blockEntity, slotIndex, clickedDir);
+            if (!isAdjacentModuleAllowed(adjType)) {
+                return; // No relevant adjacent module — ignore click
+            }
+
             if (minecraft.player != null) {
                 minecraft.player.playNotifySound(SoundEvents.UI_BUTTON_CLICK.value(), net.minecraft.sounds.SoundSource.PLAYERS, 0.5F, 1.0F);
             }
-            SlotMode nextMode = getNextMode(stack, clickedDir);
+            // Client-side preview — server will cycle the actual mode
+            SlotMode nextMode = getCycledMode(stack, clickedDir, isShiftHeld());
             setSlotMode(stack, clickedDir, nextMode, getModuleConfigKey());
 
-            PacketDistributor.sendToServer(new ServerboundToggleModuleDirectionPacket(slotIndex, clickedDir, blockEntity.getBlockPos()));
+            PacketDistributor.sendToServer(new ServerboundToggleModuleDirectionPacket(slotIndex, clickedDir, blockEntity.getBlockPos(), isShiftHeld()));
         }
     }
 
     @Override
     public boolean opensInlineOverlay() {
         return true; // Processing modules use inline overlays
-    }
-
-    private Direction getProcessingClickedDirection(int slotX, int slotY, double mx, double my, int slotIndex) {
-        int centerX = slotX + 8;
-        int centerY = slotY + 8;
-        int offset = 18;
-
-        // Only check buttons for directions that have adjacent slots
-        if (hasAdjacentSlot(slotIndex, Direction.UP) && isInsideButton(mx, my, centerX, slotY - (offset - 8))) return Direction.UP;
-        if (hasAdjacentSlot(slotIndex, Direction.WEST) && isInsideButton(mx, my, slotX - (offset - 8), centerY)) return Direction.WEST;
-        if (hasAdjacentSlot(slotIndex, Direction.EAST) && isInsideButton(mx, my, slotX + 16 + (offset - 8), centerY)) return Direction.EAST;
-        if (hasAdjacentSlot(slotIndex, Direction.DOWN) && isInsideButton(mx, my, centerX, slotY + 16 + (offset - 8))) return Direction.DOWN;
-        return null;
-    }
-
-    /**
-     * Checks if the given slot index has an adjacent slot in the specified direction.
-     * Returns false for border positions where no adjacent slot exists.
-     */
-    public boolean hasAdjacentSlot(int slotIndex, Direction dir) {
-        int row = slotIndex / MachineFrameworkBlockEntity.GRID_WIDTH;
-        int col = slotIndex % MachineFrameworkBlockEntity.GRID_WIDTH;
-
-        return switch (dir) {
-            case UP -> row > 0;
-            case DOWN -> row < MachineFrameworkBlockEntity.GRID_ROWS - 1;
-            case WEST -> col > 0;
-            case EAST -> col < MachineFrameworkBlockEntity.GRID_WIDTH - 1;
-            default -> false; // UP, DOWN, NORTH, SOUTH, etc. have no grid neighbor
-        };
-    }
-
-    private boolean isInsideButton(double mx, double my, int x, int y) {
-        return mx >= x - 8 && mx < x + 8 && my >= y - 8 && my < y + 8;
     }
 
     public ItemStack getConfigSlotItem(ItemStack moduleStack, HolderLookup.Provider registries) {
@@ -295,9 +308,9 @@ public abstract class ProcessingModuleItem extends BaseModuleItem {
         return true;
     }
 
-    public static Map<Direction, SlotMode> getSlotModes(ItemStack stack, String nbtKey) {
-        Map<Direction, SlotMode> modes = new EnumMap<>(Direction.class);
-        for (Direction dir : Direction.values()) {
+    public static Map<GridDirection, SlotMode> getSlotModes(ItemStack stack, String nbtKey) {
+        Map<GridDirection, SlotMode> modes = new EnumMap<>(GridDirection.class);
+        for (GridDirection dir : GridDirection.VALUES) {
             modes.put(dir, SlotMode.DISABLED);
         }
 
@@ -306,9 +319,11 @@ public abstract class ProcessingModuleItem extends BaseModuleItem {
             CompoundTag tag = customData.copyTag();
             if (tag.contains(nbtKey)) {
                 CompoundTag modesTag = tag.getCompound(nbtKey);
-                for (Direction dir : Direction.values()) {
-                    if (modesTag.contains(dir.getName())) {
-                        modes.put(dir, SlotMode.valueOf(modesTag.getString(dir.getName())));
+                // Iterate over NBT keys and parse GridDirection from them
+                for (String key : modesTag.getAllKeys()) {
+                    GridDirection dir = GridDirection.fromNbtKey(key);
+                    if (dir != null) {
+                        modes.put(dir, SlotMode.valueOf(modesTag.getString(key)));
                     }
                 }
             }
@@ -328,18 +343,79 @@ public abstract class ProcessingModuleItem extends BaseModuleItem {
         return tag;
     }
 
-    public SlotMode getNextMode(ItemStack stack, Direction clickedDir) {
-        Map<Direction, SlotMode> modes = getSlotModes(stack, getModuleConfigKey());
+    /**
+     * Returns the next or previous slot mode when a direction button is clicked.
+     * <p>
+     * Iterates through {@link #getSupportedModes()} in the direction determined by {@code reverse},
+     * enforcing the per-mode slot limits via {@link #getMaxForMode(SlotMode)}.
+     * Returns {@link SlotMode#DISABLED} when the cycle wraps back to the beginning.
+     * <p>
+     * Subclasses that need custom cycling logic (e.g., special FUEL handling) can override
+     * this method. Most modules only need to override {@link #getSupportedModes()} and
+     * {@link #getMaxForMode(SlotMode)}.
+     *
+     * @param stack       The module item stack
+     * @param clickedDir  The grid direction whose button was clicked
+     * @param reverse     If true, cycle in reverse order (shift-click behavior)
+     * @return The next or previous slot mode in the cycle
+     */
+    public SlotMode getCycledMode(ItemStack stack, GridDirection clickedDir, boolean reverse) {
+        Map<GridDirection, SlotMode> modes = getSlotModes(stack, getModuleConfigKey());
         SlotMode current = modes.get(clickedDir);
-        return current.next();
+        SlotMode[] supported = getSupportedModes();
+
+        // Find the current mode's index in the supported array
+        int currentIndex = 0;
+        for (int i = 0; i < supported.length; i++) {
+            if (supported[i] == current) {
+                currentIndex = i;
+                break;
+            }
+        }
+
+        // Iterate through supported modes in the appropriate direction
+        for (int i = 1; i <= supported.length; i++) {
+            int step = reverse ? -i : i;
+            int nextIndex = (currentIndex + step + supported.length) % supported.length;
+            SlotMode next = supported[nextIndex];
+
+            if (next == SlotMode.DISABLED) {
+                return SlotMode.DISABLED;
+            }
+
+            // Check if we've reached the max for this mode
+            int currentCount = countSlotMode(stack, next);
+            if (current == next) {
+                currentCount--; // exclude the clicked direction itself
+            }
+
+            int max = getMaxForMode(next);
+            if (currentCount >= max) {
+                continue; // skip this mode, limit reached
+            }
+
+            return next;
+        }
+        return SlotMode.DISABLED;
     }
 
-    public static void setSlotMode(ItemStack stack, Direction dir, SlotMode mode, String nbtKey) {
+    @Override
+    public void toggleDirectionMode(ItemStack stack, GridDirection direction, MachineFrameworkBlockEntity blockEntity, int slotIndex, boolean shiftHeld) {
+        // Only cycle mode if an adjacent Inventory module is present
+        AdjacentModuleType adjType = getAdjacentModuleType(blockEntity, slotIndex, direction);
+        if (!isAdjacentModuleAllowed(adjType)) {
+            return;
+        }
+        SlotMode nextMode = getCycledMode(stack, direction, shiftHeld);
+        setSlotMode(stack, direction, nextMode, getModuleConfigKey());
+    }
+
+    public static void setSlotMode(ItemStack stack, GridDirection dir, SlotMode mode, String nbtKey) {
         CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
         CompoundTag tag = customData != null ? customData.copyTag() : new CompoundTag();
         CompoundTag modesTag = tag.contains(nbtKey) ? tag.getCompound(nbtKey) : new CompoundTag();
 
-        modesTag.putString(dir.getName(), mode.name());
+        modesTag.putString(dir.nbtKey(), mode.name());
         tag.put(nbtKey, modesTag);
         stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
     }
@@ -352,30 +428,8 @@ public abstract class ProcessingModuleItem extends BaseModuleItem {
 
     @Override
     public void renderCustomOverlay(GuiGraphics graphics, int slotX, int slotY, ItemStack stack, MachineFrameworkBlockEntity blockEntity, net.minecraft.client.gui.Font font) {
-        Map<Direction, SlotMode> modes = getSlotModes(stack, getModuleConfigKey());
-
-        int centerX = slotX + 8;
-        int centerY = slotY + 8;
-        int offset = 18;
-
-        // Render only buttons for directions that have adjacent slots
-        int slotIndex = getOverlaySlotIndex();
-        if (slotIndex >= 0) {
-            if (hasAdjacentSlot(slotIndex, Direction.UP))
-                drawProcessingButton(graphics, font, centerX, slotY - (offset - 8), modes.get(Direction.UP), "U");
-            if (hasAdjacentSlot(slotIndex, Direction.WEST))
-                drawProcessingButton(graphics, font, slotX - (offset - 8), centerY, modes.get(Direction.WEST), "L");
-            if (hasAdjacentSlot(slotIndex, Direction.EAST))
-                drawProcessingButton(graphics, font, slotX + 16 + (offset - 8), centerY, modes.get(Direction.EAST), "R");
-            if (hasAdjacentSlot(slotIndex, Direction.DOWN))
-                drawProcessingButton(graphics, font, centerX, slotY + 16 + (offset - 8), modes.get(Direction.DOWN), "D");
-        } else {
-            // Fallback: render all buttons if slot index is unknown (e.g., third-party overlay)
-            drawProcessingButton(graphics, font, centerX, slotY - (offset - 8), modes.get(Direction.UP), "U");
-            drawProcessingButton(graphics, font, slotX - (offset - 8), centerY, modes.get(Direction.WEST), "L");
-            drawProcessingButton(graphics, font, slotX + 16 + (offset - 8), centerY, modes.get(Direction.EAST), "R");
-            drawProcessingButton(graphics, font, centerX, slotY + 16 + (offset - 8), modes.get(Direction.DOWN), "D");
-        }
+        Map<GridDirection, SlotMode> modes = getSlotModes(stack, getModuleConfigKey());
+        drawDirectionButtons(graphics, font, slotX, slotY, blockEntity, modes);
 
         if (hasConfigSlot()) {
             graphics.fill(slotX, slotY, slotX + 16, slotY + 16, 0xFF888888);
@@ -385,42 +439,81 @@ public abstract class ProcessingModuleItem extends BaseModuleItem {
                 graphics.renderItem(targetItem, slotX, slotY);
                 graphics.renderItemDecorations(font, targetItem, slotX, slotY);
             }
+        } else if (!usesCenterSlot()) {
+            drawDarkHatchLid(graphics, slotX, slotY);
         }
 
-        // Close button
-        graphics.fill(slotX - 18, slotY - 18, slotX - 2, slotY - 2, 0xFF8B0000);
-        graphics.drawCenteredString(font, "X", slotX - 10, slotY - 14, 0xFFFFFF);
+        drawCloseButton(graphics, font, slotX, slotY);
     }
 
-    private void drawProcessingButton(GuiGraphics graphics, net.minecraft.client.gui.Font font, int x, int y, SlotMode mode, String sideLabel) {
+    /**
+     * Draws the 4 direction buttons (U/D/L/R) around a module slot.
+     * If the overlay slot index is known, only draws buttons for directions with adjacent slots.
+     * Subclasses like AnvilModuleItem can call this instead of duplicating the pattern.
+     */
+    @SuppressWarnings("unused")
+    protected void drawDirectionButtons(GuiGraphics graphics, net.minecraft.client.gui.Font font, int slotX, int slotY,
+                                        MachineFrameworkBlockEntity blockEntity, Map<GridDirection, SlotMode> modes) {
+        int centerX = slotX + 8;
+        int centerY = slotY + 8;
+        int offset = 18;
+
+        int slotIndex = getOverlaySlotIndex();
+        if (slotIndex >= 0) {
+            if (hasAdjacentSlot(slotIndex, GridDirection.UP))
+                drawProcessingButtonWithCheck(graphics, font, slotIndex, blockEntity, centerX, slotY - (offset - 8), GridDirection.UP, modes.get(GridDirection.UP));
+            if (hasAdjacentSlot(slotIndex, GridDirection.LEFT))
+                drawProcessingButtonWithCheck(graphics, font, slotIndex, blockEntity, slotX - (offset - 8), centerY, GridDirection.LEFT, modes.get(GridDirection.LEFT));
+            if (hasAdjacentSlot(slotIndex, GridDirection.RIGHT))
+                drawProcessingButtonWithCheck(graphics, font, slotIndex, blockEntity, slotX + 16 + (offset - 8), centerY, GridDirection.RIGHT, modes.get(GridDirection.RIGHT));
+            if (hasAdjacentSlot(slotIndex, GridDirection.DOWN))
+                drawProcessingButtonWithCheck(graphics, font, slotIndex, blockEntity, centerX, slotY + 16 + (offset - 8), GridDirection.DOWN, modes.get(GridDirection.DOWN));
+        } else {
+            // Fallback: render all buttons if slot index is unknown (e.g., third-party overlay)
+            drawProcessingButton(graphics, font, centerX, slotY - (offset - 8), modes.get(GridDirection.UP));
+            drawProcessingButton(graphics, font, slotX - (offset - 8), centerY, modes.get(GridDirection.LEFT));
+            drawProcessingButton(graphics, font, slotX + 16 + (offset - 8), centerY, modes.get(GridDirection.RIGHT));
+            drawProcessingButton(graphics, font, centerX, slotY + 16 + (offset - 8), modes.get(GridDirection.DOWN));
+        }
+    }
+
+    protected void drawProcessingButton(GuiGraphics graphics, net.minecraft.client.gui.Font font, int x, int y, SlotMode mode) {
         graphics.fill(x - 8, y - 8, x + 8, y + 8, 0xFF888888);
         graphics.fill(x - 7, y - 7, x + 7, y + 7, mode.getColor());
 
-        // Displays e.g., "U:T" or "L:F"
-        graphics.drawCenteredString(font, sideLabel + ":" + mode.getLabelChar(), x, y - 4, 0xFFFFFF);
+        // Displays e.g., "T" or "F"
+        graphics.drawCenteredString(font, mode.getLabelChar(), x, y - 4, 0xFFFFFF);
+    }
+
+    /**
+     * Draws a processing button that checks if the adjacent module type is allowed.
+     * If no allowed module is adjacent, renders the button in disabled state.
+     */
+    protected void drawProcessingButtonWithCheck(GuiGraphics graphics, net.minecraft.client.gui.Font font, int slotIndex, MachineFrameworkBlockEntity blockEntity, int x, int y, GridDirection dir, SlotMode mode) {
+        BaseModuleItem.AdjacentModuleType adjType = BaseModuleItem.getAdjacentModuleType(blockEntity, slotIndex, dir);
+        boolean allowed = isAdjacentModuleAllowed(adjType);
+
+        graphics.fill(x - 8, y - 8, x + 8, y + 8, 0xFF888888);
+        if (allowed) {
+            graphics.fill(x - 7, y - 7, x + 7, y + 7, mode.getColor());
+            graphics.drawCenteredString(font, mode.getLabelChar(), x, y - 4, 0xFFFFFF);
+        } else {
+            // No relevant adjacent module — show disabled
+            graphics.fill(x - 7, y - 7, x + 7, y + 7, SlotMode.DISABLED.getColor());
+            graphics.drawCenteredString(font, SlotMode.DISABLED.getLabelChar(), x, y - 4, 0xFFAAAAAA);
+        }
     }
 
     // --- STANDARDIZED GRID NEIGHBOR RESOLVER ---
     public record ResolvedIoSlots(List<Integer> inputs, List<Integer> outputs) {}
 
-    public static ResolvedIoSlots resolveAdjacentIoSlots(MachineFrameworkBlockEntity blockEntity, int slotIndex, Map<Direction, SlotMode> modes) {
+    public static ResolvedIoSlots resolveAdjacentIoSlots(MachineFrameworkBlockEntity blockEntity, int slotIndex, Map<GridDirection, SlotMode> modes) {
         ItemStackHandler moduleHandler = blockEntity.getModuleHandler();
         List<Integer> inputs = new ArrayList<>();
         List<Integer> outputs = new ArrayList<>();
 
-        int row = slotIndex / 9;
-        int col = slotIndex % 9;
-
-        int[] neighborIndices = {
-                row > 0 ? slotIndex - 9 : -1,     // UP
-                row < 2 ? slotIndex + 9 : -1,     // DOWN
-                col > 0 ? slotIndex - 1 : -1,     // WEST
-                col < 8 ? slotIndex + 1 : -1      // EAST
-        };
-        Direction[] dirs = {Direction.UP, Direction.DOWN, Direction.WEST, Direction.EAST};
-
-        for (int i = 0; i < 4; i++) {
-            int adjSlot = neighborIndices[i];
+        for (GridDirection dir : GridDirection.VALUES) {
+            int adjSlot = dir.getAdjacentSlotIndex(slotIndex);
             if (adjSlot < 0) continue;
 
             ItemStack adjModule = moduleHandler.getStackInSlot(adjSlot);
@@ -428,7 +521,7 @@ public abstract class ProcessingModuleItem extends BaseModuleItem {
                 continue;
             }
 
-            SlotMode mode = modes.get(dirs[i]);
+            SlotMode mode = modes.get(dir);
             if (mode == SlotMode.INPUT) {
                 inputs.add(adjSlot);
             } else if (mode == SlotMode.OUTPUT) {
@@ -441,14 +534,19 @@ public abstract class ProcessingModuleItem extends BaseModuleItem {
 
     @Override
     public void tickModule(Level level, BlockPos pos, MachineFrameworkBlockEntity blockEntity, int slotIndex, ItemStack stack) {
-        if (blockEntity.getModuleData(slotIndex, 2) == 0 && blockEntity.getModuleData(slotIndex, 0) == 0) {
+        // Restore from saved NBT when channels 0 and 2 are zero, but skip if a stalled disc
+        // is held (channel 4 > 0) — restoring would wipe the stalled flag before the stall
+        // handler has a chance to run. The module grid slot (moduleHandler) always contains
+        // the module item itself, so we cannot use slot emptiness as a guard.
+        int stalled = blockEntity.getModuleData(slotIndex, 4);
+        if (blockEntity.getModuleData(slotIndex, 2) == 0 && blockEntity.getModuleData(slotIndex, 0) == 0 && stalled == 0) {
             if (stack.has(DataComponents.CUSTOM_DATA)) {
                 CustomData customDataComp = stack.get(DataComponents.CUSTOM_DATA);
                 if (customDataComp != null) {
                     CompoundTag tag = customDataComp.copyTag();
                     if (tag.contains("ModuleChannels")) {
                         int[] channels = tag.getIntArray("ModuleChannels");
-                        for (int i = 0; i < Math.min(channels.length, 4); i++) {
+                        for (int i = 0; i < Math.min(channels.length, 6); i++) {
                             blockEntity.setModuleData(slotIndex, i, channels[i]);
                         }
                     }
@@ -472,13 +570,14 @@ public abstract class ProcessingModuleItem extends BaseModuleItem {
     public static void saveProgressData(MachineFrameworkBlockEntity blockEntity, int slotIndex, ItemStack stack) {
         int burnTime = blockEntity.getModuleData(slotIndex, 0);
         int cookTime = blockEntity.getModuleData(slotIndex, 2);
+        int stalled = blockEntity.getModuleData(slotIndex, 4);
 
         CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
         CompoundTag tag = customData != null ? customData.copyTag() : new CompoundTag();
 
-        if (burnTime > 0 || cookTime > 0) {
-            int[] channels = new int[4];
-            for (int i = 0; i < 4; i++) {
+        if (burnTime > 0 || cookTime > 0 || stalled > 0) {
+            int[] channels = new int[6];
+            for (int i = 0; i < 6; i++) {
                 channels[i] = blockEntity.getModuleData(slotIndex, i);
             }
             tag.putIntArray("ModuleChannels", channels);

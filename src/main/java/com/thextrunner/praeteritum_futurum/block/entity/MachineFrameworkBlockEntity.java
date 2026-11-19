@@ -38,7 +38,7 @@ import com.mojang.logging.LogUtils;
 import org.slf4j.Logger;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -49,8 +49,8 @@ public class MachineFrameworkBlockEntity extends BlockEntity implements MenuProv
 
     /** Grid dimensions: 3×3 = 9 total module slots per row, 3 rows. */
     public static final int GRID_SIZE = 27;
-    /** Number of generic status channels per slot (progress, max progress, secondary, capacity). */
-    public static final int NUM_CHANNELS = 4;
+    /** Number of generic status channels per slot. Channels 0-3 are used by ProcessingModuleItem for burn/cook progress; channels 4-5 are reserved for module-specific state (e.g., Jukebox stalled flag, shuffle cycle). */
+    public static final int NUM_CHANNELS = 6;
     /** Width of the grid in slots (3×3 layout). */
     public static final int GRID_WIDTH = 9;
     /** Number of rows in the grid (3 rows of 9). */
@@ -70,6 +70,66 @@ public class MachineFrameworkBlockEntity extends BlockEntity implements MenuProv
 
     /** When false, only the owner (or ops) can apply blueprints to this machine. Default: true (public). */
     private boolean isPublic = true;
+
+    /**
+     * Maps module slot indices to cleanup runnables registered by modules.
+     * When the machine is destroyed, all registered cleanups are executed.
+     * This allows modules to manage their own lifecycle (e.g., stopping sounds)
+     * without the block entity knowing about module-specific state.
+     */
+    private final Map<Integer, Runnable> moduleCleanups = new HashMap<>();
+
+    /**
+     * Maps module slot indices to module-owned objects. Modules use this to store
+     * references that need to persist across ticks (e.g., song players, timers).
+     * The block entity does not interpret these objects — they belong entirely to the module.
+     */
+    private final Map<Integer, Object> moduleObjects = new HashMap<>();
+
+    /**
+     * Stores an arbitrary object owned by a module at the given slot index.
+     * Used to persist references across ticks without the block entity knowing their type.
+     */
+    @SuppressWarnings("unchecked")
+    public <T> void setModuleObject(int slotIndex, T object) {
+        if (object == null) {
+            moduleObjects.remove(slotIndex);
+        } else {
+            moduleObjects.put(slotIndex, object);
+        }
+    }
+
+    /**
+     * Retrieves a module-owned object by slot index. The module is responsible for casting.
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T getModuleObject(int slotIndex) {
+        return (T) moduleObjects.get(slotIndex);
+    }
+
+    /**
+     * Registers a cleanup action for a module slot. Called when the machine is destroyed.
+     * Modules should use this to stop any ongoing operations (sounds, timers, etc).
+     */
+    public void registerModuleCleanup(int slotIndex, Runnable cleanup) {
+        moduleCleanups.put(slotIndex, cleanup);
+    }
+
+    /**
+     * Runs all registered module cleanups and clears them.
+     * Called when the machine block is destroyed.
+     */
+    public void runAllModuleCleanups() {
+        for (Runnable cleanup : moduleCleanups.values()) {
+            try {
+                cleanup.run();
+            } catch (Exception e) {
+                // Ignore cleanup errors to avoid crashing on machine destruction
+            }
+        }
+        moduleCleanups.clear();
+        moduleObjects.clear();
+    }
 
     /**
      * Retrieves the numerical value stored in a specific status channel for a given module slot.
@@ -220,6 +280,19 @@ public class MachineFrameworkBlockEntity extends BlockEntity implements MenuProv
     public boolean hasInventoryModule(int slotIndex) {
         ItemStack stack = moduleHandler.getStackInSlot(slotIndex);
         return stack.getItem() instanceof InventoryModuleItem;
+    }
+
+    /**
+     * Checks whether the module at the given slot exposes its own item handler via {@link com.thextrunner.praeteritum_futurum.api.module.IItemHandlerModule}
+     * AND has declared its inventory slot as interactable via {@link com.thextrunner.praeteritum_futurum.item.custom.BaseModuleItem#hasInteractableInventorySlot()}.
+     * This allows modules like the Jukebox Module to have their inventory slots be interactable by the player.
+     */
+    public boolean hasItemHandlerModule(int slotIndex) {
+        ItemStack stack = moduleHandler.getStackInSlot(slotIndex);
+        if (stack.getItem() instanceof com.thextrunner.praeteritum_futurum.item.custom.BaseModuleItem baseModule) {
+            return baseModule.hasInteractableInventorySlot();
+        }
+        return false;
     }
 
     @Nullable
@@ -407,16 +480,36 @@ public class MachineFrameworkBlockEntity extends BlockEntity implements MenuProv
             }
         }
     }
-    public Map<RelativeSide, IoModuleItem.FaceMode> getFaceModes(ItemStack stack) {
-        return Collections.emptyMap();
-    }
 
     /**
-     * Pulls items from an external inventory into adjacent inventory modules.
+     * Pulls items from an external inventory into adjacent modules.
+     * Supports both Inventory modules (pulls into their inventory slot) and
+     * any module that exposes an item handler via {@link BaseModuleItem#getItemHandlerForSide}
+     * (e.g., Jukebox Module pulls into its own slot).
      */
     public void pullItemsFromSide(int moduleSlot, Direction side) {
         if (level == null) return;
         if (moduleSlot < 0 || moduleSlot >= GRID_SIZE) return;
+
+        BlockPos sourcePos = worldPosition.relative(side);
+
+        // Do not interact with inventories outside the active block-ticking area.
+        boolean sourceChunkTicking = level instanceof ServerLevel serverLevel
+                && serverLevel.shouldTickBlocksAt(sourcePos);
+        if (!sourceChunkTicking) {
+            if (Config.isDebugLoggingEnabled()) {
+                LOGGER.warn("[IO PULL] pos={}, from={}, chunkTicking=false — skipping capability lookup",
+                        worldPosition, sourcePos);
+            }
+            return;
+        }
+
+        IItemHandler sourceHandler = level.getCapability(
+                Capabilities.ItemHandler.BLOCK,
+                sourcePos,
+                side.getOpposite()
+        );
+        if (sourceHandler == null) return;
 
         int[] adjacentIndices = getAdjacentSlots(moduleSlot);
         for (int adj : adjacentIndices) {
@@ -425,34 +518,31 @@ public class MachineFrameworkBlockEntity extends BlockEntity implements MenuProv
 
             ItemStack adjModule = moduleHandler.getStackInSlot(adj);
 
+            // Inventory modules: pull into their corresponding inventory slot
             if (adjModule.is(ModItems.INVENTORY_MODULE.get())) {
-                BlockPos sourcePos = worldPosition.relative(side);
-
-                // Do not interact with inventories outside the active block-ticking area.
-                boolean sourceChunkTicking = level instanceof ServerLevel serverLevel
-                        && serverLevel.shouldTickBlocksAt(sourcePos);
-                if (!sourceChunkTicking) {
-                    if (Config.isDebugLoggingEnabled()) {
-                        LOGGER.warn("[IO PULL] pos={}, from={}, chunkTicking=false — skipping capability lookup",
-                                worldPosition, sourcePos);
-                    }
-                    continue;
+                IItemHandler targetHandler = new SingleSlotItemHandler(inventoryHandler, adj);
+                int before = countItems(inventoryHandler);
+                transferItems(sourceHandler, targetHandler, moduleSlot, adj);
+                int after = countItems(inventoryHandler);
+                if (Config.isDebugLoggingEnabled() && after > before) {
+                    LOGGER.info("[IO PULL] pos={}, from={}, chunkTicking={}, transferred {} items",
+                            worldPosition, sourcePos, sourceChunkTicking, after - before);
                 }
+                continue;
+            }
 
-                IItemHandler sourceHandler = level.getCapability(
-                        Capabilities.ItemHandler.BLOCK,
-                        sourcePos,
-                        side.getOpposite()
+            // Other modules: pull into their exposed item handler (e.g., Jukebox Module)
+            if (adjModule.getItem() instanceof com.thextrunner.praeteritum_futurum.api.module.IItemHandlerModule itemHandlerModule) {
+                IItemHandlerModifiable targetHandler = itemHandlerModule.getItemHandlerForSide(
+                        level, worldPosition, this, adj, adjModule, side
                 );
-
-                if (sourceHandler != null) {
-                    IItemHandler targetHandler = new SingleSlotItemHandler(inventoryHandler, adj);
-                    int before = countItems(inventoryHandler);
+                if (targetHandler != null) {
+                    int before = countItems(targetHandler);
                     transferItems(sourceHandler, targetHandler, moduleSlot, adj);
-                    int after = countItems(inventoryHandler);
+                    int after = countItems(targetHandler);
                     if (Config.isDebugLoggingEnabled() && after > before) {
-                        LOGGER.info("[IO PULL] pos={}, from={}, chunkTicking={}, transferred {} items",
-                                worldPosition, sourcePos, sourceChunkTicking, after - before);
+                        LOGGER.info("[IO PULL] pos={}, from={}, toModule={}, transferred {} items",
+                                worldPosition, sourcePos, BuiltInRegistries.ITEM.getKey(adjModule.getItem()), after - before);
                     }
                 }
             }
@@ -460,59 +550,66 @@ public class MachineFrameworkBlockEntity extends BlockEntity implements MenuProv
     }
 
     /**
-     * Pushes items from internal inventory modules out to an external inventory.
+     * Pushes items from adjacent modules out to an external inventory.
+     * Supports both Inventory modules (pushes from their inventory slot) and
+     * any module that exposes an item handler via {@link BaseModuleItem#getItemHandlerForSide}
+     * (e.g., Jukebox Module pushes from its own slot).
      */
     public void pushItemsToSide(int moduleSlot, Direction side) {
         if (level == null) return;
         if (moduleSlot < 0 || moduleSlot >= GRID_SIZE) return;
 
-        int[] adjacentIndices = getAdjacentSlots(moduleSlot);
         BlockPos targetPos = worldPosition.relative(side);
-        boolean targetChunkLoaded = level.hasChunkAt(targetPos);
         boolean targetChunkTicking = level instanceof ServerLevel serverLevel
                 && serverLevel.shouldTickBlocksAt(targetPos);
 
-        // Temporary diagnostic for IO chunk-boundary testing. Keep this at one line per
-        // machine/IO module every 100 game ticks so a fast transfer config cannot flood logs.
-        if (Config.isDebugLoggingEnabled() && level.getGameTime() % 100 == 0) {
-            String adjacentModules = Arrays.stream(adjacentIndices)
-                    .mapToObj(adj -> adj + ":" + BuiltInRegistries.ITEM.getKey(moduleHandler.getStackInSlot(adj).getItem()))
-                    .collect(Collectors.joining(","));
-            LOGGER.info("[IO PUSH DIAGNOSTIC] pos={}, ioSlot={}, side={}, adjacentModules=[{}], target={}, targetChunkLoaded={}, targetChunkTicking={}",
-                    worldPosition, moduleSlot, side, adjacentModules, targetPos, targetChunkLoaded, targetChunkTicking);
+        if (!targetChunkTicking) {
+            if (Config.isDebugLoggingEnabled()) {
+                LOGGER.warn("[IO PUSH] pos={}, to={}, chunkTicking=false — skipping capability lookup",
+                        worldPosition, targetPos);
+            }
+            return;
         }
 
+        IItemHandler targetHandler = level.getCapability(
+                Capabilities.ItemHandler.BLOCK,
+                targetPos,
+                side.getOpposite()
+        );
+        if (targetHandler == null) return;
+
+        int[] adjacentIndices = getAdjacentSlots(moduleSlot);
         for (int adj : adjacentIndices) {
             // Guard against out-of-bounds adjacent slot indices (e.g. from corrupted NBT data)
             if (adj < 0 || adj >= GRID_SIZE) continue;
 
             ItemStack adjModule = moduleHandler.getStackInSlot(adj);
 
+            // Inventory modules: push from their corresponding inventory slot
             if (adjModule.is(ModItems.INVENTORY_MODULE.get())) {
                 IItemHandler sourceHandler = new SingleSlotItemHandler(inventoryHandler, adj);
-
-                // Do not interact with inventories outside the active block-ticking area.
-                if (!targetChunkTicking) {
-                    if (Config.isDebugLoggingEnabled()) {
-                        LOGGER.warn("[IO PUSH] pos={}, to={}, chunkTicking=false — skipping capability lookup",
-                                worldPosition, targetPos);
-                    }
-                    continue;
+                int before = countItems(inventoryHandler);
+                transferItems(sourceHandler, targetHandler, moduleSlot, adj);
+                int after = countItems(inventoryHandler);
+                if (Config.isDebugLoggingEnabled() && before > after) {
+                    LOGGER.info("[IO PUSH] pos={}, to={}, chunkTicking={}, transferred {} items",
+                            worldPosition, targetPos, targetChunkTicking, before - after);
                 }
+                continue;
+            }
 
-                IItemHandler targetHandler = level.getCapability(
-                        Capabilities.ItemHandler.BLOCK,
-                        targetPos,
-                        side.getOpposite()
+            // Other modules: push from their exposed item handler (e.g., Jukebox Module)
+            if (adjModule.getItem() instanceof com.thextrunner.praeteritum_futurum.api.module.IItemHandlerModule itemHandlerModule) {
+                IItemHandlerModifiable sourceHandler = itemHandlerModule.getItemHandlerForSide(
+                        level, worldPosition, this, adj, adjModule, side
                 );
-
-                if (targetHandler != null) {
-                    int before = countItems(inventoryHandler);
+                if (sourceHandler != null) {
+                    int before = countItems(sourceHandler);
                     transferItems(sourceHandler, targetHandler, moduleSlot, adj);
-                    int after = countItems(inventoryHandler);
+                    int after = countItems(sourceHandler);
                     if (Config.isDebugLoggingEnabled() && before > after) {
-                        LOGGER.info("[IO PUSH] pos={}, to={}, chunkTicking={}, transferred {} items",
-                                worldPosition, targetPos, targetChunkTicking, before - after);
+                        LOGGER.info("[IO PUSH] pos={}, to={}, fromModule={}, transferred {} items",
+                                worldPosition, targetPos, BuiltInRegistries.ITEM.getKey(adjModule.getItem()), before - after);
                     }
                 }
             }

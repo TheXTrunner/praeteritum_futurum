@@ -1,6 +1,7 @@
 package com.thextrunner.praeteritum_futurum.item.custom;
 
 import com.thextrunner.praeteritum_futurum.PraeteritumFuturumMod;
+import com.thextrunner.praeteritum_futurum.block.GridDirection;
 import com.thextrunner.praeteritum_futurum.block.entity.MachineFrameworkBlockEntity;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.core.BlockPos;
@@ -54,45 +55,13 @@ public class CartographyModuleItem extends ProcessingModuleItem {
     }
 
     @Override
-    public SlotMode getNextMode(ItemStack stack, Direction clickedDir) {
-        Map<Direction, SlotMode> modes = getSlotModes(stack, NBT_KEY);
-        SlotMode current = modes.get(clickedDir);
-
-        SlotMode[] allowedModes = {SlotMode.DISABLED, SlotMode.INPUT, SlotMode.OUTPUT};
-        int currentIndex = 0;
-        for (int i = 0; i < allowedModes.length; i++) {
-            if (allowedModes[i] == current) {
-                currentIndex = i;
-                break;
-            }
-        }
-
-        for (int i = 1; i <= allowedModes.length; i++) {
-            int nextIndex = (currentIndex + i) % allowedModes.length;
-            SlotMode next = allowedModes[nextIndex];
-
-            if (next == SlotMode.DISABLED) {
-                return SlotMode.DISABLED;
-            }
-
-            int currentCount = countSlotMode(stack, next);
-            if (current == next) {
-                currentCount--;
-            }
-
-            int max = (next == SlotMode.INPUT) ? getMaxInputs() : getMaxOutputs();
-            if (currentCount >= max) {
-                continue;
-            }
-
-            return next;
-        }
-        return SlotMode.DISABLED;
+    public SlotMode[] getSupportedModes() {
+        return new SlotMode[]{SlotMode.DISABLED, SlotMode.INPUT, SlotMode.OUTPUT};
     }
 
     @Override
     protected void processModule(Level level, BlockPos pos, MachineFrameworkBlockEntity blockEntity, int slotIndex, ItemStack stack) {
-        Map<Direction, SlotMode> modes = getSlotModes(stack, NBT_KEY);
+        Map<GridDirection, SlotMode> modes = getSlotModes(stack, NBT_KEY);
         ResolvedIoSlots resolved = ProcessingModuleItem.resolveAdjacentIoSlots(blockEntity, slotIndex, modes);
 
         List<Integer> inputSlots = resolved.inputs();

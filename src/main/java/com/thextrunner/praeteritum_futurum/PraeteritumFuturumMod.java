@@ -5,6 +5,7 @@ import com.thextrunner.praeteritum_futurum.block.ModBlocks;
 import com.thextrunner.praeteritum_futurum.block.entity.MachineFrameworkBlockEntity;
 import com.thextrunner.praeteritum_futurum.block.entity.ModBlockEntities;
 import com.thextrunner.praeteritum_futurum.item.ModItems;
+import com.thextrunner.praeteritum_futurum.loot.ModLootModifiers;
 import com.thextrunner.praeteritum_futurum.network.*;
 import com.thextrunner.praeteritum_futurum.screen.ModMenuTypes;
 import com.thextrunner.praeteritum_futurum.recipe.ModRecipeSerializers;
@@ -71,6 +72,10 @@ public class PraeteritumFuturumMod {
         // in structure_set JSON files. This allows the config-driven spawn rate
         // to control how frequently structures appear in the world.
         ModStructurePlacements.register(modEventBus);
+
+        // Register loot modifier serializers — these define how custom loot modifiers
+        // are serialized/deserialized from JSON loot modifier files.
+        ModLootModifiers.GLOBAL_LOOT_MODIFIER_SERIALIZERS.register(modEventBus);
     }
 
     /**
@@ -147,6 +152,13 @@ public class PraeteritumFuturumMod {
                 ServerboundToggleMachinePublicPacket.STREAM_CODEC,
                 ServerboundToggleMachinePublicPacket::handle
         );
+
+        // Reset a module's direction config when the adjacent module is no longer valid
+        registrar.playToServer(
+                ServerboundResetModuleDirectionPacket.TYPE,
+                ServerboundResetModuleDirectionPacket.STREAM_CODEC,
+                ServerboundResetModuleDirectionPacket::handle
+        );
     }
 
     /**
@@ -163,4 +175,5 @@ public class PraeteritumFuturumMod {
                 MachineFrameworkBlockEntity::getItemHandlerForSide // Method that returns the item handler for a given face
         );
     }
+
 }

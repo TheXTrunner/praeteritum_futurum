@@ -1,8 +1,8 @@
 # Contributing to Praeteritum Futurum
 
-Thank you for your interest in contributing! This mod is developed with AI assistance (Google Gemini), and contributions from the community are welcome.
+Thank you for your interest in contributing! This mod is developed with AI assistance (Google's Gemini and JetBrains' Junie), and contributions from the community are welcome.
 
-For the project overview and player-facing features, start with the [README](./README.md). Use the [documentation index](./docs/README.md) to find focused guides; the [architecture overview](./docs/ARCHITECTURE.md) maps the major code areas and runtime flow.
+For the project overview and player-facing features, start with the [README](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/README.md). Player-facing documentation (Quick Start, module guides, FAQ) lives on the [GitHub Wiki](https://github.com/TheXTrunner/praeteritum_futurum/wiki). Use the [documentation index](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/docs/README.md) to find focused developer guides; the [architecture overview](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/docs/ARCHITECTURE.md) maps the major code areas and runtime flow.
 
 ## Development Setup
 
@@ -57,12 +57,13 @@ The mod uses a modular API for extensibility:
 - `IModuleMenuProvider`: for modules that provide container menus
 - `ICustomScreenProvider`: for modules with custom GUI screens
 
-See the [Module API Guide](./docs/MODULE-API-GUIDE.md) and existing implementations (`IoModuleItem`, `ProcessingModuleItem`, `FilterModuleItem`) for examples.
+See the [Module API Guide](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/docs/MODULE-API-GUIDE.md) and existing implementations (`IoModuleItem`, `ProcessingModuleItem`, `FilterModuleItem`) for examples.
 
 ## Reporting Issues
 - Use the [GitHub Issues](https://github.com/TheXTrunner/praeteritum_futurum/issues) tracker for bugs and feature requests
 - Include your Minecraft version, NeoForge version, and mod version
 - Provide steps to reproduce the issue
+- **Security vulnerabilities:** Please report privately via our [Security Policy](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/.github/SECURITY.md) instead of opening a public issue
 
 ## Pull Requests
 1. Fork the repository

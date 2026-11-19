@@ -3,6 +3,7 @@ package com.thextrunner.praeteritum_futurum.item.custom;
 import com.mojang.logging.LogUtils;
 import com.thextrunner.praeteritum_futurum.Config;
 import com.thextrunner.praeteritum_futurum.PraeteritumFuturumMod;
+import com.thextrunner.praeteritum_futurum.api.module.CyclingMode;
 import com.thextrunner.praeteritum_futurum.block.RelativeSide;
 import com.thextrunner.praeteritum_futurum.block.custom.MachineFrameworkBlock;
 import com.thextrunner.praeteritum_futurum.block.entity.MachineFrameworkBlockEntity;
@@ -64,7 +65,7 @@ public class IoModuleItem extends LogisticsModuleItem {
      */
     @Override
     public boolean isInsideOverlay(double mouseX, double mouseY, int slotX, int slotY) {
-        // Extended bottom bound to cover the inventory overlap segment
+        // Extended area to cover all 6 face buttons, the close button, and the inventory overlap segment
         return mouseX >= slotX - 36 && mouseX <= slotX + 52 &&
                 mouseY >= slotY - 18 && mouseY <= slotY + 38;
     }
@@ -122,9 +123,18 @@ public class IoModuleItem extends LogisticsModuleItem {
         drawConfigButton(graphics, slotX + 18, slotY, modes.get(RelativeSide.RIGHT), RelativeSide.RIGHT);
         drawConfigButton(graphics, slotX + 36, slotY, modes.get(RelativeSide.BACK), RelativeSide.BACK);
 
-        // Close button retains its text label
-        graphics.fill(slotX - 36, slotY, slotX - 20, slotY + 16, 0xFF8B0000);
-        graphics.drawCenteredString(font, "X", slotX - 28, slotY + 4, 0xFFFFFF);
+        // Draw the close button at the 2nd slot to the left of center, 2 rows below the top row
+        drawCloseButton(graphics, font, slotX - 18, slotY + 18);
+    }
+
+    /**
+     * Checks if the user clicked the close button on the overlay menu.
+     * The IO Module places the close button at the 2nd slot to the left of center, 2 rows below the top row.
+     */
+    @Override
+    public boolean isCloseButton(double mouseX, double mouseY, int slotX, int slotY) {
+        // Check the 2nd slot to the left of center, 2 rows below (offset by +18 from center Y)
+        return mouseX >= slotX - 34 && mouseX <= slotX - 18 && mouseY >= slotY + 2 && mouseY <= slotY + 18;
     }
 
     /**
@@ -201,10 +211,10 @@ public class IoModuleItem extends LogisticsModuleItem {
                 minecraft.player.playNotifySound(SoundEvents.UI_BUTTON_CLICK.value(), SoundSource.PLAYERS, 0.5F, 1.0F);
             }
             Map<RelativeSide, FaceMode> modes = getFaceModes(stack);
-            FaceMode nextMode = modes.get(clickedSide).next();
+            FaceMode nextMode = isShiftHeld() ? modes.get(clickedSide).previous() : modes.get(clickedSide).next();
             setFaceMode(stack, clickedSide, nextMode);
 
-            PacketDistributor.sendToServer(new ServerboundToggleIoFacePacket(slotIndex, clickedSide, blockEntity.getBlockPos()));
+            PacketDistributor.sendToServer(new ServerboundToggleIoFacePacket(slotIndex, clickedSide, blockEntity.getBlockPos(), isShiftHeld()));
         }
     }
 
@@ -215,13 +225,6 @@ public class IoModuleItem extends LogisticsModuleItem {
         return mx >= x && mx < x + 16 && my >= y && my < y + 16;
     }
 
-    /**
-     * Checks if the user clicked the close button on the overlay menu.
-     */
-    @Override
-    public boolean isCloseButton(double mouseX, double mouseY, int slotX, int slotY) {
-        return mouseX >= slotX - 36 && mouseX <= slotX - 20 && mouseY >= slotY && mouseY <= slotY + 16;
-    }
 
     /**
      * Provides an item handler for external pipes and automation based on configured relative side modes.
@@ -293,7 +296,7 @@ public class IoModuleItem extends LogisticsModuleItem {
     /**
      * Enum representing the operational state of an individual machine face.
      */
-    public enum FaceMode {
+    public enum FaceMode implements CyclingMode<FaceMode> {
         DISABLED(0, 0xFF555555),
         INPUT(1, 0xFF3366CC),
         OUTPUT(2, 0xFFCC3333),
@@ -332,8 +335,12 @@ public class IoModuleItem extends LogisticsModuleItem {
             return DISABLED;
         }
 
-        public FaceMode next() {
+        @Override public FaceMode next() {
             return values()[(this.ordinal() + 1) % values().length];
+        }
+
+        @Override public FaceMode previous() {
+            return values()[(this.ordinal() - 1 + values().length) % values().length];
         }
     }
 

@@ -92,6 +92,26 @@ public class ModRecipeProvider extends RecipeProvider implements IConditionBuild
                 .unlockedBy("has_refined_scrap", has(ModItems.REFINED_SCRAP.get()))
                 .save(recipeOutput);
 
+        // Blast Module: Blast furnace and refined scrap
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.BLAST_MODULE.get())
+                .define('R', ModItems.REFINED_SCRAP.get())
+                .define('B', Items.BLAST_FURNACE)
+                .pattern(" R ")
+                .pattern("RBR")
+                .pattern(" R ")
+                .unlockedBy("has_refined_scrap", has(ModItems.REFINED_SCRAP.get()))
+                .save(recipeOutput);
+
+        // Smoker Module: Smoker and refined scrap
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.SMOKER_MODULE.get())
+                .define('R', ModItems.REFINED_SCRAP.get())
+                .define('S', Items.SMOKER)
+                .pattern(" R ")
+                .pattern("RSR")
+                .pattern(" R ")
+                .unlockedBy("has_refined_scrap", has(ModItems.REFINED_SCRAP.get()))
+                .save(recipeOutput);
+
         // Stonecutter Module: Stonecutter and refined scrap
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.STONECUTTER_MODULE.get())
                 .define('R', ModItems.REFINED_SCRAP.get())
@@ -148,6 +168,26 @@ public class ModRecipeProvider extends RecipeProvider implements IConditionBuild
                 .define('B', Items.BREWING_STAND)
                 .pattern(" R ")
                 .pattern("RBR")
+                .pattern(" R ")
+                .unlockedBy("has_refined_scrap", has(ModItems.REFINED_SCRAP.get()))
+                .save(recipeOutput);
+
+        // Ejection Module: Dispenser and refined scrap
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.EJECTION_MODULE.get())
+                .define('R', ModItems.REFINED_SCRAP.get())
+                .define('D', Items.DISPENSER)
+                .pattern(" R ")
+                .pattern("RDR")
+                .pattern(" R ")
+                .unlockedBy("has_refined_scrap", has(ModItems.REFINED_SCRAP.get()))
+                .save(recipeOutput);
+
+        // Jukebox Module: Jukebox and refined scrap
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.JUKEBOX_MODULE.get())
+                .define('R', ModItems.REFINED_SCRAP.get())
+                .define('J', Items.JUKEBOX)
+                .pattern(" R ")
+                .pattern("RJR")
                 .pattern(" R ")
                 .unlockedBy("has_refined_scrap", has(ModItems.REFINED_SCRAP.get()))
                 .save(recipeOutput);
