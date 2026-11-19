@@ -47,7 +47,7 @@ Right-click the Machine Framework normally (without the Yool wrench) to open its
 
 ## Step 5: Configure the Smelting Module
 
-Left-click on the Smelting Module in the UI to configure it. You'll see direction buttons that let you tell the module where to get its input, fuel, and where to send its output. The Smelting Module uses INPUT, FUEL, and OUTPUT slot modes — other modules will have their own set of modes.
+Left-click on the Smelting Module in the UI to configure it. You'll see direction buttons that let you tell the module where to get its input, fuel, and where to send its output. The Smelting Module uses INPUT, FUEL, and OUTPUT slot modes. Other modules have their own set of modes.
 
 - Set one direction to **INPUT** pointing at the Inventory Module that holds raw ores
 - Set another direction to **FUEL** pointing at the Inventory Module that holds fuel
@@ -73,11 +73,13 @@ Once everything is configured and loaded, the Smelting Module will automatically
 
 ### How Modules Communicate
 
-Modules need to know which slots to use for their work. Left-clicking a module in the UI lets you configure direction buttons. Each module defines its own slot modes — for example, the Smelting Module uses INPUT, FUEL, and OUTPUT, while other modules may have different modes:
+Modules need to know which slots to use for their work. Left-clicking a module in the UI lets you configure direction buttons. Each module defines its own slot modes. For example, the Smelting Module uses these modes:
 - **INPUT** - pull items from this slot
 - **OUTPUT** - send items to this slot
 - **FUEL** - pull fuel from this slot
 - **DISABLED** - ignore this slot
+
+Other modules define different modes that match what they do. A Stonecutter Module might only need INPUT and OUTPUT, while an IO Module handles external transfers.
 
 ### The 27-Slot Grid
 
@@ -100,7 +102,7 @@ Once you're comfortable with this basic setup, try:
 
 ## Tips
 
-- Start simple. A single processing module with inventory modules for input, output, and fuel is enough to learn the basics.
+- Start simple. A single processing module with the inventory modules it needs is enough to learn the basics.
 - Use the blueprint system to save configurations you like.
 - The Public/Private toggle prevents other players from modifying your machine on multiplayer.
 - If something isn't working, check that your module directions are set correctly and point to the right slots.
