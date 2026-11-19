@@ -1,6 +1,0 @@
-{
-  "parent": "minecraft:block/cube_all",
-  "textures": {
-    "all": "praeteritum_futurum:block/salvage_framing"
-  }
-}
