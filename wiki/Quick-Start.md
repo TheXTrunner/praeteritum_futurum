@@ -47,13 +47,13 @@ Right-click the Machine Framework normally (without the Yool wrench) to open its
 
 ## Step 5: Configure the Smelting Module
 
-Left-click on the Smelting Module in the UI to configure it. You'll see direction buttons that let you tell the module where to get its input, fuel, and where to send its output.
+Left-click on the Smelting Module in the UI to configure it. You'll see direction buttons that let you tell the module where to get its input, fuel, and where to send its output. The Smelting Module uses INPUT, FUEL, and OUTPUT slot modes — other modules will have their own set of modes.
 
 - Set one direction to **INPUT** pointing at the Inventory Module that holds raw ores
 - Set another direction to **FUEL** pointing at the Inventory Module that holds fuel
 - Set the third direction to **OUTPUT** pointing at the Inventory Module that will collect smelted items
 
-Each direction button cycles through modes when you left-click: DISABLED, INPUT, FUEL, OUTPUT. Shift-click to cycle back.
+Each direction button cycles through the module's available modes when you left-click. Shift-click to cycle back.
 
 ![Smelting Module configured](images/quickstart-module-configured.png)
 
@@ -73,7 +73,7 @@ Once everything is configured and loaded, the Smelting Module will automatically
 
 ### How Modules Communicate
 
-Modules need to know which slots to use for their work. Left-clicking a processing module in the UI lets you configure direction buttons:
+Modules need to know which slots to use for their work. Left-clicking a module in the UI lets you configure direction buttons. Each module defines its own slot modes — for example, the Smelting Module uses INPUT, FUEL, and OUTPUT, while other modules may have different modes:
 - **INPUT** - pull items from this slot
 - **OUTPUT** - send items to this slot
 - **FUEL** - pull fuel from this slot
@@ -81,7 +81,7 @@ Modules need to know which slots to use for their work. Left-clicking a processi
 
 ### The 27-Slot Grid
 
-The Machine Framework has 27 slots arranged like a chest inventory (9x3). You can place any module in any slot and arrange them however you want. The key is configuring each module to point to the right slots for its input, output, and fuel.
+The Machine Framework has 27 slots arranged like a chest inventory (9x3). You can place any module in any slot and arrange them however you want. The key is configuring each module to point to the right slots for its specific needs.
 
 ### IO Modules for External Connection
 
