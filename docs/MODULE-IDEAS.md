@@ -1,7 +1,5 @@
 # Module Roadmap
 
-> **Internal document:** This file is the internal development roadmap. The public-facing version is on the [GitHub Wiki - Module Roadmap](https://github.com/TheXTrunner/praeteritum_futurum/wiki/Module-Roadmap). Keep both in sync when adding or removing planned modules.
-
 Modules planned for future implementation, organized by type. The Redstone Module (dev) introduces a circuit system that many future modules will hook into.
 
 ---
