@@ -12,6 +12,12 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * Generates block tag JSON files for the mod's blocks.
+ * <p>
+ * Defines which blocks belong to mod-specific tags (e.g., salvage_blocks)
+ * and registers blocks with vanilla mining tags (pickaxe-mineable, iron-tool-required).
+ */
 public class ModBlockTagProvider extends BlockTagsProvider {
     public ModBlockTagProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> lookupProvider, @Nullable ExistingFileHelper existingFileHelper) {
         super(output, lookupProvider, PraeteritumFuturumMod.MODID, existingFileHelper);

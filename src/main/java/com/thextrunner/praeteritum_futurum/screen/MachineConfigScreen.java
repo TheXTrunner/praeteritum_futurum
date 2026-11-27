@@ -7,6 +7,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
@@ -14,7 +15,15 @@ import net.minecraft.world.entity.player.Inventory;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * GUI screen for configuring the Machine Framework.
+ * <p>
+ * Renders the 27-slot module grid with module overlays, inventory slots,
+ * and the player's inventory. Handles mouse clicks for module configuration,
+ * IO face toggling, and opening module-specific config screens.
+ */
 public class MachineConfigScreen extends AbstractContainerScreen<MachineConfigMenu> {
+    /** GUI texture — uses the vanilla shulker box texture as the base. */
     private static final ResourceLocation TEXTURE =
             ResourceLocation.withDefaultNamespace("textures/gui/container/shulker_box.png");
 
@@ -92,15 +101,15 @@ public class MachineConfigScreen extends AbstractContainerScreen<MachineConfigMe
         // Render tooltip for the lock toggle button
         if (lockToggleButton != null && lockToggleButton.isMouseOver(mouseX, mouseY)) {
             MachineFrameworkBlockEntity blockEntity = getMenuBlockEntity();
-            if (blockEntity != null) {
-                Component tooltip;
-                if (blockEntity.isPublic()) {
-                    tooltip = Component.translatable("tooltip.praeteritum_futurum.machine_public");
-                } else {
-                    tooltip = Component.translatable("tooltip.praeteritum_futurum.machine_private");
-                }
-                guiGraphics.renderComponentTooltip(this.font, java.util.List.of(tooltip), mouseX, mouseY);
-            }
+            boolean isPublic = blockEntity != null && blockEntity.isPublic();
+            guiGraphics.renderComponentTooltip(this.font, java.util.List.of(
+                    Component.literal("Machine access").withStyle(ChatFormatting.AQUA),
+                    Component.translatable(isPublic
+                            ? "tooltip.praeteritum_futurum.machine_public"
+                            : "tooltip.praeteritum_futurum.machine_private")
+                            .withStyle(isPublic ? ChatFormatting.GREEN : ChatFormatting.RED),
+                    Component.literal("Click to change who may access this machine").withStyle(ChatFormatting.GOLD)
+            ), mouseX, mouseY);
         }
     }
 }

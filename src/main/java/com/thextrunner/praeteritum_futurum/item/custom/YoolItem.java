@@ -14,7 +14,24 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Yool — a wrench-like tool for interacting with the Machine Framework.
+ * <p>
+ * Behaviors:
+ * <ul>
+ *   <li>Right-Click a Machine Framework: opens the config screen (handled by the block)</li>
+ *   <li>Shift + Right-Click a Machine Framework: breaks and drops the block safely</li>
+ *   <li>Right-Click directional blocks: rotates them (handled by YoolInteractHandler)</li>
+ * </ul>
+ * <p>
+ * Stacks to 1 so each Yool is unique. The rotation feature can be disabled via config.
+ */
 public class YoolItem extends Item {
+    /**
+     * Constructs the Yool item with the given properties.
+     *
+     * @param properties The item properties (typically stacksTo(1))
+     */
     public YoolItem(Properties properties) {
         super(properties);
     }

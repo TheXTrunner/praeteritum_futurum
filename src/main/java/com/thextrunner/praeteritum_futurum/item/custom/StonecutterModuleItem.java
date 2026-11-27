@@ -1,5 +1,6 @@
 package com.thextrunner.praeteritum_futurum.item.custom;
 
+import com.thextrunner.praeteritum_futurum.api.module.ProcessingMode;
 import com.thextrunner.praeteritum_futurum.PraeteritumFuturumMod;
 import com.thextrunner.praeteritum_futurum.block.GridDirection;
 import com.thextrunner.praeteritum_futurum.block.entity.MachineFrameworkBlockEntity;
@@ -23,9 +24,52 @@ import net.neoforged.neoforge.items.ItemStackHandler;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Stonecutter Module — adds stonecutter processing capability to the Machine Framework.
+ * <p>
+ * Extends ProcessingModuleItem to provide stonecutter-style processing: takes input items
+ * and converts them to a specific target item (set via the config slot). Unlike smelting
+ * modules, it requires no fuel and processes items instantly. Supports up to 3 input slots
+ * and 1 output slot.
+ * <p>
+ * The config slot holds the target item — only recipes that produce this exact item will
+ * be processed. Multiple input items are processed at once (up to 64 per tick).
+ */
 public class StonecutterModuleItem extends ProcessingModuleItem {
+    public enum SlotMode implements ProcessingMode {
+        DISABLED("D", 0xFF555555, "No items are transferred through this side.", Role.DISABLED),
+        INPUT("I", 0xFF3366CC, "Pull items from the adjacent inventory for processing.", Role.INPUT),
+        OUTPUT("O", 0xFFCC3333, "Send processed items to the adjacent inventory.", Role.OUTPUT);
 
+        private final String labelChar;
+        private final int color;
+        private final String description;
+        private final Role role;
+
+        SlotMode(String labelChar, int color, String description, Role role) {
+            this.labelChar = labelChar;
+            this.color = color;
+            this.description = description;
+            this.role = role;
+        }
+
+        @Override public String getLabelChar() { return labelChar; }
+        @Override public int getColor() { return color; }
+        @Override public String getDescription() { return description; }
+        @Override public Role getRole() { return role; }
+    }
+
+    /** NBT key for storing the module's slot mode configuration. */
     private static final String NBT_KEY = "StonecutterModes";
+
+    /**
+     * Constructs the Stonecutter Module with the given properties.
+     *
+     * @param properties The item properties
+     */
+    public StonecutterModuleItem(Properties properties) {
+        super(properties);
+    }
 
     @Override
     public void renderModuleOverlay(GuiGraphics graphics, Slot slot, ItemStack stack, MachineFrameworkBlockEntity blockEntity) {
@@ -39,13 +83,6 @@ public class StonecutterModuleItem extends ProcessingModuleItem {
         super.renderModuleOverlay(graphics, slot, stack, blockEntity);
     }
 
-    public StonecutterModuleItem(Properties properties) {
-        super(properties);
-    }
-
-    public static Map<GridDirection, SlotMode> getSlotModes(ItemStack stack) {
-        return ProcessingModuleItem.getSlotModes(stack, NBT_KEY);
-    }
 
     @Override
     public String getModuleConfigKey() {
@@ -108,7 +145,7 @@ public class StonecutterModuleItem extends ProcessingModuleItem {
         ItemStack targetItem = getConfigSlotItem(stack, level.registryAccess());
         if (targetItem.isEmpty()) return;
 
-        Map<GridDirection, SlotMode> modes = getSlotModes(stack);
+        Map<GridDirection, ProcessingMode> modes = getSlotModes(stack);
         ResolvedIoSlots resolved = ProcessingModuleItem.resolveAdjacentIoSlots(blockEntity, slotIndex, modes);
 
         List<Integer> inputSlots = resolved.inputs();

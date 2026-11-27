@@ -16,6 +16,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
@@ -128,6 +129,11 @@ public class JukeboxModuleItem extends ProcessingModuleItem {
 
     public JukeboxModuleItem(Properties properties) {
         super(properties);
+    }
+
+    @Override
+    public boolean supportsRedstoneControl() {
+        return false;
     }
 
     @Override
@@ -300,11 +306,11 @@ public class JukeboxModuleItem extends ProcessingModuleItem {
     @Override
     public boolean isInsideOverlay(double mx, double my, int slotX, int slotY) {
         // Direction buttons + close button — NOT the center slot (disc is a real item)
-        boolean up    = mx >= slotX     && mx <= slotX + 16 && my >= slotY - 18 && my <= slotY - 2;
-        boolean down  = mx >= slotX     && mx <= slotX + 16 && my >= slotY + 18 && my <= slotY + 34;
-        boolean left  = mx >= slotX - 18 && mx <= slotX - 2 && my >= slotY     && my <= slotY + 16;
-        boolean right = mx >= slotX + 18 && mx <= slotX + 34 && my >= slotY     && my <= slotY + 16;
-        boolean close = mx >= slotX - 18 && mx <= slotX - 2 && my >= slotY - 18 && my <= slotY - 2;
+        boolean up    = isWithinBounds(mx, my, slotX, slotY - 18, 16, 16);
+        boolean down  = isWithinBounds(mx, my, slotX, slotY + 18, 16, 16);
+        boolean left  = isWithinBounds(mx, my, slotX - 18, slotY, 16, 16);
+        boolean right = isWithinBounds(mx, my, slotX + 18, slotY, 16, 16);
+        boolean close = isWithinBounds(mx, my, slotX - 18, slotY - 18, 16, 16);
         return up || down || left || right || close;
     }
 
@@ -321,15 +327,15 @@ public class JukeboxModuleItem extends ProcessingModuleItem {
 
     @Override
     public void resetDirection(ItemStack stack, GridDirection dir, MachineFrameworkBlockEntity be, int slotIndex) {
-        saveConfigDirection(stack, null);
-        saveMode(stack, JukeboxMode.DISABLED);
-        // Clear playlist state
-        be.setModuleData(slotIndex, 2, 0);
-        be.setModuleData(slotIndex, 3, 0);
+        clearDirectionConfiguration(stack, be, slotIndex);
     }
 
     @Override
     public void resetDirectionMode(ItemStack stack, GridDirection dir, MachineFrameworkBlockEntity be, int slotIndex) {
+        clearDirectionConfiguration(stack, be, slotIndex);
+    }
+
+    private void clearDirectionConfiguration(ItemStack stack, MachineFrameworkBlockEntity be, int slotIndex) {
         saveConfigDirection(stack, null);
         saveMode(stack, JukeboxMode.DISABLED);
         be.setModuleData(slotIndex, 2, 0);
@@ -444,6 +450,46 @@ public class JukeboxModuleItem extends ProcessingModuleItem {
         drawCloseButton(graphics, font, slotX, slotY);
     }
 
+    @Override
+    public List<Component> getCustomOverlayTooltip(double mouseX, double mouseY, int slotX, int slotY,
+                                                   ItemStack stack, MachineFrameworkBlockEntity blockEntity,
+                                                   int slotIndex) {
+        if (isCloseButton(mouseX, mouseY, slotX, slotY)) {
+            return List.of(Component.literal("Close configuration").withStyle(ChatFormatting.RED));
+        }
+
+        GridDirection direction = getClickedDirection(slotX, slotY, mouseX, mouseY, slotIndex);
+        if (direction == null) return List.of();
+
+        boolean compatible = isAdjacentModuleAllowed(getAdjacentModuleType(blockEntity, slotIndex, direction));
+        if (!compatible) {
+            return List.of(
+                    Component.literal(direction.name() + " connection").withStyle(ChatFormatting.AQUA),
+                    Component.literal("Requires an adjacent I/O module").withStyle(ChatFormatting.RED)
+            );
+        }
+
+        GridDirection configuredDirection = getConfigDirection(stack);
+        boolean selected = configuredDirection == direction;
+        JukeboxMode mode = selected ? getMode(stack) : JukeboxMode.DISABLED;
+        String description = switch (mode) {
+            case DISABLED -> "Automatic playlist loading is off; manually inserted discs can still play.";
+            case QUEUE -> "Play discs in playlist order, then loop back to the start.";
+            case SHUFFLE -> "Play every playlist disc in a shuffled order before reshuffling.";
+        };
+
+        List<Component> lines = new ArrayList<>();
+        lines.add(Component.literal(direction.name() + " I/O connection").withStyle(ChatFormatting.AQUA));
+        lines.add(tooltipValue("Selection: ", selected ? "Selected" : "Not selected",
+                selected ? 0xFF33CC66 : 0xFF888888));
+        lines.add(tooltipValue("Playlist mode: ", mode.name(), mode.getColor()));
+        lines.add(Component.literal(description).withStyle(ChatFormatting.GRAY));
+        lines.add(tooltipHint(selected
+                ? "Click to cycle mode; Shift-click to cycle backward"
+                : "Click to select this connection"));
+        return lines;
+    }
+
     private void drawButton(GuiGraphics g, net.minecraft.client.gui.Font font, int slotIndex,
                             MachineFrameworkBlockEntity be, int x, int y,
                             GridDirection dir, JukeboxMode mode, GridDirection cfgDir) {
@@ -506,7 +552,7 @@ public class JukeboxModuleItem extends ProcessingModuleItem {
                                       MachineFrameworkBlockEntity be, int slotIndex) {
         Optional<Holder<JukeboxSong>> song = JukeboxSong.fromStack(level.registryAccess(), stack);
         song.ifPresent(holder -> {
-            JukeboxSongPlayer player = be.getModuleObject(slotIndex);
+            JukeboxSongPlayer player = be.getModuleObject(slotIndex, JukeboxSongPlayer.class);
             if (player == null) {
                 player = new JukeboxSongPlayer(() -> {}, pos);
                 be.setModuleObject(slotIndex, player);
@@ -529,7 +575,7 @@ public class JukeboxModuleItem extends ProcessingModuleItem {
      * Call this when the disc is removed or the song finishes.
      */
     private static void stopDiscSong(Level level, MachineFrameworkBlockEntity be, int slotIndex) {
-        JukeboxSongPlayer player = be.getModuleObject(slotIndex);
+        JukeboxSongPlayer player = be.getModuleObject(slotIndex, JukeboxSongPlayer.class);
         if (player != null && level != null) {
             player.stop(level, be.getBlockState());
         }
@@ -594,16 +640,7 @@ public class JukeboxModuleItem extends ProcessingModuleItem {
             }
         }
 
-        if (Config.isDebugLoggingEnabled()) {
-            PraeteritumFuturumMod.LOGGER.info(LOG_PREFIX + " BUILD PLAYLIST: {} positions from {} inventories",
-                    playlist.size(), countInventories(playlist));
-        }
         return playlist;
-    }
-
-    /** Counts unique inventories (by block position) in the playlist. */
-    private static int countInventories(List<PlaylistPosition> playlist) {
-        return (int) playlist.stream().map(p -> p.externalPos).distinct().count();
     }
 
     /* ==================================================================== */
@@ -661,16 +698,8 @@ public class JukeboxModuleItem extends ProcessingModuleItem {
             if (stalled == 1 && canAutoLoad) {
                 List<PlaylistPosition> playlist = buildPlaylist(level, pos, be, slotIndex, moduleStack);
 
-                if (Config.isDebugLoggingEnabled()) {
-                    PraeteritumFuturumMod.LOGGER.info(LOG_PREFIX + " UNSTALL CHECK: pos={}, playlistSize={}, disc={}",
-                            pos, playlist.size(), disc.getItem());
-                }
-
                 // If no inventories are connected yet, keep stalled
                 if (playlist.isEmpty()) {
-                    if (Config.isDebugLoggingEnabled()) {
-                        PraeteritumFuturumMod.LOGGER.info(LOG_PREFIX + " UNSTALL FAILED: no inventories, keeping stalled");
-                    }
                     return;
                 }
 
@@ -692,10 +721,7 @@ public class JukeboxModuleItem extends ProcessingModuleItem {
                     }
                     return;
                 }
-                // Still stalled — don't do anything this tick
-                if (Config.isDebugLoggingEnabled()) {
-                    PraeteritumFuturumMod.LOGGER.info(LOG_PREFIX + " UNSTALL FAILED: inventories full, remainder={}", remainder.getItem());
-                }
+                // Still stalled — don't do anything this tick.
                 return;
             }
 
@@ -818,9 +844,6 @@ public class JukeboxModuleItem extends ProcessingModuleItem {
             // Auto-load next disc
             int playlistPos = be.getModuleData(slotIndex, 2);
             List<PlaylistPosition> playlist = buildPlaylist(level, pos, be, slotIndex, moduleStack);
-            if (Config.isDebugLoggingEnabled()) {
-                PraeteritumFuturumMod.LOGGER.info(LOG_PREFIX + " AUTO-LOAD: playlistSize={}, playlistPos={}", playlist.size(), playlistPos);
-            }
             if (playlist.isEmpty()) return;
 
             if (playlistPos >= playlist.size()) {
@@ -993,11 +1016,16 @@ public class JukeboxModuleItem extends ProcessingModuleItem {
     }
 
     /** Get the shuffle order list from module object storage. */
-    @SuppressWarnings("unchecked")
     private List<Integer> getShuffleOrder(MachineFrameworkBlockEntity be, int slotIndex) {
-        Object obj = be.getModuleObject(slotIndex + 100); // offset to avoid conflict with JukeboxSongPlayer
-        if (obj instanceof List) return (List<Integer>) obj;
-        return new ArrayList<>();
+        Object storedOrder = be.getModuleObject(slotIndex + 100, List.class); // offset to avoid conflict with JukeboxSongPlayer
+        if (!(storedOrder instanceof List<?> values)) return new ArrayList<>();
+
+        List<Integer> order = new ArrayList<>(values.size());
+        for (Object value : values) {
+            if (!(value instanceof Integer index)) return new ArrayList<>();
+            order.add(index);
+        }
+        return order;
     }
 
     /** Save the shuffle order list to module object storage. */

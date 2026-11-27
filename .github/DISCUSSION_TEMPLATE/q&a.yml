@@ -29,7 +29,7 @@ body:
     attributes:
       label: "Praeteritum Futurum Version"
       description: "What version of the mod are you running?"
-      placeholder: "0.1.3"
+      placeholder: "0.2.0"
     validations:
       required: true
 

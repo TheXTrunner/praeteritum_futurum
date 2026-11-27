@@ -1,5 +1,6 @@
 package com.thextrunner.praeteritum_futurum.item.custom;
 
+import com.thextrunner.praeteritum_futurum.api.module.ProcessingMode;
 import com.thextrunner.praeteritum_futurum.PraeteritumFuturumMod;
 import com.thextrunner.praeteritum_futurum.block.GridDirection;
 import com.thextrunner.praeteritum_futurum.block.entity.MachineFrameworkBlockEntity;
@@ -23,6 +24,29 @@ import java.util.Map;
 import java.util.Optional;
 
 public class BrewingModuleItem extends ProcessingModuleItem {
+
+    public enum SlotMode implements ProcessingMode {
+        DISABLED("D", 0xFF555555, "No items are transferred through this side.", Role.DISABLED),
+        POTION("P", 0xFF9933CC, "Use potion items from the adjacent inventory.", Role.INPUT),
+        INGREDIENT("G", 0xFF33CC66, "Use ingredients from the adjacent inventory.", Role.OTHER);
+
+        private final String labelChar;
+        private final int color;
+        private final String description;
+        private final Role role;
+
+        SlotMode(String labelChar, int color, String description, Role role) {
+            this.labelChar = labelChar;
+            this.color = color;
+            this.description = description;
+            this.role = role;
+        }
+
+        @Override public String getLabelChar() { return labelChar; }
+        @Override public int getColor() { return color; }
+        @Override public String getDescription() { return description; }
+        @Override public Role getRole() { return role; }
+    }
 
     private static final String NBT_KEY = "BrewingModes";
     private static final int BREW_TIME = 200; // ticks per brew stage, matching vanilla
@@ -91,7 +115,7 @@ public class BrewingModuleItem extends ProcessingModuleItem {
 
     @Override
     public int getInventorySlotLimit(MachineFrameworkBlockEntity blockEntity, int moduleSlotIndex, int inventorySlotIndex) {
-        Map<GridDirection, SlotMode> modes = getSlotModes(blockEntity.getModuleHandler().getStackInSlot(moduleSlotIndex), NBT_KEY);
+        Map<GridDirection, ProcessingMode> modes = getSlotModes(blockEntity.getModuleHandler().getStackInSlot(moduleSlotIndex), NBT_KEY);
 
         for (GridDirection dir : GridDirection.VALUES) {
             int adjSlot = dir.getAdjacentSlotIndex(moduleSlotIndex);
@@ -102,7 +126,7 @@ public class BrewingModuleItem extends ProcessingModuleItem {
                 continue;
             }
 
-            SlotMode mode = modes.get(dir);
+            ProcessingMode mode = modes.get(dir);
             if (mode == SlotMode.INGREDIENT && adjSlot == inventorySlotIndex) {
                 return 1; // Limit ingredient slot to 1 item for proper queuing
             }
@@ -117,7 +141,7 @@ public class BrewingModuleItem extends ProcessingModuleItem {
     }
 
     @Override
-    protected int getMaxForMode(SlotMode mode) {
+    protected int getMaxForMode(ProcessingMode mode) {
         if (mode == SlotMode.POTION) return getMaxInputs();
         if (mode == SlotMode.INGREDIENT) return getMaxIngredients();
         return super.getMaxForMode(mode);
@@ -125,7 +149,7 @@ public class BrewingModuleItem extends ProcessingModuleItem {
 
     @Override
     protected void processModule(Level level, BlockPos pos, MachineFrameworkBlockEntity blockEntity, int slotIndex, ItemStack stack) {
-        Map<GridDirection, SlotMode> modes = getSlotModes(stack, NBT_KEY);
+        Map<GridDirection, ProcessingMode> modes = getSlotModes(stack, NBT_KEY);
 
         ItemStackHandler moduleHandler = blockEntity.getModuleHandler();
         ItemStackHandler itemHandler = blockEntity.getInventoryHandler();
@@ -143,7 +167,7 @@ public class BrewingModuleItem extends ProcessingModuleItem {
                 continue;
             }
 
-            SlotMode mode = modes.get(dir);
+            ProcessingMode mode = modes.get(dir);
             if (mode == SlotMode.POTION && potionSlots.size() < getMaxInputs()) {
                 potionSlots.add(adjSlot);
             } else if (mode == SlotMode.INGREDIENT && ingredientSlot == -1) {

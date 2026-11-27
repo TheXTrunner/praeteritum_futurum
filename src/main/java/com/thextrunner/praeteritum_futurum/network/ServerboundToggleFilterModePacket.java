@@ -1,7 +1,6 @@
 package com.thextrunner.praeteritum_futurum.network;
 
 import com.thextrunner.praeteritum_futurum.PraeteritumFuturumMod;
-import com.thextrunner.praeteritum_futurum.block.entity.MachineFrameworkBlockEntity;
 import com.thextrunner.praeteritum_futurum.item.custom.FilterModuleItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -10,7 +9,6 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
@@ -41,17 +39,10 @@ public record ServerboundToggleFilterModePacket(int slotIndex, BlockPos blockPos
     public static void handle(ServerboundToggleFilterModePacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             ServerPlayer player = (ServerPlayer) context.player();
-            if (player.distanceToSqr(packet.blockPos().getX() + 0.5, packet.blockPos().getY() + 0.5, packet.blockPos().getZ() + 0.5) > 64.0) {
-                PraeteritumFuturumMod.LOGGER.warn("Player {} tried to toggle filter mode from too far away at {}", player.getName().getString(), packet.blockPos());
-                return;
-            }
-            if (player.level().getBlockEntity(packet.blockPos()) instanceof MachineFrameworkBlockEntity blockEntity) {
-                ItemStack stack = blockEntity.getModuleHandler().getStackInSlot(packet.slotIndex());
-                if (stack.getItem() instanceof FilterModuleItem) {
-                    FilterModuleItem.toggleFilterMode(stack);
-                    blockEntity.setChanged();
-                }
-            }
+            ModulePacketHandler.handleAtBlock(player, packet.blockPos(), packet.slotIndex(),
+                    FilterModuleItem.class::isInstance,
+                    stack -> FilterModuleItem.toggleFilterMode(stack),
+                    "toggle filter mode");
         });
     }
 }

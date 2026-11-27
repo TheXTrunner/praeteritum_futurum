@@ -8,7 +8,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
@@ -40,24 +40,23 @@ public record ServerboundSetModuleTextPacket(String text, int slotIndex, BlockPo
 
     public static void handle(ServerboundSetModuleTextPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
-            Player player = context.player();
-            if (player.distanceToSqr(packet.blockPos().getX() + 0.5, packet.blockPos().getY() + 0.5, packet.blockPos().getZ() + 0.5) > 64.0) {
-                PraeteritumFuturumMod.LOGGER.warn("Player {} tried to set module text from too far away at {}", player.getName().getString(), packet.blockPos());
-                return;
-            }
+            ServerPlayer player = (ServerPlayer) context.player();
+            ModulePacketHandler.handleAtBlock(player, packet.blockPos(), packet.slotIndex,
+                    ITextInputModule.class::isInstance,
+                    stack -> {
+                        ITextInputModule textModule = (ITextInputModule) stack.getItem();
+                        // Validate text length against the module's maximum allowed length
+                        if (packet.text().length() > textModule.getMaxTextLength()) {
+                            PraeteritumFuturumMod.LOGGER.warn("Player {} sent text exceeding max length ({}/{}) for module at {}",
+                                    player.getName().getString(), packet.text().length(), textModule.getMaxTextLength(), packet.blockPos());
+                            return;
+                        }
+                        textModule.setText(stack, packet.text());
+                    },
+                    "set module text");
+            // Refresh the block state so clients see updated text
             if (player.level().getBlockEntity(packet.blockPos()) instanceof MachineFrameworkBlockEntity blockEntity) {
-                ItemStack moduleStack = blockEntity.getModuleHandler().getStackInSlot(packet.slotIndex());
-                if (moduleStack.getItem() instanceof ITextInputModule textModule) {
-                    // Validate text length against the module's maximum allowed length
-                    if (packet.text().length() > textModule.getMaxTextLength()) {
-                        PraeteritumFuturumMod.LOGGER.warn("Player {} sent text exceeding max length ({}/{}) for module at {}",
-                                player.getName().getString(), packet.text().length(), textModule.getMaxTextLength(), packet.blockPos());
-                        return;
-                    }
-                    textModule.setText(moduleStack, packet.text());
-                    blockEntity.setChanged();
-                    player.level().sendBlockUpdated(packet.blockPos(), blockEntity.getBlockState(), blockEntity.getBlockState(), 3);
-                }
+                player.level().sendBlockUpdated(packet.blockPos(), blockEntity.getBlockState(), blockEntity.getBlockState(), 3);
             }
         });
     }

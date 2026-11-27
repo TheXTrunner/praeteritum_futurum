@@ -117,6 +117,15 @@ public class ModItems {
             );
 
     /**
+     * Scrap Block BlockItem — the pickable form of the Scrap Block.
+     * In the redstone circuit grid, it acts as a WALL component.
+     */
+    public static final DeferredItem<BlockItem> SCRAP_BLOCK_ITEM =
+            ITEMS.registerSimpleBlockItem("scrap_block",
+                    ModBlocks.SCRAP_BLOCK
+            );
+
+    /**
      * Yool — a special tool. Uses YoolItem for custom right-click behavior with the machine framework
      * Stacks to 1.
      */
@@ -234,6 +243,20 @@ public class ModItems {
      */
      public static final DeferredItem<JukeboxModuleItem> JUKEBOX_MODULE =
              ITEMS.registerItem("jukebox_module", JukeboxModuleItem::new);
+
+    /**
+     * Redstone Module — a 9×6 grid that simulates a single layer of vanilla redstone.
+     * Players place redstone components (dust, repeaters, comparators, torches, levers,
+     * redstone blocks) to build custom logic circuits inside the machine framework.
+     */
+    public static final DeferredItem<RedstoneModuleItem> REDSTONE_MODULE =
+            ITEMS.registerItem("redstone_module", RedstoneModuleItem::new);
+
+    /** Configurable 0-15 source component used in the redstone grid. */
+    public static final DeferredItem<Item> SIGNAL_SOURCE = ITEMS.registerSimpleItem(
+            "signal_source",
+            new Item.Properties()
+    );
 
     /**
      * Blueprint — a utility item that copies the entire configuration of one Machine Framework

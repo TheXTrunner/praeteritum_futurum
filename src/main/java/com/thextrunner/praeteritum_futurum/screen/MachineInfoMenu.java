@@ -10,7 +10,15 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Read-only container menu for viewing the Machine Framework's state.
+ * <p>
+ * Displays the 27-slot module grid and inventory slots in read-only mode.
+ * Players cannot pick up or place items — this screen is for inspection only.
+ * Opened when the player right-clicks the Machine Framework without holding any item.
+ */
 public class MachineInfoMenu extends BaseMachineContainerMenu {
+    /** Reference to the machine framework block entity. */
     private final MachineFrameworkBlockEntity blockEntity;
 
     public MachineInfoMenu(int containerId, Inventory playerInventory, FriendlyByteBuf extraData) {
@@ -18,6 +26,10 @@ public class MachineInfoMenu extends BaseMachineContainerMenu {
     }
 
     private static MachineFrameworkBlockEntity getBlockEntityFromBuffer(Inventory playerInventory, FriendlyByteBuf extraData) {
+        // In spectator mode, extraData can be null
+        if (extraData == null) {
+            return null;
+        }
         BlockPos pos = extraData.readBlockPos();
         if (playerInventory.player.level().getBlockEntity(pos) instanceof MachineFrameworkBlockEntity be) {
             return be;

@@ -9,12 +9,14 @@ import com.thextrunner.praeteritum_futurum.item.custom.ProcessingModuleItem;
 import com.thextrunner.praeteritum_futurum.network.ServerboundOpenModuleConfigPacket;
 import com.thextrunner.praeteritum_futurum.network.ServerboundSetModuleConfigItemPacket;
 import com.thextrunner.praeteritum_futurum.network.ServerboundSetModuleTextPacket;
+import com.thextrunner.praeteritum_futurum.network.ServerboundCycleRedstoneControlPacket;
 import com.thextrunner.praeteritum_futurum.network.ServerboundToggleMachinePublicPacket;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
@@ -26,7 +28,15 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Read-only GUI screen for viewing the Machine Framework's state.
+ * <p>
+ * Renders the 27-slot module grid with module overlays and inventory slots
+ * in read-only mode. Shows the machine's owner, public/private status, and
+ * module tooltips. Players cannot interact with slots — this is inspection only.
+ */
 public class MachineInfoScreen extends AbstractContainerScreen<MachineInfoMenu> {
+    /** GUI texture — uses the vanilla shulker box texture as the base. */
     private static final ResourceLocation TEXTURE =
             ResourceLocation.withDefaultNamespace("textures/gui/container/shulker_box.png");
 
@@ -69,7 +79,16 @@ public class MachineInfoScreen extends AbstractContainerScreen<MachineInfoMenu> 
 
         ItemStack moduleStack = blockEntity.getModuleHandler().getStackInSlot(slot.index);
         if (moduleStack.getItem() instanceof BaseModuleItem baseModule) {
-            return baseModule.shouldHideSlot(configuringSlotIndex, slotIndex);
+            if (baseModule.shouldHideSlot(configuringSlotIndex, slotIndex)) return true;
+
+            if (slotIndex >= 0 && slotIndex < this.menu.slots.size()) {
+                Slot targetSlot = this.menu.slots.get(slotIndex);
+                int overlayX = slot.x + this.leftPos;
+                int overlayY = slot.y + this.topPos;
+                int targetX = targetSlot.x + this.leftPos;
+                int targetY = targetSlot.y + this.topPos;
+                return baseModule.doesOverlayCoverSlot(overlayX, overlayY, targetX, targetY);
+            }
         }
         return false;
     }
@@ -107,7 +126,7 @@ public class MachineInfoScreen extends AbstractContainerScreen<MachineInfoMenu> 
             MachineFrameworkBlockEntity blockEntity = this.menu.getBlockEntity();
             if (blockEntity != null) {
                 ItemStack moduleStack = blockEntity.getModuleHandler().getStackInSlot(slot.index);
-                com.thextrunner.praeteritum_futurum.client.ModuleScreenRenderer.renderModuleOverlay(graphics, slot, moduleStack, blockEntity, this.font);
+                com.thextrunner.praeteritum_futurum.client.ModuleScreenRenderer.renderModuleOverlay(graphics, slot, moduleStack, blockEntity);
             }
         }
     }
@@ -157,19 +176,24 @@ public class MachineInfoScreen extends AbstractContainerScreen<MachineInfoMenu> 
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
-        this.renderTooltip(guiGraphics, mouseX, mouseY);
+        if (!isMouseOverActiveOverlay(mouseX, mouseY)) {
+            this.renderTooltip(guiGraphics, mouseX, mouseY);
+        }
+        java.util.List<Component> overlayTooltip = java.util.List.of();
 
         // Render tooltip for the lock toggle button
         if (lockToggleButton != null && lockToggleButton.isMouseOver(mouseX, mouseY)) {
             MachineFrameworkBlockEntity blockEntity = this.menu.getBlockEntity();
             if (blockEntity != null) {
-                Component tooltip;
-                if (blockEntity.isPublic()) {
-                    tooltip = Component.translatable("tooltip.praeteritum_futurum.machine_public");
-                } else {
-                    tooltip = Component.translatable("tooltip.praeteritum_futurum.machine_private");
-                }
-                guiGraphics.renderComponentTooltip(this.font, java.util.List.of(tooltip), mouseX, mouseY);
+                boolean isPublic = blockEntity.isPublic();
+                guiGraphics.renderComponentTooltip(this.font, java.util.List.of(
+                        Component.literal("Machine access").withStyle(ChatFormatting.AQUA),
+                        Component.translatable(isPublic
+                                ? "tooltip.praeteritum_futurum.machine_public"
+                                : "tooltip.praeteritum_futurum.machine_private")
+                                .withStyle(isPublic ? ChatFormatting.GREEN : ChatFormatting.RED),
+                        Component.literal("Click to change who may access this machine").withStyle(ChatFormatting.GOLD)
+                ), mouseX, mouseY);
             }
         }
 
@@ -186,6 +210,12 @@ public class MachineInfoScreen extends AbstractContainerScreen<MachineInfoMenu> 
                     // Set overlay slot index so border-aware rendering and adjacent-module detection work
                     baseModule.setOverlaySlotIndex(configuringSlotIndex);
                     baseModule.renderCustomOverlay(guiGraphics, renderX, renderY, moduleStack, blockEntity, this.font);
+                    baseModule.renderRedstoneControlButton(guiGraphics, renderX, renderY, moduleStack,
+                            blockEntity, configuringSlotIndex);
+                    overlayTooltip = baseModule.isRedstoneControlButton(mouseX, mouseY, renderX, renderY)
+                            ? baseModule.getRedstoneControlTooltip(moduleStack)
+                            : baseModule.getCustomOverlayTooltip(mouseX, mouseY, renderX, renderY,
+                                    moduleStack, blockEntity, configuringSlotIndex);
                 } else {
                     configuringSlotIndex = -1;
                 }
@@ -195,7 +225,32 @@ public class MachineInfoScreen extends AbstractContainerScreen<MachineInfoMenu> 
         // Render the inline text input panel overlay ON TOP of everything else
         if (textInputField != null && textInputSlotIndex >= 0 && textInputSlotIndex < 27) {
             renderTextInputPanel(guiGraphics);
+            if (textInputClearButton != null && textInputClearButton.isMouseOver(mouseX, mouseY)) {
+                guiGraphics.renderComponentTooltip(this.font, java.util.List.of(
+                        Component.literal("Clear name").withStyle(ChatFormatting.AQUA),
+                        Component.literal("Remove the current custom name.").withStyle(ChatFormatting.GRAY)
+                ), mouseX, mouseY);
+            } else if (textInputSaveButton != null && textInputSaveButton.isMouseOver(mouseX, mouseY)) {
+                guiGraphics.renderComponentTooltip(this.font, java.util.List.of(
+                        Component.literal("Save name").withStyle(ChatFormatting.AQUA),
+                        Component.literal("Apply this name to the anvil module.").withStyle(ChatFormatting.GRAY)
+                ), mouseX, mouseY);
+            }
+        } else if (!overlayTooltip.isEmpty()) {
+            guiGraphics.renderComponentTooltip(this.font, overlayTooltip, mouseX, mouseY);
         }
+    }
+
+    private boolean isMouseOverActiveOverlay(double mouseX, double mouseY) {
+        if (configuringSlotIndex < 0 || configuringSlotIndex >= 27) return false;
+
+        Slot slot = this.menu.slots.get(configuringSlotIndex);
+        MachineFrameworkBlockEntity blockEntity = this.menu.getBlockEntity();
+        if (blockEntity == null) return false;
+
+        ItemStack moduleStack = blockEntity.getModuleHandler().getStackInSlot(slot.index);
+        return moduleStack.getItem() instanceof BaseModuleItem baseModule
+                && baseModule.isPointInOverlay(mouseX, mouseY, slot.x + this.leftPos, slot.y + this.topPos);
     }
 
     /**
@@ -460,11 +515,23 @@ public class MachineInfoScreen extends AbstractContainerScreen<MachineInfoMenu> 
                 int slotY = slot.y + this.topPos;
 
                 if (moduleStack.getItem() instanceof BaseModuleItem baseModule) {
-                    boolean insideOverlay = baseModule.isInsideOverlay(mouseX, mouseY, slotX, slotY);
+                    boolean insideOverlay = baseModule.isPointInOverlay(mouseX, mouseY, slotX, slotY);
 
                     if (insideOverlay) {
                         lastClickWasOverlay = true;
                         this.setDragging(false);
+
+                        if (baseModule.isRedstoneControlButton(mouseX, mouseY, slotX, slotY)) {
+                            if (button == 0 && this.minecraft != null && this.minecraft.player != null) {
+                                boolean reverse = baseModule.isShiftHeld();
+                                this.minecraft.player.playNotifySound(SoundEvents.UI_BUTTON_CLICK.value(),
+                                        net.minecraft.sounds.SoundSource.PLAYERS, 0.5F, 1.0F);
+                                baseModule.cycleRedstoneControlMode(moduleStack, reverse);
+                                PacketDistributor.sendToServer(new ServerboundCycleRedstoneControlPacket(
+                                        slot.index, blockEntity.getBlockPos(), reverse));
+                            }
+                            return true;
+                        }
 
                         // ITextInputModule: open inline text input panel on center slot click
                         if (moduleStack.getItem() instanceof ITextInputModule textModule &&

@@ -1,13 +1,14 @@
 # Welcome to Praeteritum Futurum
 
-A modular machine and logistics mod for Minecraft on NeoForge. Build custom automation pipelines by configuring a single Machine Framework block with interchangeable modules - no need for dozens of specialized machines.
+A modular machine, logistics, and redstone mod for Minecraft on NeoForge. Build custom automation pipelines with interchangeable modules and use redstone circuits to control machine operations.
 
 ## Quick Links
 
 - [[Getting-Started]] - Install the mod and learn the basics
-- [[Quick-Start]] - Build your first machine step by step
-- [[Modules]] - Browse all available modules
 - [[Exploration]] - Discover Ruined Outposts and salvage materials
+- [[First-Machine]] - Build your first machine step by step
+- [[Modules]] - Browse all available modules
+- [[Redstone]] - Build circuits and connect machine redstone signals
 - [[FAQ]] - Common questions and tips
 
 ## For Developers

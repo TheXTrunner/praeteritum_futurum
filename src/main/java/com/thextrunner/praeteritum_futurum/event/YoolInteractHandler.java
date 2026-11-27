@@ -20,9 +20,29 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 
+/**
+ * Event handler for Yool (wrench) right-click interactions.
+ * <p>
+ * Listens for player right-click events and rotates directional blocks when
+ * the player is holding a Yool. Supports two modes:
+ * <ul>
+ *   <li>Hoppers: cycles through all facing directions (including up/down)</li>
+ *   <li>Other directional blocks: rotates 90° counterclockwise horizontally</li>
+ * </ul>
+ * <p>
+ * Machine Framework blocks are skipped to preserve their menu interaction.
+ * The rotation feature for general blocks can be disabled via config.
+ */
 @EventBusSubscriber(modid = PraeteritumFuturumMod.MODID)
 public class YoolInteractHandler {
 
+    /**
+     * Handles right-clicking blocks while holding a Yool.
+     * <p>
+     * Rotates the targeted block's facing direction. For hoppers, cycles through
+     * all 6 directions. For other directional blocks, rotates 90° counterclockwise.
+     * Runs on both client and server, but only modifies the world on the server.
+     */
     @SuppressWarnings("deprecation")
     @SubscribeEvent
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
@@ -54,7 +74,7 @@ public class YoolInteractHandler {
             // Rotates general directional blocks counterclockwise
             // This feature can be disabled via config: Config.General.ENABLE_YOOL_ROTATION
             if (state.hasProperty(BlockStateProperties.FACING) || state.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
-                // Check if Yool rotation is enabled in the config (use safe accessor to avoid NPE before spec is built)
+                // Check whether Yool rotation is enabled in the config.
                 if (!Config.isYoolRotationEnabled()) {
                     return;
                 }

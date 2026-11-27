@@ -6,7 +6,19 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Salvage Cutter — a custom tool specialized for mining salvage blocks.
+ * <p>
+ * Provides increased mining speed (1.8x) on blocks tagged with salvage_blocks
+ * and is recognized as the correct tool for dropping them. Takes 1 durability
+ * damage per block mined.
+ */
 public class SalvageCutterItem extends Item {
+    /**
+     * Constructs the Salvage Cutter with the given properties.
+     *
+     * @param properties The item properties (typically with durability)
+     */
     public SalvageCutterItem(Properties properties) {
         super(properties);
     }

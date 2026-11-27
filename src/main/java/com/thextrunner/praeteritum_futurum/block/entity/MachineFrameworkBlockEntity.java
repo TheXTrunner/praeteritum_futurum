@@ -4,9 +4,11 @@ import com.thextrunner.praeteritum_futurum.Config;
 import com.thextrunner.praeteritum_futurum.ModTags;
 import com.thextrunner.praeteritum_futurum.item.ModItems;
 import com.thextrunner.praeteritum_futurum.block.RelativeSide;
+import com.thextrunner.praeteritum_futurum.block.custom.MachineFrameworkBlock;
 import com.thextrunner.praeteritum_futurum.item.custom.BaseModuleItem;
 import com.thextrunner.praeteritum_futurum.item.custom.FilterModuleItem;
 import com.thextrunner.praeteritum_futurum.item.custom.IoModuleItem;
+import com.thextrunner.praeteritum_futurum.item.custom.RedstoneModuleItem;
 import com.thextrunner.praeteritum_futurum.screen.MachineConfigMenu;
 import com.thextrunner.praeteritum_futurum.screen.MachineInfoMenu;
 import com.thextrunner.praeteritum_futurum.inventory.SingleSlotItemHandler;
@@ -43,26 +45,55 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Block Entity for the Machine Framework — the central data container for all machine state.
+ * <p>
+ * Stores and manages:
+ * <ul>
+ *   <li>27 module slots (3×9 grid) with their item stacks</li>
+ *   <li>27 inventory slots (one per grid position)</li>
+ *   <li>Per-slot status channels for module progress data</li>
+ *   <li>Owner UUID and public/private access control</li>
+ *   <li>Module-owned objects and cleanup actions</li>
+ * </ul>
+ * <p>
+ * All server-side logic (IO transfers, processing, ticking) runs through this block entity.
+ * The server tick method ({@link #serverTick}) is called every tick and orchestrates the
+ * three-phase processing cycle: pull → process → push.
+ * <p>
+ * Implements {@link MenuProvider} so players can open the machine's GUI screens.
+ */
 public class MachineFrameworkBlockEntity extends BlockEntity implements MenuProvider {
 
+    /** Logger for machine diagnostics and optional debug output. */
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    /** Grid dimensions: 3×3 = 9 total module slots per row, 3 rows. */
+    /** Grid dimensions: 3×9 = 27 total module slots. */
     public static final int GRID_SIZE = 27;
-    /** Number of generic status channels per slot. Channels 0-3 are used by ProcessingModuleItem for burn/cook progress; channels 4-5 are reserved for module-specific state (e.g., Jukebox stalled flag, shuffle cycle). */
+
+    /** Number of generic status channels per slot. Processing modules use channels 0-3 for progress; I/O modules use channels 0-5 for per-face redstone signals. */
     public static final int NUM_CHANNELS = 6;
-    /** Width of the grid in slots (3×3 layout). */
+
+    /** Width of the grid in slots (9 columns). */
     public static final int GRID_WIDTH = 9;
+
     /** Number of rows in the grid (3 rows of 9). */
     public static final int GRID_ROWS = 3;
 
-    // 27 slots x 4 generic status channels per slot.
-    // Safe future-proofing hook: these channels store custom states, progress values,
-    // or fluid levels for current and upcoming processing modules.
-    // Channel 0: Progress / Burn Time
-    // Channel 1: Max Progress / Burn Time Total / Wear
-    // Channel 2: Secondary Progress / Fluid / Energy Level
-    // Channel 3: Secondary Max / Capacity / Extra State
+    /**
+     * Per-slot status channel data: 27 slots × 6 channels each.
+     * <p>
+     * Safe future-proofing hook: these channels store custom states, progress values,
+     * or fluid levels for current and upcoming processing modules.
+     * <ul>
+     *   <li>Channel 0: Progress / Burn Time</li>
+     *   <li>Channel 1: Max Progress / Burn Time Total / Wear</li>
+     *   <li>Channel 2: Secondary Progress / Fluid / Energy Level</li>
+     *   <li>Channel 3: Secondary Max / Capacity / Extra State</li>
+     *   <li>Channel 4-5: Additional module-specific state</li>
+     *   <li>I/O module redstone signals: FRONT, BACK, LEFT, RIGHT, UP, DOWN map to channels 0-5</li>
+     * </ul>
+     */
     private final int[][] moduleData = new int[GRID_SIZE][NUM_CHANNELS];
 
     /** UUID of the player who placed this machine framework. Empty string = unknown (old machines). */
@@ -90,8 +121,7 @@ public class MachineFrameworkBlockEntity extends BlockEntity implements MenuProv
      * Stores an arbitrary object owned by a module at the given slot index.
      * Used to persist references across ticks without the block entity knowing their type.
      */
-    @SuppressWarnings("unchecked")
-    public <T> void setModuleObject(int slotIndex, T object) {
+    public void setModuleObject(int slotIndex, Object object) {
         if (object == null) {
             moduleObjects.remove(slotIndex);
         } else {
@@ -100,11 +130,15 @@ public class MachineFrameworkBlockEntity extends BlockEntity implements MenuProv
     }
 
     /**
-     * Retrieves a module-owned object by slot index. The module is responsible for casting.
+     * Retrieves a module-owned object by slot index and checks that it has the expected type.
+     *
+     * @param slotIndex the module-owned storage key
+     * @param objectType the expected object type
+     * @return the stored object, or {@code null} if no object is stored
+     * @throws ClassCastException if the stored object is not an instance of {@code objectType}
      */
-    @SuppressWarnings("unchecked")
-    public <T> T getModuleObject(int slotIndex) {
-        return (T) moduleObjects.get(slotIndex);
+    public <T> T getModuleObject(int slotIndex, Class<T> objectType) {
+        return objectType.cast(moduleObjects.get(slotIndex));
     }
 
     /**
@@ -120,11 +154,11 @@ public class MachineFrameworkBlockEntity extends BlockEntity implements MenuProv
      * Called when the machine block is destroyed.
      */
     public void runAllModuleCleanups() {
-        for (Runnable cleanup : moduleCleanups.values()) {
+        for (Map.Entry<Integer, Runnable> entry : moduleCleanups.entrySet()) {
             try {
-                cleanup.run();
+                entry.getValue().run();
             } catch (Exception e) {
-                // Ignore cleanup errors to avoid crashing on machine destruction
+                LOGGER.error("Module cleanup failed for slot {} at machine {}", entry.getKey(), worldPosition, e);
             }
         }
         moduleCleanups.clear();
@@ -133,6 +167,10 @@ public class MachineFrameworkBlockEntity extends BlockEntity implements MenuProv
 
     /**
      * Retrieves the numerical value stored in a specific status channel for a given module slot.
+     *
+     * @param slot The module slot index (0-26)
+     * @param channel The status channel index (0-5)
+     * @return The stored value, or 0 if out of bounds
      */
     public int getModuleData(int slot, int channel) {
         if (slot < 0 || slot >= GRID_SIZE || channel < 0 || channel >= NUM_CHANNELS) return 0;
@@ -140,7 +178,66 @@ public class MachineFrameworkBlockEntity extends BlockEntity implements MenuProv
     }
 
     /**
-     * Updates a specific status channel for a given module slot and triggers a block state sync to the client.
+     * Gets the redstone signal emitted from this machine toward a world direction by configured I/O modules.
+     * I/O output is weak power only; the machine does not directly power the neighboring block.
+     */
+    public int getRedstoneOutputSignal(Direction worldDirection) {
+        if (worldDirection == null) return 0;
+        BlockState state = getBlockState();
+        Direction machineFacing = state.hasProperty(MachineFrameworkBlock.FACING)
+                ? state.getValue(MachineFrameworkBlock.FACING)
+                : Direction.NORTH;
+        RelativeSide side = RelativeSide.fromWorldDirection(worldDirection, machineFacing);
+        int channel = IoModuleItem.getRedstoneSignalChannel(side);
+        int strongestSignal = 0;
+
+        for (int slot = 0; slot < moduleHandler.getSlots(); slot++) {
+            ItemStack stack = moduleHandler.getStackInSlot(slot);
+            if (!(stack.getItem() instanceof IoModuleItem ioModule)) continue;
+
+            IoModuleItem.FaceMode mode = ioModule.getFaceModes(stack)
+                    .getOrDefault(side, IoModuleItem.FaceMode.DISABLED);
+            if (mode == IoModuleItem.FaceMode.OUTPUT || mode == IoModuleItem.FaceMode.OPEN) {
+                strongestSignal = Math.max(strongestSignal, getModuleData(slot, channel));
+            }
+        }
+
+        return Math.clamp(strongestSignal, 0, 15);
+    }
+
+    /**
+     * Reads the strongest world redstone signal on faces configured as INPUT or OPEN.
+     * This is the shared input bus used by redstone circuits and opted-in module controls.
+     */
+    public int getRedstoneInputSignal() {
+        var level = getLevel();
+        if (level == null) return 0;
+
+        BlockState state = getBlockState();
+        Direction machineFacing = state.hasProperty(MachineFrameworkBlock.FACING)
+                ? state.getValue(MachineFrameworkBlock.FACING)
+                : Direction.NORTH;
+        int strongestInput = 0;
+
+        for (RelativeSide side : RelativeSide.values()) {
+            IoModuleItem.FaceMode mode = getEffectiveFaceMode(side);
+            if (mode != IoModuleItem.FaceMode.INPUT && mode != IoModuleItem.FaceMode.OPEN) continue;
+
+            Direction worldDirection = side.toWorldDirection(machineFacing);
+            int signal = level.getSignal(worldPosition.relative(worldDirection), worldDirection);
+            strongestInput = Math.max(strongestInput, Math.clamp(signal, 0, 15));
+        }
+
+        return strongestInput;
+    }
+
+    /**
+     * Updates a specific status channel for a given module slot, syncs the block entity, and notifies neighbors.
+     * Neighbor notifications allow changes to configured redstone outputs to be observed by world components.
+     *
+     * @param slot The module slot index (0-26)
+     * @param channel The status channel index (0-5)
+     * @param value The new value to store
      */
     public void setModuleData(int slot, int channel, int value) {
         if (slot >= 0 && slot < GRID_SIZE && channel >= 0 && channel < NUM_CHANNELS) {
@@ -148,14 +245,25 @@ public class MachineFrameworkBlockEntity extends BlockEntity implements MenuProv
                 moduleData[slot][channel] = value;
                 setChanged();
                 if (level != null && !level.isClientSide()) {
-                    level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+                    BlockState state = getBlockState();
+                    level.sendBlockUpdated(worldPosition, state, state, 3);
+                    level.updateNeighborsAt(worldPosition, state.getBlock());
                 }
             }
         }
     }
 
-    // Handler managing the 27 module slots within the machine framework.
+    /**
+     * Handler managing the 27 module slots within the machine framework.
+     * Validates that only machine modules can be inserted, initializes IO module defaults,
+     * and saves processing data when modules are extracted.
+     */
     private final ItemStackHandler moduleHandler = new ItemStackHandler(GRID_SIZE) {
+        @Override
+        protected void onContentsChanged(int slot) {
+            setChanged();
+        }
+
         @Override
         public boolean isItemValid(int slot, @NotNull ItemStack stack) {
             return stack.is(ModTags.Items.MACHINE_MODULES);
@@ -207,7 +315,10 @@ public class MachineFrameworkBlockEntity extends BlockEntity implements MenuProv
         }
     };
 
-    // Handler managing the internal item inventory slots corresponding to each grid position.
+    /**
+     * Handler managing the internal item inventory slots corresponding to each grid position.
+     * Each slot's stack limit can be overridden by installed modules via BaseModuleItem.getInventorySlotLimit().
+     */
     private final ItemStackHandler inventoryHandler = new ItemStackHandler(GRID_SIZE) {
         @Override
         protected void onContentsChanged(int slot) {
@@ -230,10 +341,17 @@ public class MachineFrameworkBlockEntity extends BlockEntity implements MenuProv
         }
     };
 
+    /**
+     * Constructs a new Machine Framework block entity.
+     *
+     * @param pos The block position
+     * @param state The block state
+     */
     public MachineFrameworkBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MACHINE_FRAMEWORK_BE.get(), pos, state);
     }
 
+    /** Returns the module slot item handler (27 slots). */
     public ItemStackHandler getModuleHandler() {
         return moduleHandler;
     }
@@ -265,6 +383,9 @@ public class MachineFrameworkBlockEntity extends BlockEntity implements MenuProv
     /**
      * Checks whether the given player is allowed to modify this machine with a blueprint.
      * Returns true if the machine is public, the player is the owner, or the player is an operator.
+     *
+     * @param player The player attempting to modify the machine
+     * @return True if the player has permission
      */
     public boolean canModify(Player player) {
         if (isPublic) return true;
@@ -273,10 +394,17 @@ public class MachineFrameworkBlockEntity extends BlockEntity implements MenuProv
         return false;
     }
 
+    /** Returns the internal inventory item handler (27 slots). */
     public ItemStackHandler getInventoryHandler() {
         return inventoryHandler;
     }
 
+    /**
+     * Checks if the module at the given slot is an Inventory module.
+     *
+     * @param slotIndex The module slot index (0-26)
+     * @return True if an Inventory module is installed at that slot
+     */
     public boolean hasInventoryModule(int slotIndex) {
         ItemStack stack = moduleHandler.getStackInSlot(slotIndex);
         return stack.getItem() instanceof InventoryModuleItem;
@@ -286,6 +414,9 @@ public class MachineFrameworkBlockEntity extends BlockEntity implements MenuProv
      * Checks whether the module at the given slot exposes its own item handler via {@link com.thextrunner.praeteritum_futurum.api.module.IItemHandlerModule}
      * AND has declared its inventory slot as interactable via {@link com.thextrunner.praeteritum_futurum.item.custom.BaseModuleItem#hasInteractableInventorySlot()}.
      * This allows modules like the Jukebox Module to have their inventory slots be interactable by the player.
+     *
+     * @param slotIndex The module slot index (0-26)
+     * @return True if the module has an interactable inventory slot
      */
     public boolean hasItemHandlerModule(int slotIndex) {
         ItemStack stack = moduleHandler.getStackInSlot(slotIndex);
@@ -313,16 +444,28 @@ public class MachineFrameworkBlockEntity extends BlockEntity implements MenuProv
         return Component.translatable("block.praeteritum_futurum.machine_framework");
     }
 
+    /**
+     * Creates the main machine config menu (opened with Yool).
+     * This is the MenuProvider implementation used when the player opens the config screen.
+     */
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int containerId, @NotNull Inventory playerInventory, @NotNull Player player) {
         return new MachineConfigMenu(containerId, playerInventory, this);
     }
 
+    /**
+     * Creates the machine info menu (opened by right-clicking without an item).
+     * Shows a read-only view of the machine's current state.
+     */
     public AbstractContainerMenu createInfoMenu(int containerId, Inventory playerInventory, Player player) {
         return new MachineInfoMenu(containerId, playerInventory, this);
     }
 
+    /**
+     * Saves all machine state to NBT for persistence.
+     * Stores modules, inventory, module data channels, owner UUID, and public flag.
+     */
     @Override
     protected void saveAdditional(@NotNull CompoundTag tag, HolderLookup.@NotNull Provider registries) {
         super.saveAdditional(tag, registries);
@@ -339,6 +482,10 @@ public class MachineFrameworkBlockEntity extends BlockEntity implements MenuProv
         tag.putBoolean("IsPublic", isPublic);
     }
 
+    /**
+     * Loads all machine state from NBT data.
+     * Restores modules, inventory, module data channels, owner UUID, and public flag.
+     */
     @Override
     public void loadAdditional(@NotNull CompoundTag tag, HolderLookup.@NotNull Provider registries) {
         super.loadAdditional(tag, registries);
@@ -364,6 +511,10 @@ public class MachineFrameworkBlockEntity extends BlockEntity implements MenuProv
 
     /**
      * Calculates the adjacent grid slot indices (up, down, left, right) for a given slot index.
+     * Used by IO modules to find neighboring modules for item transfer.
+     *
+     * @param slotIndex The slot index (0-26)
+     * @return Array of adjacent slot indices (1-4 elements, depending on grid position)
      */
     public int[] getAdjacentSlots(int slotIndex) {
         int row = slotIndex / GRID_WIDTH;
@@ -387,6 +538,14 @@ public class MachineFrameworkBlockEntity extends BlockEntity implements MenuProv
         return neighbors.stream().mapToInt(i -> i).toArray();
     }
 
+    /**
+     * Resolves the effective IO face mode for a given relative side by combining
+     * the face modes from all installed modules. If conflicting modes are detected
+     * (e.g., INPUT and OUTPUT), the result is OPEN (both directions).
+     *
+     * @param side The relative side to check
+     * @return The combined face mode (DISABLED, INPUT, OUTPUT, or OPEN)
+     */
     public IoModuleItem.FaceMode getEffectiveFaceMode(RelativeSide side) {
         IoModuleItem.FaceMode resolvedMode = IoModuleItem.FaceMode.DISABLED;
 
@@ -406,28 +565,39 @@ public class MachineFrameworkBlockEntity extends BlockEntity implements MenuProv
         return resolvedMode;
     }
 
+    /**
+     * Combines two face modes according to IO priority rules.
+     * OPEN takes precedence over everything. Conflicting INPUT/OUTPUT resolves to OPEN.
+     *
+     * @param current The current resolved mode
+     * @param incoming The new mode to combine
+     * @return The combined mode
+     */
     private IoModuleItem.FaceMode combineFaceModes(IoModuleItem.FaceMode current, IoModuleItem.FaceMode incoming) {
-        if (current == IoModuleItem.FaceMode.OPEN || incoming == IoModuleItem.FaceMode.OPEN) {
-            return IoModuleItem.FaceMode.OPEN;
+        if (current == incoming) {
+            return current;
         }
-        if ((current == IoModuleItem.FaceMode.INPUT && incoming == IoModuleItem.FaceMode.OUTPUT) ||
-                (current == IoModuleItem.FaceMode.OUTPUT && incoming == IoModuleItem.FaceMode.INPUT)) {
-            return IoModuleItem.FaceMode.OPEN;
+        if (current == IoModuleItem.FaceMode.DISABLED) {
+            return incoming;
         }
-        return incoming.ordinal() > current.ordinal() ? incoming : current;
+        if (incoming == IoModuleItem.FaceMode.DISABLED) {
+            return current;
+        }
+        return IoModuleItem.FaceMode.OPEN;
     }
 
     /**
-     * Server-side tick logic running every tick to process modules and handle item push/pull automation based on relative IO configurations.
+     * Server-side tick logic running every game tick to process modules and handle item transfers
+     * according to their configurations.
      * <p>
      * The tick is split into 3 phases:
      * 1. Pull — IO modules pull items from external inventories into the machine
-     * 2. Process — Processing modules (smelter, stonecutter, etc.) work on internal items
+     * 2. Process — eligible modules work on internal items; opted-in redstone control may skip a module's tick
      * 3. Push — IO modules push items from the machine to external inventories
      * <p>
-     * IO transfer (phases 1 & 3) respects the configured tick rate from Config.Machine.IO_TRANSFER_TICK_RATE,
-     * so transfers only happen every N ticks instead of every tick. Processing modules always run every tick
-     * because they use vanilla mechanics for their own timing.
+     * I/O transfers (phases 1 & 3) respect Config.Machine.IO_TRANSFER_TICK_RATE. Module ticks are
+     * visited every game tick, but redstone-controlled modules are skipped when their policy denies operation.
+     * Redstone circuits are evaluated together on their own configured cadence and scheduled component ticks.
      */
     public static void serverTick(
             net.minecraft.world.level.Level level,
@@ -437,17 +607,10 @@ public class MachineFrameworkBlockEntity extends BlockEntity implements MenuProv
     ) {
         if (level.isClientSide()) return;
 
-        // Get the current tick count to determine if IO transfers should run this tick.
-        // The config value controls how many ticks between transfer attempts (default: 1 = every tick).
-        // Use the safe accessor to avoid NPE if called before the config spec is built.
+        // Get the current tick count to determine if I/O transfers should run this tick.
+        // The default config value is 8, meaning one transfer attempt every eight ticks.
         int tickRate = Config.getIoTransferTickRate();
         boolean shouldTransfer = (level.getGameTime() % tickRate == 0);
-
-        // Log chunk loading status periodically (every 100 ticks) to monitor simulation distance
-        if (Config.isDebugLoggingEnabled() && level.getGameTime() % 100 == 0) {
-            boolean chunkLoaded = level.hasChunkAt(blockPos);
-            LOGGER.info("[MACHINE TICK] pos={}, chunkLoaded={}, gameTime={}", blockPos, chunkLoaded, level.getGameTime());
-        }
 
         // Phase 1: Pull external items into internal inventory modules
         // Only runs on ticks matching the configured IO transfer rate
@@ -460,14 +623,22 @@ public class MachineFrameworkBlockEntity extends BlockEntity implements MenuProv
             }
         }
 
-        // Phase 2: Processing modules process recipes / work on internal inventories
-        // Always runs every tick — processing speed is controlled by vanilla mechanics
+        // Phase 2: Give eligible modules their normal tick; redstone control may pause opted-in modules.
         for (int i = 0; i < blockEntity.moduleHandler.getSlots(); i++) {
             ItemStack moduleStack = blockEntity.moduleHandler.getStackInSlot(i);
             if (moduleStack.getItem() instanceof BaseModuleItem baseModule) {
+                if (baseModule instanceof RedstoneModuleItem) continue;
+                if (!baseModule.isRedstoneControlSatisfied(moduleStack, blockEntity, i)) continue;
                 baseModule.tickModule(level, blockPos, blockEntity, i, moduleStack);
+                // Write the modified stack back to the moduleHandler so changes (e.g., circuit NBT)
+                // are persisted when the world saves.
+                blockEntity.moduleHandler.setStackInSlot(i, moduleStack);
             }
         }
+
+        // Redstone modules must evaluate together so shared-wall signals settle without
+        // depending on the order in which the machine's module slots are visited.
+        RedstoneModuleItem.tickMachineCircuits(level, blockPos, blockEntity);
 
         // Phase 3: Push processed or finished items out to external inventories
         // Only runs on ticks matching the configured IO transfer rate

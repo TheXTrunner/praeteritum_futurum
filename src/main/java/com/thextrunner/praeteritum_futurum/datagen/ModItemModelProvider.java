@@ -8,6 +8,15 @@ import net.neoforged.neoforge.client.model.generators.ItemModelBuilder;
 import net.neoforged.neoforge.client.model.generators.ItemModelProvider;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
 
+/**
+ * Generates item model JSON files for all mod items.
+ * <p>
+ * Registers flat (generated) item models for modules, materials, and utility items.
+ * The Anomaly Compass uses a special multi-layer override system with 32 frames
+ * for its rotating animation. Handheld items (Yool, Salvage Cutter) use the
+ * handheld transform parent. The Machine Framework item model is hand-crafted
+ * in src/main/resources/ and not generated here.
+ */
 public class ModItemModelProvider extends ItemModelProvider {
     public ModItemModelProvider(PackOutput output, ExistingFileHelper existingFileHelper) {
         super(output, PraeteritumFuturumMod.MODID, existingFileHelper);
@@ -35,8 +44,9 @@ public class ModItemModelProvider extends ItemModelProvider {
         basicItem(ModItems.REFINED_SCRAP.get());
         basicItem(ModItems.STRANGE_ARTIFACT.get());
         basicItem(ModItems.BLUEPRINT.get());
-        getBuilder(ModItems.MACHINE_FRAMEWORK_ITEM.getId().getPath())
-                .parent(new net.neoforged.neoforge.client.model.generators.ModelFile.UncheckedModelFile(modLoc("block/machine_framework")));
+        basicItem(ModItems.SCRAP_BLOCK_ITEM.get());
+
+        // Machine Framework item model is hand-crafted in src/main/resources/
 
         withExistingParent(ModItems.YOOL.getId().getPath(),
                 mcLoc("item/handheld"))
@@ -101,5 +111,11 @@ public class ModItemModelProvider extends ItemModelProvider {
         withExistingParent(ModItems.JUKEBOX_MODULE.getId().getPath(),
                 mcLoc("item/generated"))
                 .texture("layer0", modLoc("item/jukebox_module"));
+
+        withExistingParent(ModItems.REDSTONE_MODULE.getId().getPath(),
+                mcLoc("item/generated"))
+                .texture("layer0", modLoc("item/redstone_module"));
+
+        basicItem(ModItems.SIGNAL_SOURCE.get());
     }
 }

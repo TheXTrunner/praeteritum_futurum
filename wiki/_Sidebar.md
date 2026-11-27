@@ -2,9 +2,10 @@
 
 - [[Home]]
 - [[Getting-Started]]
-- [[Quick-Start]]
-- [[Modules]]
 - [[Exploration]]
+- [[First-Machine]]
+- [[Modules]]
+- [[Redstone]]
 - [[FAQ]]
 
 ## Links

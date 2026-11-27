@@ -9,6 +9,7 @@ Ruined Outpost structures spawn naturally in the Overworld. They contain salvage
 - Structures appear scattered across the Overworld
 - Spawn rate can be adjusted in the mod's config
 - Contain salvage blocks with tiered drops
+- Mine these blocks with a pickaxe to get salvage scrap
 
 ## Tools
 
@@ -16,22 +17,22 @@ Ruined Outpost structures spawn naturally in the Overworld. They contain salvage
 
 Use the Anomaly Compass to find nearby Ruined Outposts.
 
-- Right-click to look at the nearest structure
+- Right-click to look at the 3 nearest structures
 - Sneak and right-click to cycle between nearby targets
 - The compass points toward the structure's location
 
 ### Salvage Cutter
 
-The Salvage Cutter mines salvage blocks faster than a regular pickaxe.
+The Salvage Cutter mines salvage blocks more effectively than a regular pickaxe.
 
-- Use it on salvage blocks to harvest them efficiently
-- Drops Salvage Scrap and Refined Scrap
+- Use it on salvage blocks to harvest advanced salvage
+- Used to obtain Refined Scrap and the Strange Artifact
 
 ### Yool Wrench
 
 The Yool wrench has multiple uses:
 
-- Rotate directional blocks and hoppers by right-clicking
+- Rotates a variety of directional blocks by right-clicking
 - Place and remove modules in the Machine Framework
 - Sneak and right-click on a Machine Framework to safely break and drop it
 
@@ -39,15 +40,19 @@ The Yool wrench has multiple uses:
 
 ### Salvage Scrap
 
-Basic crafting material dropped from salvage blocks. Use it to craft modules and other mod items.
+Basic crafting material dropped from salvage blocks and advanced salvage by mining them with a pickaxe. Use it to craft modules and other mod items.
+
+### Scrap Block
+
+A compact form of Salvage Scrap, crafted from 9 Salvage Scrap in a 3x3 recipe. Crafting one Scrap Block back gives you 9 Salvage Scrap.
 
 ### Refined Scrap
 
-Advanced crafting material from higher-tier salvage blocks. Required for more complex modules.
+Advanced crafting material mining salvage blocks with the salvage cutter. Required for more complex modules.
 
 ### Strange Artifact
 
-Rare drop from advanced salvage blocks. Used in high-tier crafting recipes.
+Rare drop from mining advanced salvage blocks with the cutter. Used in the crafting of the Machine Framework.
 
 ## Tips
 
