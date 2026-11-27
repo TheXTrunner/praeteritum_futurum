@@ -113,7 +113,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           name: "Praeteritum Futurum v${{ github.ref_name }}"
-          prerelease: true
+          prerelease: false
           files: build/libs/praeteritum_futurum-${{ github.ref_name }}.jar
           body_path: release_body.md
 
