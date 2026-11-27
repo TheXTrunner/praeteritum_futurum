@@ -1,3 +1,4 @@
+<!--suppress ALL -->
 # Quick Start: Your First Machine
 
 This guide walks you through setting up a basic smelting machine in survival. By the end, you'll have an automated setup that smelts ores using the Machine Framework.
@@ -47,7 +48,7 @@ Right-click the Machine Framework normally (without the Yool wrench) to open its
 
 ## Step 5: Configure the Smelting Module
 
-Left-click on the Smelting Module in the UI to configure it. You'll see direction buttons that let you tell the module where to get its input, fuel, and where to send its output.
+Left-click on the Smelting Module in the UI to configure it. You'll see direction buttons that let you tell the module where to get its input, fuel, and where to send its output. The Smelting Module uses INPUT, FUEL, and OUTPUT slot modes. Other modules have their own set of modes.
 
 - Set one direction to **INPUT** pointing at the Inventory Module that holds raw ores
 - Set another direction to **FUEL** pointing at the Inventory Module that holds fuel
@@ -73,12 +74,12 @@ Once everything is configured and loaded, the Smelting Module will automatically
 
 ### How Modules Communicate
 
-Modules need to know which slots to use for their work. Left-clicking a processing module in the UI lets you configure direction buttons, in general:
+Modules need to know which slots to use for their work. Left-clicking a module in the UI lets you configure direction buttons. Common slot modes include:
 - **INPUT** - pull items from this slot
 - **OUTPUT** - send items to this slot
 - **DISABLED** - ignore this slot
 
-Keep in mind that every module is different, and every one has different modes for their slots.
+Some modules also have specialized modes. For example, the Smelting Module has a FUEL mode, while a Stonecutter Module might only need INPUT and OUTPUT. An IO Module handles external transfers.
 
 ### The 27-Slot Grid
 
@@ -102,7 +103,7 @@ Once you're comfortable with this basic setup, try:
 
 ## Tips
 
-- Start simple. A single processing module with inventory modules for input, output, etc. is enough to learn the basics.
-- Use the blueprint system to save configurations you like. In Survival, applying a Blueprint also consumes the Redstone components stored in its copied circuits. Hold Shift over the Blueprint to see missing materials.
+- Start simple. A single processing module with the inventory modules it needs is enough to learn the basics.
+- Use the blueprint system to save configurations you like. In Survival, applying a Blueprint consumes the required clean modules and any Redstone components stored in its copied circuits. Hold Shift over the Blueprint to see missing materials.
 - The Public/Private toggle prevents other players from modifying your machine on multiplayer.
 - If something isn't working, check that your module directions are set correctly and point to the right slots.
