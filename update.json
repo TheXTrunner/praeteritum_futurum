@@ -4,10 +4,11 @@
     "0.1.1": "See the full changelog: https://github.com/TheXTrunner/praeteritum_futurum/blob/main/CHANGELOG.md#011",
     "0.1.2": "See the full changelog: https://github.com/TheXTrunner/praeteritum_futurum/blob/main/CHANGELOG.md#012",
     "0.1.3": "See the full changelog: https://github.com/TheXtrunner/praeteritum_futurum/blob/main/CHANGELOG.md#013",
-    "0.2.0": "See the full changelog: https://github.com/TheXtrunner/praeteritum_futurum/blob/main/CHANGELOG.md#020"
+    "0.2.0": "See the full changelog: https://github.com/TheXtrunner/praeteritum_futurum/blob/main/CHANGELOG.md#020",
+    "0.2.1": "See the full changelog: https://github.com/TheXtrunner/praeteritum_futurum/blob/main/CHANGELOG.md#021"
   },
   "promos": {
-    "1.21.1-latest": "0.2.0",
-    "1.21.1-recommended": "0.2.0"
+    "1.21.1-latest": "0.2.1",
+    "1.21.1-recommended": "0.2.1"
   }
 }
