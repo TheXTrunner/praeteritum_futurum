@@ -46,6 +46,7 @@ public class ModCreativeTabs {
                         output.accept(ModItems.SALVAGE_FRAMING_ITEM.get());
                         output.accept(ModItems.ADVANCED_SALVAGE_ITEM.get());
                         output.accept(ModItems.MACHINE_FRAMEWORK_ITEM.get());
+                        output.accept(ModItems.SCRAP_BLOCK_ITEM.get());
 
                         // Materials
                         output.accept(ModItems.SALVAGE_SCRAP.get());
@@ -67,6 +68,8 @@ public class ModCreativeTabs {
                         output.accept(ModItems.BREWING_MODULE.get());
                         output.accept(ModItems.EJECTION_MODULE.get());
                         output.accept(ModItems.JUKEBOX_MODULE.get());
+                        output.accept(ModItems.REDSTONE_MODULE.get());
+                        output.accept(ModItems.SIGNAL_SOURCE.get());
 
                         // Utility items
                         output.accept(ModItems.BLUEPRINT.get());

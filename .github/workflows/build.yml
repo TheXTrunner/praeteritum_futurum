@@ -39,7 +39,7 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
-    if: (success() || always()) && startsWith(github.ref, 'refs/tags/')
+    if: always() && startsWith(github.ref, 'refs/tags/') && needs.build.result == 'skipped'
     permissions:
       contents: write
     steps:
@@ -59,33 +59,66 @@ jobs:
         run: ./gradlew build
 
       - name: Extract changelog for GitHub Release
-        id: changelog
+        env:
+          RELEASE_VERSION: ${{ github.ref_name }}
         run: |
-          # Extract the section between the current version header and the next version header
-          # sed removes the version header line and strips leading blank lines
-          VERSION="${GITHUB_REF#refs/tags/}"
-          CHANGELOG=$(sed -n "/^## \[${VERSION}\]/,/^## \[/p" CHANGELOG.md | sed -e '$d' -e '/./,$!d')
-          # If exact version tag not found, try "Unreleased" section
-          if [ -z "$CHANGELOG" ]; then
-            CHANGELOG=$(sed -n '/^## \[Unreleased\]/,/^## \[/p' CHANGELOG.md | sed -e '$d' -e '/./,$!d')
-          fi
-          # Write to a file for the release step
-          echo "$CHANGELOG" > release_body.md
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          changelog_path = Path("CHANGELOG.md")
+          if not changelog_path.is_file():
+              raise SystemExit("CHANGELOG.md was not found; refusing to create a release without notes.")
+
+          lines = changelog_path.read_text(encoding="utf-8").splitlines()
+          heading_pattern = re.compile(r"^## \[([^\]]+)\](?:\s+-\s+.*)?\s*$")
+          release_version = os.environ["RELEASE_VERSION"]
+          section_start = None
+          section_name = release_version
+
+          for index, line in enumerate(lines):
+              match = heading_pattern.fullmatch(line)
+              if match and match.group(1) == release_version:
+                  section_start = index
+                  break
+
+          if section_start is None:
+              for index, line in enumerate(lines):
+                  match = heading_pattern.fullmatch(line)
+                  if match and match.group(1) == "Unreleased":
+                      section_start = index
+                      section_name = "Unreleased"
+                      break
+
+          if section_start is None:
+              raise SystemExit(
+                  f"No CHANGELOG.md section found for '{release_version}' or [Unreleased]; refusing to create a release."
+              )
+
+          section_end = next(
+              (index for index in range(section_start + 1, len(lines)) if lines[index].startswith("## ")),
+              len(lines),
+          )
+          release_body = "\n".join(lines[section_start + 1:section_end]).strip()
+          if not release_body:
+              raise SystemExit(
+                  f"CHANGELOG.md section for '{section_name}' is empty; refusing to create a release."
+              )
+
+          Path("release_body.md").write_text(release_body + "\n", encoding="utf-8")
+          PY
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           name: "Praeteritum Futurum v${{ github.ref_name }}"
-          files: build/libs/*.jar
+          prerelease: true
+          files: build/libs/praeteritum_futurum-${{ github.ref_name }}.jar
           body_path: release_body.md
 
-      - name: Publish to CurseForge
+      - name: Publish to CurseForge and Modrinth
         env:
           CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
-        run: ./gradlew publishCurseforge
-
-      # Modrinth already published successfully — re-enable below for future releases
-      # - name: Publish to Modrinth
-      #   env:
-      #     MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
-      #   run: ./gradlew publishModrinth
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+        run: ./gradlew publishMods

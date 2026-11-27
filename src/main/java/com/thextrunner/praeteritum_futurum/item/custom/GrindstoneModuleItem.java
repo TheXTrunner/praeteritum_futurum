@@ -1,5 +1,6 @@
 package com.thextrunner.praeteritum_futurum.item.custom;
 
+import com.thextrunner.praeteritum_futurum.api.module.ProcessingMode;
 import com.thextrunner.praeteritum_futurum.PraeteritumFuturumMod;
 import com.thextrunner.praeteritum_futurum.block.GridDirection;
 import com.thextrunner.praeteritum_futurum.block.entity.MachineFrameworkBlockEntity;
@@ -26,6 +27,29 @@ import java.util.List;
 import java.util.Map;
 
 public class GrindstoneModuleItem extends ProcessingModuleItem {
+
+    public enum SlotMode implements ProcessingMode {
+        DISABLED("D", 0xFF555555, "No items are transferred through this side.", Role.DISABLED),
+        INPUT("I", 0xFF3366CC, "Pull items from the adjacent inventory for processing.", Role.INPUT),
+        OUTPUT("O", 0xFFCC3333, "Send processed items to the adjacent inventory.", Role.OUTPUT);
+
+        private final String labelChar;
+        private final int color;
+        private final String description;
+        private final Role role;
+
+        SlotMode(String labelChar, int color, String description, Role role) {
+            this.labelChar = labelChar;
+            this.color = color;
+            this.description = description;
+            this.role = role;
+        }
+
+        @Override public String getLabelChar() { return labelChar; }
+        @Override public int getColor() { return color; }
+        @Override public String getDescription() { return description; }
+        @Override public Role getRole() { return role; }
+    }
 
     private static final String NBT_KEY = "GrindstoneModes";
 
@@ -62,7 +86,7 @@ public class GrindstoneModuleItem extends ProcessingModuleItem {
 
     @Override
     protected void processModule(Level level, BlockPos pos, MachineFrameworkBlockEntity blockEntity, int slotIndex, ItemStack stack) {
-        Map<GridDirection, SlotMode> modes = getSlotModes(stack, NBT_KEY);
+        Map<GridDirection, ProcessingMode> modes = getSlotModes(stack, NBT_KEY);
         ResolvedIoSlots resolved = ProcessingModuleItem.resolveAdjacentIoSlots(blockEntity, slotIndex, modes);
 
         List<Integer> inputSlots = resolved.inputs().stream().limit(3).toList();

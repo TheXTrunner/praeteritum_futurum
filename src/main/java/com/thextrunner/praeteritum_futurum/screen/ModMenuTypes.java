@@ -52,6 +52,22 @@ public class ModMenuTypes {
                     IMenuTypeExtension.create(GenericModuleConfigMenu::new));
 
     /**
+     * Redstone Module Config Menu — the 6×9 circuit editor for the Redstone Module.
+     * Players place vanilla redstone components to build custom logic circuits.
+     */
+    public static final DeferredHolder<MenuType<?>, MenuType<RedstoneConfigMenu>> REDSTONE_MODULE_CONFIG_MENU =
+            MENUS.register("redstone_module_config_menu", () ->
+                    IMenuTypeExtension.create(RedstoneConfigMenu::new));
+
+    /**
+     * Text Input Module Menu — a simple menu for modules that need text input
+     * (e.g., naming items in the Anvil module). Used with TextInputModuleScreen.
+     */
+    public static final DeferredHolder<MenuType<?>, MenuType<TextInputModuleMenu>> TEXT_INPUT_MODULE_MENU =
+            MENUS.register("text_input_module_menu", () ->
+                    IMenuTypeExtension.create(TextInputModuleMenu::new));
+
+    /**
      * Registers the menu types with the mod event bus.
      * Called from PraeteritumFuturumMod's constructor.
      */
@@ -68,5 +84,7 @@ public class ModMenuTypes {
         event.register(MACHINE_CONFIG_MENU.get(), MachineConfigScreen::new);
         event.register(MACHINE_INFO_MENU.get(), MachineInfoScreen::new);
         event.register(GENERIC_MODULE_CONFIG_MENU.get(), GenericModuleConfigScreen::new);
+        event.register(REDSTONE_MODULE_CONFIG_MENU.get(), RedstoneConfigScreen::new);
+        event.register(TEXT_INPUT_MODULE_MENU.get(), TextInputModuleScreen::new);
     }
 }

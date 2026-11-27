@@ -1,12 +1,12 @@
 # Module Roadmap
 
-Modules planned for future implementation, organized by type. The Redstone Module (dev) introduces a circuit system that many future modules will hook into.
+This page tracks proposed module work. The Redstone Module and its current circuit behavior are implemented; see [REDSTONE-MODULE.md](REDSTONE-MODULE.md) for the developer reference. The circuit model is internal, and custom redstone component registration is not currently an add-on API.
 
 ---
 
 ## Implemented on Dev (New Engine System)
 
-These modules are implemented on the dev branch and introduce a fundamentally new engine system: the Redstone Module's programmable circuit system. Block Manipulator and Piston are part of this same engine overhaul. Work on this system is paused temporarily but ongoing.
+These features are implemented on the dev branch and form a separate engine system for block manipulation and piston movement. Work on this system is paused temporarily but ongoing.
 
 ### Block Manipulator Module
 
@@ -21,17 +21,6 @@ These modules are implemented on the dev branch and introduce a fundamentally ne
 - Excludes redstone components from placement
 
 **Notes:** Part of the new engine system. Future documentation on this feature underway.
-
-### Redstone Module
-
-**Summary:** A programmable logic circuit with a 6×9 (54-slot) circuit editor for custom redstone logic. This is the foundation for many future modules.
-
-**Implemented mechanics:**
-- `RedstoneCircuit` and `RedstoneComponent` API classes for custom circuit-based modules
-- Signal propagation, rotation, and wall attachment support
-- Custom config screen for circuit editing
-
-**Notes:** Core of the new engine system. Future modules that hook into this system are marked with 🔴 below.
 
 ### Piston Module
 
@@ -95,7 +84,7 @@ These modules automate existing vanilla Minecraft mechanics and are planned for 
 - IO modules query entity capabilities at adjacent positions, not just block capabilities.
 - Supports minecarts with chests, hoppers on minecarts, and other entity inventories.
 
-**Notes:** See [.github/DEVELOPMENT.md](../.github/DEVELOPMENT.md#entity-inventory-detection) for implementation details.
+**Notes:** IO modules will query entity capabilities at adjacent positions in addition to block capabilities, requiring changes to the existing adjacency detection logic.
 
 ### Fluid/Block Interaction Module
 
@@ -183,7 +172,7 @@ These modules require new items, non-vanilla mechanics, or custom design beyond 
 - Supports both momentary (pulse) and toggle (latch) signal modes.
 - Configurable range limit for balance.
 
-**Notes:** Will hook into the Redstone Module's circuit system (🔴) for signal transmission logic. See [.github/DEVELOPMENT.md](../.github/DEVELOPMENT.md#rc-module-remote-signal) for implementation details.
+**Notes:** Will hook into the Redstone Module's circuit system (🔴) for signal transmission logic. Pairing and frequency channel state will need to be stored per-module.
 
 ### Woodcutter Module
 
@@ -206,7 +195,7 @@ These modules require new items, non-vanilla mechanics, or custom design beyond 
 - **Output slot:** produces an exact clone of the source banner in the input banner's base color.
 - **Fuel consumption:** each copy consumes Color Mix, scaling with pattern count.
 
-**Notes:** See [.github/DEVELOPMENT.md](../.github/DEVELOPMENT.md#loom-module) for implementation details.
+**Notes:** Color Mix fuel consumption will scale with the number of patterns on the source banner, similar to how the Smelting module tracks fuel levels.
 
 ### Grinder Module
 
@@ -223,4 +212,4 @@ These modules require new items, non-vanilla mechanics, or custom design beyond 
 - **Targeting rules:** All entities, hostile only, passive only, or filter-configurable?
 - **Range and rate:** Configurable or fixed to prevent performance issues?
 
-**Notes:** See [.github/DEVELOPMENT.md](../.github/DEVELOPMENT.md#grinder-module) for implementation details.
+**Notes:** Entity detection and damage logic will need to respect server tick rates and spawn lag limits to avoid performance issues.

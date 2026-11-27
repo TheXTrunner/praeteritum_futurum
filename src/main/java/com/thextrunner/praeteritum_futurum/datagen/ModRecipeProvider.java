@@ -1,5 +1,6 @@
 package com.thextrunner.praeteritum_futurum.datagen;
 
+import com.thextrunner.praeteritum_futurum.block.ModBlocks;
 import com.thextrunner.praeteritum_futurum.item.ModItems;
 import com.thextrunner.praeteritum_futurum.PraeteritumFuturumMod;
 import com.thextrunner.praeteritum_futurum.recipe.DataCleaningRecipe;
@@ -13,6 +14,16 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * Generates recipe JSON files for all mod recipes.
+ * <p>
+ * Defines crafting recipes for all mod items including tools, modules, and materials.
+ * Also registers the custom DataCleaningRecipe (special recipe type) for clearing
+ * module and blueprint configuration data.
+ * <p>
+ * Recipe patterns follow a consistent theme: modules are crafted by surrounding
+ * their corresponding vanilla block with refined scrap, while tools use salvage scrap.
+ */
 public class ModRecipeProvider extends RecipeProvider implements IConditionBuilder {
     public ModRecipeProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> registries) {
         super(output, registries);
@@ -42,7 +53,7 @@ public class ModRecipeProvider extends RecipeProvider implements IConditionBuild
                 .save(recipeOutput);
 
         // Machine Framework: Strange artifact center, salvage scrap corners, refined scrap sides
-        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModItems.MACHINE_FRAMEWORK_ITEM.get())
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.MACHINE_FRAMEWORK_ITEM.get())
                 .define('A', ModItems.STRANGE_ARTIFACT.get())
                 .define('S', ModItems.SALVAGE_SCRAP.get())
                 .define('R', ModItems.REFINED_SCRAP.get())
@@ -192,6 +203,17 @@ public class ModRecipeProvider extends RecipeProvider implements IConditionBuild
                 .unlockedBy("has_refined_scrap", has(ModItems.REFINED_SCRAP.get()))
                 .save(recipeOutput);
 
+        // Signal Source: comparator calibrated with quartz and redstone dust
+        ShapedRecipeBuilder.shaped(RecipeCategory.REDSTONE, ModItems.SIGNAL_SOURCE.get())
+                .define('Q', Items.QUARTZ)
+                .define('R', Items.REDSTONE)
+                .define('C', Items.COMPARATOR)
+                .pattern(" Q ")
+                .pattern("RCR")
+                .pattern(" R ")
+                .unlockedBy("has_comparator", has(Items.COMPARATOR))
+                .save(recipeOutput);
+
         // Unified Data Cleaning Recipe for modules and blueprints
         SpecialRecipeBuilder.special(DataCleaningRecipe::new)
                 .save(recipeOutput, ResourceLocation.fromNamespaceAndPath(PraeteritumFuturumMod.MODID, "data_cleaning"));
@@ -211,6 +233,22 @@ public class ModRecipeProvider extends RecipeProvider implements IConditionBuild
                 .requires(Items.PAPER)
                 .requires(ModItems.REFINED_SCRAP.get())
                 .unlockedBy("has_refined_scrap", has(ModItems.REFINED_SCRAP.get()))
+                .save(recipeOutput);
+
+        // Scrap Block: 9 Salvage Scrap → 1 Scrap Block (compact form)
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.SCRAP_BLOCK_ITEM.get())
+                .define('S', ModItems.SALVAGE_SCRAP.get())
+                .pattern("SSS")
+                .pattern("SSS")
+                .pattern("SSS")
+                .unlockedBy("has_salvage_scrap", has(ModItems.SALVAGE_SCRAP.get()))
+                .save(recipeOutput);
+
+        // Scrap Block → 9 Salvage Scrap (reversible)
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.SALVAGE_SCRAP.get(), 9)
+                .define('B', ModItems.SCRAP_BLOCK_ITEM.get())
+                .pattern("B  ")
+                .unlockedBy("has_scrap_block", has(ModItems.SCRAP_BLOCK_ITEM.get()))
                 .save(recipeOutput);
     }
 }

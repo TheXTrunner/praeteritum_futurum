@@ -6,6 +6,19 @@ import com.thextrunner.praeteritum_futurum.block.ModBlocks;
 import net.minecraft.data.PackOutput;
 import net.neoforged.neoforge.common.data.LanguageProvider;
 
+/**
+ * Generates language JSON files (en_us.lang) for all mod strings.
+ * <p>
+ * Includes translations for:
+ * <ul>
+ *   <li>Item and block names</li>
+ *   <li>Creative tab titles</li>
+ *   <li>Tag display names for JEI</li>
+ *   <li>Tooltips</li>
+ *   <li>Config screen categories and options</li>
+ *   <li>Screen UI text (text input, anvil name input)</li>
+ * </ul>
+ */
 public class ModLanguageProvider extends LanguageProvider {
     public ModLanguageProvider(PackOutput output, String locale) {
         super(output, PraeteritumFuturumMod.MODID, locale);
@@ -35,6 +48,8 @@ public class ModLanguageProvider extends LanguageProvider {
         addItem(ModItems.BREWING_MODULE, "Brewing Module");
         addItem(ModItems.EJECTION_MODULE, "Ejection Module");
         addItem(ModItems.JUKEBOX_MODULE, "Jukebox Module");
+        addItem(ModItems.REDSTONE_MODULE, "Redstone Module");
+        addItem(ModItems.SIGNAL_SOURCE, "Signal Source");
 
         addItem(ModItems.BLUEPRINT, "Blueprint");
 
@@ -42,6 +57,7 @@ public class ModLanguageProvider extends LanguageProvider {
         addBlock(ModBlocks.SALVAGE_FRAMING, "Salvage Framing");
         addBlock(ModBlocks.ADVANCED_SALVAGE, "Advanced Salvage");
         addBlock(ModBlocks.MACHINE_FRAMEWORK, "Machine Framework");
+        addBlock(ModBlocks.SCRAP_BLOCK, "Scrap Block");
 
         // Creative Tabs and UI
         add("itemGroup.praeteritum_futurum.praeteritum_tab", "Praeteritum Futurum");

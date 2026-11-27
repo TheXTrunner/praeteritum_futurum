@@ -3,6 +3,7 @@ package com.thextrunner.praeteritum_futurum;
 import com.thextrunner.praeteritum_futurum.block.entity.ModBlockEntities;
 import com.thextrunner.praeteritum_futurum.client.ClientModSetup;
 import com.thextrunner.praeteritum_futurum.client.MachineFrameworkRenderer;
+import com.thextrunner.praeteritum_futurum.client.OverlayModelLoader;
 import com.thextrunner.praeteritum_futurum.screen.*;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
@@ -45,6 +46,9 @@ public class PraeteritumFuturumModClient {
         // Item property overrides use client-only types, so keep their listener
         // registration inside the client-only mod entry point.
         modEventBus.addListener(ClientModSetup::onClientSetup);
+
+        // Register IO overlay model loader so the overlay models are baked
+        modEventBus.register(OverlayModelLoader.class);
     }
 
     /**

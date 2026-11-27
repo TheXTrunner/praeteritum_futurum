@@ -74,4 +74,21 @@ public class ModBlocks {
                                     .requiresCorrectToolForDrops()
                     )
             );
+
+    /**
+     * Scrap Block — the block form of Salvage Scrap.
+     * <p>
+     * Crafted from 9 Salvage Scrap (reversible). In the redstone circuit grid,
+     * it acts as a WALL component — a solid block that can be powered by adjacent
+     * redstone, enabling torch inversion circuits.
+     */
+    public static final DeferredBlock<Block> SCRAP_BLOCK =
+            BLOCKS.register(
+                    "scrap_block",
+                    () -> new Block(
+                            BlockBehaviour.Properties.of()
+                                    .mapColor(MapColor.METAL)
+                                    .destroyTime(2.0f)
+                    )
+            );
 }

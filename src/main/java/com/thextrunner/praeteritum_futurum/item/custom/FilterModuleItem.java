@@ -31,14 +31,31 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+/**
+ * Filter Module — controls which items pass through adjacent IO and Inventory modules.
+ * <p>
+ * Extends LogisticsModuleItem to provide whitelist/blacklist filtering. When placed
+ * adjacent to an IO module or Inventory module, it checks each item against its
+ * 27-slot filter list. Items that don't match the filter criteria are blocked.
+ * <p>
+ * Two modes:
+ * <ul>
+ *   <li>Whitelist: only items in the filter list are allowed through</li>
+ *   <li>Blacklist: all items except those in the filter list are allowed through</li>
+ * </ul>
+ * <p>
+ * Implements IModuleMenuProvider to provide a custom 27-slot config screen where
+ * players can drag and drop items to set their filter list.
+ */
 public class FilterModuleItem extends LogisticsModuleItem implements IModuleMenuProvider {
 
+    /** Number of filter slots in the module's config screen (3×9 grid). */
     public static final int FILTER_SLOTS = 27;
 
-    public FilterModuleItem(Properties properties) {
-        super(properties);
-    }
-
+    /**
+     * Enum defining the filter modes — whitelist allows only listed items,
+     * blacklist blocks only listed items.
+     */
     public enum FilterMode {
         WHITELIST("Whitelist"),
         BLACKLIST("Blacklist");
@@ -60,6 +77,15 @@ public class FilterModuleItem extends LogisticsModuleItem implements IModuleMenu
         public static FilterMode fromId(int id) {
             return id >= 0 && id < values().length ? values()[id] : WHITELIST;
         }
+    }
+
+    /**
+     * Constructs the Filter Module with the given properties.
+     *
+     * @param properties The item properties
+     */
+    public FilterModuleItem(Properties properties) {
+        super(properties);
     }
 
     @Override
@@ -109,6 +135,16 @@ public class FilterModuleItem extends LogisticsModuleItem implements IModuleMenu
     }
 
     @Override
+    public void saveMenuData(GenericModuleConfigMenu menu, HolderLookup.Provider registries) {
+        ItemStackHandler inventory = new ItemStackHandler(FILTER_SLOTS);
+        for (int slot = 0; slot < FILTER_SLOTS && slot < menu.slots.size(); slot++) {
+            ItemStack filter = menu.slots.get(slot).getItem();
+            inventory.setStackInSlot(slot, filter.isEmpty() ? ItemStack.EMPTY : filter.copyWithCount(1));
+        }
+        saveFilterInventory(menu.getModuleStack(), inventory, registries);
+    }
+
+    @Override
     public void handleMenuClick(GenericModuleConfigMenu menu, int slotId, int button, ClickType clickType, Player player) {
         if (slotId >= 0 && slotId < 27) {
             ItemStack carried = menu.getCarried();
@@ -143,6 +179,9 @@ public class FilterModuleItem extends LogisticsModuleItem implements IModuleMenu
                 for (int i = 0; i < 27; i++) {
                     if (ghostHandler.getStackInSlot(i).isEmpty()) {
                         ghostHandler.setStackInSlot(i, stackToFilter.copyWithCount(1));
+                        if (i < menu.slots.size()) {
+                            menu.slots.get(i).set(ghostHandler.getStackInSlot(i));
+                        }
                         saveFilterInventory(menu.getModuleStack(), ghostHandler, player.registryAccess());
                         break;
                     }

@@ -11,15 +11,32 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Container menu for the main machine configuration screen.
+ * <p>
+ * Displays the 27-slot module grid, inventory slots, and player inventory.
+ * Handles item placement, module configuration, and IO face toggling.
+ * Opened when the player right-clicks the Machine Framework with a Yool.
+ */
 public class MachineConfigMenu extends BaseMachineContainerMenu {
+    /** Whether this menu is in config mode (true) or info mode (false). */
     private final boolean isConfigMode;
 
     public MachineConfigMenu(int containerId, Inventory playerInventory, FriendlyByteBuf extraData) {
-        this(
-                containerId,
-                playerInventory,
-                (MachineFrameworkBlockEntity) playerInventory.player.level().getBlockEntity(extraData.readBlockPos())
-        );
+        this(containerId, playerInventory, getBlockEntityFromBuffer(playerInventory, extraData));
+    }
+
+    private static MachineFrameworkBlockEntity getBlockEntityFromBuffer(Inventory playerInventory, FriendlyByteBuf extraData) {
+        // In spectator mode, extraData can be null
+        if (extraData == null) {
+            return null;
+        }
+        net.minecraft.core.BlockPos pos = extraData.readBlockPos();
+        Object be = playerInventory.player.level().getBlockEntity(pos);
+        if (be instanceof MachineFrameworkBlockEntity frameworkBe) {
+            return frameworkBe;
+        }
+        return null;
     }
 
     public MachineConfigMenu(int containerId, Inventory playerInventory, MachineFrameworkBlockEntity blockEntity) {

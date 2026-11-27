@@ -1,42 +1,43 @@
 package com.thextrunner.praeteritum_futurum.item.custom;
 
 import com.mojang.logging.LogUtils;
-import com.thextrunner.praeteritum_futurum.Config;
 import com.thextrunner.praeteritum_futurum.PraeteritumFuturumMod;
 import com.thextrunner.praeteritum_futurum.api.module.CyclingMode;
 import com.thextrunner.praeteritum_futurum.block.RelativeSide;
 import com.thextrunner.praeteritum_futurum.block.custom.MachineFrameworkBlock;
 import com.thextrunner.praeteritum_futurum.block.entity.MachineFrameworkBlockEntity;
 import com.thextrunner.praeteritum_futurum.network.ServerboundToggleIoFacePacket;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.gui.Font;
-import net.minecraft.core.component.DataComponents;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.inventory.InventoryMenu;
-import net.minecraft.world.item.component.CustomData;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import net.neoforged.neoforge.items.wrapper.CombinedInvWrapper;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
-import java.awt.Color;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
 
 public class IoModuleItem extends LogisticsModuleItem {
 
@@ -65,21 +66,25 @@ public class IoModuleItem extends LogisticsModuleItem {
      */
     @Override
     public boolean isInsideOverlay(double mouseX, double mouseY, int slotX, int slotY) {
-        // Extended area to cover all 6 face buttons, the close button, and the inventory overlap segment
-        return mouseX >= slotX - 36 && mouseX <= slotX + 52 &&
-                mouseY >= slotY - 18 && mouseY <= slotY + 38;
+        return isWithinBounds(mouseX, mouseY, slotX, slotY, 16, 16)
+                || isWithinBounds(mouseX, mouseY, slotX, slotY - 18, 16, 16)
+                || isWithinBounds(mouseX, mouseY, slotX, slotY + 18, 16, 16)
+                || isWithinBounds(mouseX, mouseY, slotX - 18, slotY, 16, 16)
+                || isWithinBounds(mouseX, mouseY, slotX + 18, slotY, 16, 16)
+                || isWithinBounds(mouseX, mouseY, slotX + 36, slotY, 16, 16)
+                || isCloseButton(mouseX, mouseY, slotX, slotY);
     }
 
     /**
      * Determines which relative side button the player clicked in the overlay UI.
      */
     private RelativeSide getIoClickedRelativeSide(int slotX, int slotY, double mx, double my) {
-        if (isInside(mx, my, slotX, slotY)) return RelativeSide.FRONT;
-        if (isInside(mx, my, slotX, slotY - 18)) return RelativeSide.UP;
-        if (mx >= slotX && mx <= slotX + 16 && my >= slotY + 18 && my <= slotY + 38) return RelativeSide.DOWN;
-        if (isInside(mx, my, slotX - 18, slotY)) return RelativeSide.LEFT;
-        if (isInside(mx, my, slotX + 18, slotY)) return RelativeSide.RIGHT;
-        if (isInside(mx, my, slotX + 36, slotY)) return RelativeSide.BACK;
+        if (isWithinBounds(mx, my, slotX, slotY, 16, 16)) return RelativeSide.FRONT;
+        if (isWithinBounds(mx, my, slotX, slotY - 18, 16, 16)) return RelativeSide.UP;
+        if (isWithinBounds(mx, my, slotX, slotY + 18, 16, 16)) return RelativeSide.DOWN;
+        if (isWithinBounds(mx, my, slotX - 18, slotY, 16, 16)) return RelativeSide.LEFT;
+        if (isWithinBounds(mx, my, slotX + 18, slotY, 16, 16)) return RelativeSide.RIGHT;
+        if (isWithinBounds(mx, my, slotX + 36, slotY, 16, 16)) return RelativeSide.BACK;
         return null;
     }
 
@@ -123,75 +128,70 @@ public class IoModuleItem extends LogisticsModuleItem {
         drawConfigButton(graphics, slotX + 18, slotY, modes.get(RelativeSide.RIGHT), RelativeSide.RIGHT);
         drawConfigButton(graphics, slotX + 36, slotY, modes.get(RelativeSide.BACK), RelativeSide.BACK);
 
-        // Draw the close button at the 2nd slot to the left of center, 2 rows below the top row
+        // Draw the close button in the slot two positions to the left of center.
         drawCloseButton(graphics, font, slotX - 18, slotY + 18);
+    }
+
+    @Override
+    public List<Component> getCustomOverlayTooltip(double mouseX, double mouseY, int slotX, int slotY,
+                                                   ItemStack stack, MachineFrameworkBlockEntity blockEntity,
+                                                   int slotIndex) {
+        List<Component> baseTooltip = super.getCustomOverlayTooltip(mouseX, mouseY, slotX, slotY,
+                stack, blockEntity, slotIndex);
+        if (!baseTooltip.isEmpty()) return baseTooltip;
+
+        RelativeSide side = getIoClickedRelativeSide(slotX, slotY, mouseX, mouseY);
+        if (side == null) return List.of();
+
+        FaceMode mode = getFaceModes(stack).get(side);
+        return List.of(
+                Component.literal("Machine face: " + side.name()).withStyle(ChatFormatting.AQUA),
+                tooltipValue("Mode: ", mode.name(), mode.getColor()),
+                Component.literal(getFaceModeDescription(mode)).withStyle(ChatFormatting.GRAY),
+                tooltipHint("Click to cycle; Shift-click to cycle backward")
+        );
+    }
+
+    private String getFaceModeDescription(FaceMode mode) {
+        return switch (mode) {
+            case DISABLED -> "No transfer";
+            case INPUT -> "Pulls items/signals";
+            case OUTPUT -> "Pushes items/signals";
+            case OPEN -> "Face accepts insertion/extraction";
+        };
     }
 
     /**
      * Checks if the user clicked the close button on the overlay menu.
-     * The IO Module places the close button at the 2nd slot to the left of center, 2 rows below the top row.
+     * The IO Module places the close button in the slot two positions to the left of center.
      */
     @Override
     public boolean isCloseButton(double mouseX, double mouseY, int slotX, int slotY) {
-        // Check the 2nd slot to the left of center, 2 rows below (offset by +18 from center Y)
-        return mouseX >= slotX - 34 && mouseX <= slotX - 18 && mouseY >= slotY + 2 && mouseY <= slotY + 18;
+        // The close button is drawn in the slot two positions to the left of the module.
+        return isWithinBounds(mouseX, mouseY, slotX - 36, slotY, 16, 16);
     }
 
     /**
-     * Renders an individual relative face configuration button using the base block texture,
-     * the dynamic rainbow glow layer, and the IO status overlay.
+     * Renders an individual relative face configuration button using the machine face textures
+     * and a small color marker for its configured mode.
      */
     private void drawConfigButton(GuiGraphics graphics, int x, int y, FaceMode mode, RelativeSide side) {
-        // Draw dark background shell for the button container
-        graphics.fill(x, y, x + 16, y + 16, 0xFF222222);
-
         Minecraft mc = Minecraft.getInstance();
-        long time = mc.level != null ? mc.level.getGameTime() : System.currentTimeMillis() / 50;
         String sideName = side.name().toLowerCase();
 
-        // Layer 0: Render the actual base block face texture without tint
-        TextureAtlasSprite blockSprite = mc.getTextureAtlas(InventoryMenu.BLOCK_ATLAS)
-                .apply(ResourceLocation.fromNamespaceAndPath(PraeteritumFuturumMod.MODID, "block/machine_framework_" + sideName));
-        graphics.blit(x + 1, y + 1, 0, 14, 14, blockSprite, 1.0f, 1.0f, 1.0f, 1.0f);
+        TextureAtlasSprite frameSprite = mc.getTextureAtlas(InventoryMenu.BLOCK_ATLAS)
+                .apply(ResourceLocation.fromNamespaceAndPath(PraeteritumFuturumMod.MODID, "block/frame"));
+        TextureAtlasSprite faceSprite = mc.getTextureAtlas(InventoryMenu.BLOCK_ATLAS)
+                .apply(ResourceLocation.fromNamespaceAndPath(PraeteritumFuturumMod.MODID, "block/" + sideName));
 
-        // Layer 1: Render the dynamic rainbow glowing texture on top
-        TextureAtlasSprite glowSprite = mc.getTextureAtlas(InventoryMenu.BLOCK_ATLAS)
-                .apply(ResourceLocation.fromNamespaceAndPath(PraeteritumFuturumMod.MODID, "block/machine_framework_" + sideName + "_glow"));
+        graphics.blit(x, y, 0, 16, 16, frameSprite, 1.0f, 1.0f, 1.0f, 1.0f);
+        graphics.blit(x + 3, y + 3, 0, 10, 10, faceSprite, 1.0f, 1.0f, 1.0f, 1.0f);
 
-        float hue = (time * 0.015f) % 1.0f;
-        int rgb = Color.HSBtoRGB(hue, 1.0f, 1.0f);
-        float pulse = (float) (Math.sin(time * 0.1) * 0.3f + 0.7f);
-        int r = (int) (((rgb >> 16) & 0xFF) * pulse);
-        int g = (int) (((rgb >> 8) & 0xFF) * pulse);
-        int b = (int) ((rgb & 0xFF) * pulse);
-
-        float red = r / 255.0f;
-        float green = g / 255.0f;
-        float blue = b / 255.0f;
-
-        graphics.blit(x + 1, y + 1, 0, 14, 14, glowSprite, red, green, blue, 1.0f);
-
-        // Layer 2: Render the IO module status overlay texture if active
         if (mode != null && mode != FaceMode.DISABLED) {
-            TextureAtlasSprite ioSprite = mc.getTextureAtlas(InventoryMenu.BLOCK_ATLAS)
-                    .apply(ResourceLocation.fromNamespaceAndPath(PraeteritumFuturumMod.MODID, "block/machine_framework_io_overlay"));
-
-            int ioColor;
-            if (mode == FaceMode.OPEN) {
-                float cycle = (float) ((Math.sin(time * 0.15f) + 1.0f) * 0.5f);
-                int ioR = (int) (0x33 + (0xCC - 0x33) * cycle);
-                int ioG = (int) (0x66 + (0x33 - 0x66) * cycle);
-                int ioB = (int) (0xCC + (0x33 - 0xCC) * cycle);
-                ioColor = (ioR << 16) | (ioG << 8) | ioB;
-            } else {
-                ioColor = mode.getColor();
-            }
-
-            float ioRed = ((ioColor >> 16) & 0xFF) / 255.0f;
-            float ioGreen = ((ioColor >> 8) & 0xFF) / 255.0f;
-            float ioBlue = (ioColor & 0xFF) / 255.0f;
-
-            graphics.blit(x + 1, y + 1, 0, 14, 14, ioSprite, ioRed, ioGreen, ioBlue, 1.0f);
+            int markerSize = mode == FaceMode.INPUT ? 8 : 6;
+            int markerOffset = (16 - markerSize) / 2;
+            graphics.fill(x + markerOffset, y + markerOffset,
+                    x + markerOffset + markerSize, y + markerOffset + markerSize, mode.getColor());
         }
     }
 
@@ -217,14 +217,6 @@ public class IoModuleItem extends LogisticsModuleItem {
             PacketDistributor.sendToServer(new ServerboundToggleIoFacePacket(slotIndex, clickedSide, blockEntity.getBlockPos(), isShiftHeld()));
         }
     }
-
-    /**
-     * Helper check to see if mouse coordinates are inside a standard 16x16 button area.
-     */
-    private boolean isInside(double mx, double my, int x, int y) {
-        return mx >= x && mx < x + 16 && my >= y && my < y + 16;
-    }
-
 
     /**
      * Provides an item handler for external pipes and automation based on configured relative side modes.
@@ -300,7 +292,7 @@ public class IoModuleItem extends LogisticsModuleItem {
         DISABLED(0, 0xFF555555),
         INPUT(1, 0xFF3366CC),
         OUTPUT(2, 0xFFCC3333),
-        OPEN(3, 0xFF00FFCC);
+        OPEN(3, 0xFF9933CC);
 
         private final int id;
         private final int color;
@@ -314,17 +306,8 @@ public class IoModuleItem extends LogisticsModuleItem {
             return color;
         }
 
-        /**
-         * Returns the correct color for a given time, handling dynamic transitions for OPEN mode.
-         */
+        /** Returns the fixed display color for this mode. */
         public int getDynamicColor(long time) {
-            if (this == OPEN) {
-                float cycle = (float) ((Math.sin(time * 0.15f) + 1.0f) * 0.5f);
-                int ioR = (int) (0x33 + (0xCC - 0x33) * cycle);
-                int ioG = (int) (0x66 + (0x33 - 0x66) * cycle);
-                int ioB = (int) (0xCC + (0x33 - 0xCC) * cycle);
-                return (ioR << 16) | (ioG << 8) | ioB;
-            }
             return color;
         }
 
@@ -359,6 +342,21 @@ public class IoModuleItem extends LogisticsModuleItem {
             }
         }
         updateStackSize(stack, hasConfig);
+    }
+
+    /**
+     * Gets the machine data channel used to expose redstone strength for a relative face.
+     * The channel mapping is kept explicit so enum reordering cannot change the data contract.
+     */
+    public static int getRedstoneSignalChannel(RelativeSide side) {
+        return switch (side) {
+            case FRONT -> 0;
+            case BACK -> 1;
+            case LEFT -> 2;
+            case RIGHT -> 3;
+            case UP -> 4;
+            case DOWN -> 5;
+        };
     }
 
     @Override
@@ -431,7 +429,7 @@ public class IoModuleItem extends LogisticsModuleItem {
                     case DISABLED -> "§8";
                     case INPUT -> "§9";
                     case OUTPUT -> "§c";
-                    case OPEN -> "§a";
+                    case OPEN -> "§5";
                 };
 
                 tooltipComponents.add(Component.literal("§8 • §f" + capitalized + ": " + colorCode + mode.name()));

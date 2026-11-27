@@ -872,7 +872,7 @@ Standard convention uses reverse domain names:
 - `com.example.examplemod` is the placeholder used by the NeoForge template.
 
     PNG
-- You want to change this to reflect your developer identity and your project name—for example, `com.nacho.praeteritum_futurum` (or whatever developer handle and mod ID you choose).
+- You want to change this to reflect your developer identity and your project name—for example, `com.user.praeteritum_futurum` (or whatever developer handle and mod ID you choose).
 
 ### Why Refactoring This Is Important
 
@@ -898,7 +898,7 @@ Replace `com.example.examplemod` with your desired structure:
 com.<yourname>.<yourmodid>
 ```
 
-*(For instance: `com.nacho.praeteritum_futurum`)*
+*(For instance: `com.user.praeteritum_futurum`)*
 
 PNG
 
@@ -1392,7 +1392,7 @@ The failure during the **:processResources** task typically stems from one of tw
 
 ### 1. The OneDrive File Lock (Most Common)
 
-Your project folder sits inside your OneDrive directory (`C:\Users\nacho\OneDrive\Documents\...`). When Gradle tries to generate and process resource files during build time, OneDrive immediately attempts to sync those files at the exact same millisecond. This creates a file access collision, causing the build process to crash with an error in `META-INF`.
+Your project folder sits inside your OneDrive directory (`C:\Users\user\OneDrive\Documents\...`). When Gradle tries to generate and process resource files during build time, OneDrive immediately attempts to sync those files at the exact same millisecond. This creates a file access collision, causing the build process to crash with an error in `META-INF`.
 
 - **The Solution:** Move your entire project folder out of OneDrive and place it directly on your local drive, such as `C:\Projects\PraeteritumFuturum`. Then, reopen the project in IntelliJ and run Gradle sync.
 

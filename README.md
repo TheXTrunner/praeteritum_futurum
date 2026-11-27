@@ -6,11 +6,11 @@
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.21.1-blue.svg)](https://minecraft.net)<br>
 [![Build](https://github.com/TheXTrunner/praeteritum_futurum/actions/workflows/build.yml/badge.svg)](https://github.com/TheXTrunner/praeteritum_futurum/actions/workflows/build.yml)
 
-A modular machine and logistics mod for Minecraft on NeoForge. Build custom automation pipelines by configuring a single Machine Framework block with interchangeable modules; no need for dozens of specialized machines.
+A modular machine, logistics, and redstone mod for Minecraft on NeoForge. Build custom automation pipelines by configuring a single Machine Framework block with interchangeable modules, then add redstone logic to control processing and connect machines.
 
 ## Overview
 
-Praeteritum Futurum lets you create fully customizable automation systems. Place a **Machine Framework** block, then configure each slot with modules to dictate what goes where and how items get processed. Every aspect of item flow is player-defined, from input/output routing to filtering and processing.
+Praeteritum Futurum lets you create customizable automation systems. Place a **Machine Framework** block, then configure each slot with modules to dictate what goes where and how items get processed. Every aspect of item flow is player-defined, from input/output routing to filtering and processing. The Redstone Module adds an editable 2D circuit grid, and selected modules can be controlled by signals from the grid or from configured I/O faces.
 
 The mod also includes exploration elements: discover **Ruined Outpost** structures scattered across the Overworld using the **Anomaly Compass**, and salvage rare materials using specialized tools.
 
@@ -19,15 +19,15 @@ The mod also includes exploration elements: discover **Ruined Outpost** structur
 ### Machine Framework
 - **27-slot modular grid:** configure each slot with a different module
 - **Modular design:** mix and match modules to create custom automation pipelines
-- **Blueprint system:** copy configurations across machines for easy replication
+- **Blueprint system:** copy configured modules across machines; Survival pasting consumes the required clean modules and embedded redstone components, while Creative pasting is free
 - **Public/Private toggle:** anti-grief protection that prevents other players from using or interacting with your machine
-- **Data Cleaning recipe:** place a configured module or blueprint alone in any crafting grid to reset it to a clean state
+- **Data Cleaning recipe:** clears a module's or blueprint's saved configuration; components inside a Redstone Module return to your inventory, and any overflow drops nearby
 
 ### Modules
 | Module | Description |
 |--------|-------------|
 | **Inventory Module** | Internal item storage within the framework |
-| **IO Module** | Directional input/output routing for adjacent slots |
+| **IO Module** | Directional item routing and world redstone signal input/output |
 | **Filter Module** | Whitelist/blacklist item filtering with ghost item containers |
 | **Smelting Module** | Furnace-style smelting with fuel support |
 | **Stonecutter Module** | Instant stonecutter recipes |
@@ -40,6 +40,13 @@ The mod also includes exploration elements: discover **Ruined Outpost** structur
 | **Smoker Module** | Faster food cooking (100-tick cook time) |
 | **Jukebox Module** | Play music discs with playlist support (queue and shuffle modes) |
 | **Ejection Module** | Eject items with dispenser or dropper behavior |
+| **Redstone Module** | Build 2D redstone circuits, connect adjacent redstone modules, and exchange signals through configured I/O faces |
+
+### Redstone Control
+- Build circuits from dust, repeaters, comparators, torches, levers, buttons, observers, redstone blocks, Scrap Block wall cells, and a configurable 0-15 Signal Source
+- Configure processing modules and the Ejection Module to ignore signals, run while powered, or run while unpowered; the Ejection Module also supports one ejection pass per rising signal edge
+- Use I/O face modes to read world signals or expose circuit output as weak redstone power; adjacent redstone modules in the same machine share aligned circuit borders
+- The grid is a 2D, vanilla-inspired system. Vertical dust paths and some vanilla update details are not modeled
 
 ### Exploration
 - **Ruined Outpost structures** spawning in the Overworld
@@ -47,6 +54,7 @@ The mod also includes exploration elements: discover **Ruined Outpost** structur
 - **Salvage Cutter** for mining salvage blocks with increased speed
 - **Yool wrench** for rotating directional blocks and hoppers (sneak + right-click on a Machine Framework to safely break and drop it)
 - **Salvage Scrap** and **Refined Scrap** crafting materials
+- **Scrap Block** for compacting 9 Salvage Scrap into one block, reversible back into 9
 - **Strange Artifact** dropped from advanced salvage blocks
 
 ### Miscellaneous
@@ -74,7 +82,7 @@ The mod also includes exploration elements: discover **Ruined Outpost** structur
 
 ## Documentation
 
-The [documentation index](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/docs/README.md) is the entry point for project documentation. Common paths:
+The [documentation index](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/docs/README.md) is the entry point for project documentation. Players can start with the [Redstone Module guide](https://github.com/TheXTrunner/praeteritum_futurum/wiki/Redstone); the [playtest guide](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/docs/REDSTONE-TESTS.md) explains how to check edge cases and report results. Common developer paths:
 
 - To develop the project, start with [CONTRIBUTING.md](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/CONTRIBUTING.md); it links to the [architecture overview](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/docs/ARCHITECTURE.md) and focused guides.
 - To create an add-on module, use the [Module API Guide](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/docs/MODULE-API-GUIDE.md).

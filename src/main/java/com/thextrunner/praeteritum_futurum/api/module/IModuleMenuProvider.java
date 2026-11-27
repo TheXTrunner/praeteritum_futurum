@@ -2,6 +2,7 @@ package com.thextrunner.praeteritum_futurum.api.module;
 
 import com.thextrunner.praeteritum_futurum.screen.GenericModuleConfigMenu;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ClickType;
@@ -17,7 +18,7 @@ import java.util.function.Consumer;
  * input/output slots). This allows each module type to define its own slot layout
  * without modifying the screen code.
  * <p>
- * Implementing classes: FilterModuleItem, ProcessingModuleItem (and subclasses).
+ * Implementing classes: FilterModuleItem and RedstoneModuleItem.
  */
 public interface IModuleMenuProvider {
 
@@ -33,6 +34,17 @@ public interface IModuleMenuProvider {
      * @param slotAdder       A consumer function used to register new slots to the menu
      */
     void addModuleSlots(Inventory playerInventory, ItemStack moduleStack, BlockPos blockPos, Consumer<Slot> slotAdder);
+
+    /**
+     * Persists module-specific state from the menu when it closes.
+     * <p>
+     * Providers that save changes immediately can keep the default no-op implementation.
+     *
+     * @param menu the closing module configuration menu
+     * @param registries registry access used to serialize item stacks
+     */
+    default void saveMenuData(GenericModuleConfigMenu menu, HolderLookup.Provider registries) {
+    }
 
     /**
      * Handles click events on the module's custom slots.

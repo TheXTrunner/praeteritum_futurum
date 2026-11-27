@@ -16,6 +16,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.dispenser.BlockSource;
 import net.minecraft.core.dispenser.DispenseItemBehavior;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -52,6 +53,10 @@ import java.util.Map;
 public class EjectionModuleItem extends LogisticsModuleItem {
 
     private static final String NBT_KEY = "EjectionModes";
+    private static final String REDSTONE_PULSE_STATE_KEY = "EjectionRedstonePulse";
+    private static final String LAST_SIGNAL_POWERED_KEY = "LastSignalPowered";
+    private static final String PENDING_PULSES_KEY = "PendingPulses";
+    private static final int MAX_PENDING_PULSES = 64;
 
     /**
      * Mode for directions adjacent to an Inventory module.
@@ -138,6 +143,68 @@ public class EjectionModuleItem extends LogisticsModuleItem {
     }
 
     @Override
+    public boolean supportsRedstoneControl() {
+        return true;
+    }
+
+    @Override
+    public RedstoneControlMode[] getSupportedRedstoneControlModes() {
+        return new RedstoneControlMode[]{
+                RedstoneControlMode.IGNORE,
+                RedstoneControlMode.HIGH,
+                RedstoneControlMode.LOW,
+                RedstoneControlMode.PULSE
+        };
+    }
+
+    @Override
+    public void setRedstoneControlMode(ItemStack stack, RedstoneControlMode mode) {
+        super.setRedstoneControlMode(stack, mode);
+        if (mode != RedstoneControlMode.PULSE && getRedstoneControlMode(stack) == mode) {
+            modifyCustomData(stack, REDSTONE_PULSE_STATE_KEY, tag -> tag.putInt(PENDING_PULSES_KEY, 0));
+        }
+    }
+
+    @Override
+    public boolean isRedstoneControlSatisfied(ItemStack stack, MachineFrameworkBlockEntity blockEntity,
+                                              int slotIndex) {
+        int signalStrength = getRedstoneControlSignal(blockEntity, slotIndex);
+        boolean signalPowered = signalStrength > 0;
+        RedstoneControlMode mode = getRedstoneControlMode(stack);
+        CompoundTag pulseState = getCustomTag(stack, REDSTONE_PULSE_STATE_KEY);
+        boolean signalStateInitialized = pulseState.contains(LAST_SIGNAL_POWERED_KEY);
+        boolean lastSignalPowered = pulseState.getBoolean(LAST_SIGNAL_POWERED_KEY);
+        int pendingPulses = pulseState.getInt(PENDING_PULSES_KEY);
+
+        if (!signalStateInitialized || signalPowered != lastSignalPowered) {
+            boolean risingEdge = signalStateInitialized && signalPowered && !lastSignalPowered;
+            int updatedPendingPulses = risingEdge && mode == RedstoneControlMode.PULSE
+                    ? Math.min(MAX_PENDING_PULSES, pendingPulses + 1)
+                    : pendingPulses;
+            modifyCustomData(stack, REDSTONE_PULSE_STATE_KEY, tag -> {
+                tag.putBoolean(LAST_SIGNAL_POWERED_KEY, signalPowered);
+                tag.putInt(PENDING_PULSES_KEY, updatedPendingPulses);
+            });
+            pendingPulses = updatedPendingPulses;
+        }
+
+        if (mode == RedstoneControlMode.PULSE) {
+            return pendingPulses > 0;
+        }
+        return mode.allowsSignal(signalStrength);
+    }
+
+    private boolean consumePendingPulse(ItemStack stack) {
+        CompoundTag pulseState = getCustomTag(stack, REDSTONE_PULSE_STATE_KEY);
+        int pendingPulses = pulseState.getInt(PENDING_PULSES_KEY);
+        if (pendingPulses <= 0) return false;
+
+        modifyCustomData(stack, REDSTONE_PULSE_STATE_KEY,
+                tag -> tag.putInt(PENDING_PULSES_KEY, pendingPulses - 1));
+        return true;
+    }
+
+    @Override
     public void renderModuleOverlay(GuiGraphics graphics, Slot slot, ItemStack stack, MachineFrameworkBlockEntity blockEntity) {
         graphics.blit(
                 ResourceLocation.fromNamespaceAndPath(PraeteritumFuturumMod.MODID, "textures/gui/container/ejection_module_overlay.png"),
@@ -150,12 +217,12 @@ public class EjectionModuleItem extends LogisticsModuleItem {
 
     @Override
     public boolean isInsideOverlay(double mouseX, double mouseY, int slotX, int slotY) {
-        boolean center = mouseX >= slotX && mouseX <= slotX + 16 && mouseY >= slotY && mouseY <= slotY + 16;
-        boolean up = mouseX >= slotX && mouseX <= slotX + 16 && mouseY >= slotY - 18 && mouseY <= slotY - 2;
-        boolean down = mouseX >= slotX && mouseX <= slotX + 16 && mouseY >= slotY + 18 && mouseY <= slotY + 38;
-        boolean west = mouseX >= slotX - 18 && mouseX <= slotX - 2 && mouseY >= slotY && mouseY <= slotY + 16;
-        boolean east = mouseX >= slotX + 18 && mouseX <= slotX + 34 && mouseY >= slotY && mouseY <= slotY + 16;
-        boolean close = mouseX >= slotX - 18 && mouseX <= slotX - 2 && mouseY >= slotY - 18 && mouseY <= slotY - 2;
+        boolean center = isWithinBounds(mouseX, mouseY, slotX, slotY, 16, 16);
+        boolean up = isWithinBounds(mouseX, mouseY, slotX, slotY - 18, 16, 16);
+        boolean down = isWithinBounds(mouseX, mouseY, slotX, slotY + 18, 16, 20);
+        boolean west = isWithinBounds(mouseX, mouseY, slotX - 18, slotY, 16, 16);
+        boolean east = isWithinBounds(mouseX, mouseY, slotX + 18, slotY, 16, 16);
+        boolean close = isWithinBounds(mouseX, mouseY, slotX - 18, slotY - 18, 16, 16);
         return center || up || down || west || east || close;
     }
 
@@ -185,13 +252,15 @@ public class EjectionModuleItem extends LogisticsModuleItem {
 
     @Override
     public void resetDirection(ItemStack stack, GridDirection dir, MachineFrameworkBlockEntity blockEntity, int slotIndex) {
-        setInventoryMode(stack, dir, InventoryMode.DISABLED);
-        setIoMode(stack, dir, IoMode.DISABLED);
+        clearDirectionModes(stack, dir);
     }
 
     @Override
     public void resetDirectionMode(ItemStack stack, GridDirection dir, MachineFrameworkBlockEntity blockEntity, int slotIndex) {
-        // Server-side reset — reset both InventoryMode and IoMode to DISABLED
+        clearDirectionModes(stack, dir);
+    }
+
+    private void clearDirectionModes(ItemStack stack, GridDirection dir) {
         setInventoryMode(stack, dir, InventoryMode.DISABLED);
         setIoMode(stack, dir, IoMode.DISABLED);
     }
@@ -270,6 +339,50 @@ public class EjectionModuleItem extends LogisticsModuleItem {
         drawDarkHatchLid(graphics, slotX, slotY);
 
         drawCloseButton(graphics, font, slotX, slotY);
+    }
+
+    @Override
+    public List<Component> getCustomOverlayTooltip(double mouseX, double mouseY, int slotX, int slotY,
+                                                   ItemStack stack, MachineFrameworkBlockEntity blockEntity,
+                                                   int slotIndex) {
+        List<Component> baseTooltip = super.getCustomOverlayTooltip(mouseX, mouseY, slotX, slotY,
+                stack, blockEntity, slotIndex);
+        if (!baseTooltip.isEmpty()) return baseTooltip;
+
+        GridDirection direction = getClickedDirection(slotX, slotY, mouseX, mouseY, slotIndex);
+        if (direction == null) return List.of();
+
+        AdjacentModuleType adjacentType = getAdjacentModuleType(blockEntity, slotIndex, direction);
+        List<Component> lines = new ArrayList<>();
+        lines.add(Component.literal(direction.name() + " connection").withStyle(ChatFormatting.AQUA));
+
+        if (adjacentType == AdjacentModuleType.INVENTORY) {
+            InventoryMode mode = getInventoryMode(stack, direction);
+            lines.add(tooltipValue("Inventory mode: ", mode.name(), mode.getColor()));
+            lines.add(Component.literal(getInventoryModeDescription(mode)).withStyle(ChatFormatting.GRAY));
+            lines.add(tooltipHint("Click to cycle; Shift-click to cycle backward"));
+        } else if (adjacentType == AdjacentModuleType.IO) {
+            IoMode mode = getIoMode(stack, direction);
+            lines.add(tooltipValue("I/O link: ", mode.name(), mode.getColor()));
+            lines.add(Component.literal(mode == IoMode.ENABLED
+                    ? "Marks this adjacent I/O link as enabled."
+                    : "This adjacent I/O link is inactive.").withStyle(ChatFormatting.GRAY));
+            lines.add(Component.literal("No separate direction-specific ejection action is currently applied to this setting.")
+                    .withStyle(ChatFormatting.DARK_GRAY));
+            lines.add(tooltipHint("Click to cycle; Shift-click to cycle backward"));
+        } else {
+            lines.add(Component.literal("No compatible adjacent module").withStyle(ChatFormatting.RED));
+        }
+        return lines;
+    }
+
+    private String getInventoryModeDescription(InventoryMode mode) {
+        return switch (mode) {
+            case DISABLED -> "No items are taken from this inventory for ejection.";
+            case DISPENSE -> "Use dispenser behavior to eject items through an enabled I/O output face.";
+            case DROP -> "Drop items as entities through an enabled I/O output face.";
+            case CATCH -> "Catch returned item entities for routing back into an inventory.";
+        };
     }
 
     private void drawEjectionButton(GuiGraphics graphics, Font font, int x, int y, int color, String text) {
@@ -392,6 +505,10 @@ public class EjectionModuleItem extends LogisticsModuleItem {
         // Find all adjacent Inventory Modules
         List<Integer> inventorySlots = findAdjacentInventoryModules(blockEntity, slotIndex);
         if (inventorySlots.isEmpty()) {
+            return;
+        }
+
+        if (getRedstoneControlMode(stack) == RedstoneControlMode.PULSE && !consumePendingPulse(stack)) {
             return;
         }
 

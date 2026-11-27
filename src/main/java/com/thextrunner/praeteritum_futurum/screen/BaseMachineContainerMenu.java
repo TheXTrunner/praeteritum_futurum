@@ -8,7 +8,15 @@ import net.minecraft.world.inventory.MenuType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Base class for all machine-related container menus.
+ * <p>
+ * Provides common functionality shared by MachineConfigMenu, MachineInfoMenu,
+ * GenericModuleConfigMenu, and their subclasses. Stores the block position of
+ * the machine and provides helper methods for slot management and item transfer.
+ */
 public abstract class BaseMachineContainerMenu extends AbstractContainerMenu {
+    /** The block position of the machine framework this menu is for. */
     protected final BlockPos blockPos;
 
     protected BaseMachineContainerMenu(@Nullable MenuType<?> menuType, int containerId, BlockPos blockPos) {

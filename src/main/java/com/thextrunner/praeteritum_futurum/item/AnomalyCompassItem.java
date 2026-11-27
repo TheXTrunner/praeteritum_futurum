@@ -21,12 +21,35 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+/**
+ * Custom compass item that detects and points toward nearby mod structures.
+ * <p>
+ * When the player right-clicks, the compass searches for structures tagged with
+ * {@link ModTags.Structures#RUINED_OUTPOST} in four directions from the player's position.
+ * It stores up to 3 nearby structure positions in its NBT data and locks onto the nearest one.
+ * <p>
+ * The compass needle rotates toward the locked target using the {@link #calculateAngle}
+ * method, which is called by the item model's "angle" property override registered
+ * in {@link com.thextrunner.praeteritum_futurum.client.ClientModSetup}.
+ * <p>
+ * Shift-clicking cycles through the stored targets to switch between nearby structures.
+ */
 public class AnomalyCompassItem extends Item {
 
+    /**
+     * Constructs the Anomaly Compass with the given properties.
+     *
+     * @param properties The item properties (typically stacksTo(1))
+     */
     public AnomalyCompassItem(Properties properties) {
         super(properties);
     }
 
+    /**
+     * Called when the player uses (right-clicks) the compass.
+     * Searches for nearby structures and stores their positions in the item's NBT data.
+     * If shift is held, cycles to the next stored target.
+     */
     @NotNull
     @Override
     public InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {

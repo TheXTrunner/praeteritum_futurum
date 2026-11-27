@@ -1,5 +1,6 @@
 package com.thextrunner.praeteritum_futurum.item.custom;
 
+import com.thextrunner.praeteritum_futurum.api.module.ProcessingMode;
 import com.thextrunner.praeteritum_futurum.PraeteritumFuturumMod;
 import com.thextrunner.praeteritum_futurum.block.GridDirection;
 import com.thextrunner.praeteritum_futurum.block.entity.MachineFrameworkBlockEntity;
@@ -17,11 +18,52 @@ import net.neoforged.neoforge.registries.datamaps.builtin.NeoForgeDataMaps;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Composter Module — adds composter processing capability to the Machine Framework.
+ * <p>
+ * Extends ProcessingModuleItem to provide composter-style processing: takes compostable
+ * items and converts them to bone meal after reaching 7 compost levels. Each compostable
+ * item has a chance to increase the compost level based on its Compostables data map entry.
+ * Supports up to 3 input slots and 1 output slot.
+ * <p>
+ * Unlike other processing modules, it requires no fuel and uses a level-based progress
+ * system (0-7) instead of a tick-based progress bar.
+ */
 public class ComposterModuleItem extends ProcessingModuleItem {
+    public enum SlotMode implements ProcessingMode {
+        DISABLED("D", 0xFF555555, "No items are transferred through this side.", Role.DISABLED),
+        INPUT("I", 0xFF3366CC, "Pull items from the adjacent inventory for processing.", Role.INPUT),
+        OUTPUT("O", 0xFFCC3333, "Send processed items to the adjacent inventory.", Role.OUTPUT);
 
+        private final String labelChar;
+        private final int color;
+        private final String description;
+        private final Role role;
+
+        SlotMode(String labelChar, int color, String description, Role role) {
+            this.labelChar = labelChar;
+            this.color = color;
+            this.description = description;
+            this.role = role;
+        }
+
+        @Override public String getLabelChar() { return labelChar; }
+        @Override public int getColor() { return color; }
+        @Override public String getDescription() { return description; }
+        @Override public Role getRole() { return role; }
+    }
+
+    /** NBT key for storing the module's slot mode configuration. */
     private static final String NBT_KEY = "ComposterModes";
+
+    /** Maximum compost level before producing bone meal (vanilla composter behavior). */
     private static final int MAX_COMPOST_LEVEL = 7;
 
+    /**
+     * Constructs the Composter Module with the given properties.
+     *
+     * @param properties The item properties
+     */
     public ComposterModuleItem(Properties properties) {
         super(properties);
     }
@@ -61,7 +103,7 @@ public class ComposterModuleItem extends ProcessingModuleItem {
 
     @Override
     protected void processModule(Level level, BlockPos pos, MachineFrameworkBlockEntity blockEntity, int slotIndex, ItemStack stack) {
-        Map<GridDirection, SlotMode> modes = getSlotModes(stack, NBT_KEY);
+        Map<GridDirection, ProcessingMode> modes = getSlotModes(stack, NBT_KEY);
         ResolvedIoSlots resolved = ProcessingModuleItem.resolveAdjacentIoSlots(blockEntity, slotIndex, modes);
 
         List<Integer> inputSlots = resolved.inputs();

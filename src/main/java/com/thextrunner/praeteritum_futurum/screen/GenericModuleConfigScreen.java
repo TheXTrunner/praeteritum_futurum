@@ -6,6 +6,7 @@ import com.thextrunner.praeteritum_futurum.network.ServerboundToggleFilterModePa
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
@@ -21,6 +22,8 @@ import org.jetbrains.annotations.NotNull;
 public class GenericModuleConfigScreen extends AbstractContainerScreen<GenericModuleConfigMenu> {
     private static final ResourceLocation SHULKER_GUI_TEXTURE =
             ResourceLocation.withDefaultNamespace("textures/gui/container/shulker_box.png");
+    private Button backButton;
+    private Button filterModeButton;
 
     public GenericModuleConfigScreen(GenericModuleConfigMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -33,7 +36,7 @@ public class GenericModuleConfigScreen extends AbstractContainerScreen<GenericMo
     protected void init() {
         super.init();
 
-        this.addRenderableWidget(Button.builder(
+        backButton = Button.builder(
                         Component.literal("<- Back"), button -> {
                             if (this.minecraft != null && this.minecraft.player != null) {
                                 this.minecraft.player.playNotifySound(
@@ -49,13 +52,14 @@ public class GenericModuleConfigScreen extends AbstractContainerScreen<GenericMo
                             );
                         })
                 .bounds(this.leftPos + 6, this.topPos - 22, 50, 20)
-                .build());
+                .build();
+        this.addRenderableWidget(backButton);
 
         // Client-side check keeps common interfaces clean and safe for third-party modules
         if (menu.getModuleStack().getItem() instanceof FilterModuleItem) {
             FilterModuleItem.FilterMode currentMode = FilterModuleItem.getFilterMode(menu.getModuleStack());
 
-            this.addRenderableWidget(Button.builder(
+            filterModeButton = Button.builder(
                             Component.literal("Mode: " + currentMode.getLabel()), button -> {
                                 if (this.minecraft != null && this.minecraft.player != null) {
                                     this.minecraft.player.playNotifySound(
@@ -77,7 +81,8 @@ public class GenericModuleConfigScreen extends AbstractContainerScreen<GenericMo
                                 button.setMessage(Component.literal("Mode: " + nextMode.getLabel()));
                             })
                     .bounds(this.leftPos + 60, this.topPos - 22, 110, 20)
-                    .build());
+                    .build();
+            this.addRenderableWidget(filterModeButton);
         }
     }
 
@@ -86,6 +91,27 @@ public class GenericModuleConfigScreen extends AbstractContainerScreen<GenericMo
         renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         renderTooltip(guiGraphics, mouseX, mouseY);
+
+        if (backButton != null && backButton.isMouseOver(mouseX, mouseY)) {
+            guiGraphics.renderComponentTooltip(this.font, java.util.List.of(
+                    Component.literal("Return to machine").withStyle(ChatFormatting.AQUA),
+                    Component.literal("Close this module's configuration and reopen the machine.")
+                            .withStyle(ChatFormatting.GRAY)
+            ), mouseX, mouseY);
+        } else if (filterModeButton != null && filterModeButton.isMouseOver(mouseX, mouseY)) {
+            FilterModuleItem.FilterMode mode = FilterModuleItem.getFilterMode(menu.getModuleStack());
+            ChatFormatting color = mode == FilterModuleItem.FilterMode.WHITELIST
+                    ? ChatFormatting.GREEN : ChatFormatting.RED;
+            var explanation = mode == FilterModuleItem.FilterMode.WHITELIST
+                    ? Component.literal("Only listed items pass the filter.")
+                    : Component.literal("Listed items are blocked; other items pass.");
+            guiGraphics.renderComponentTooltip(this.font, java.util.List.of(
+                    Component.literal("Filter mode").withStyle(ChatFormatting.AQUA),
+                    Component.literal(mode.getLabel()).withStyle(color),
+                    explanation.withStyle(ChatFormatting.GRAY),
+                    Component.literal("Click to switch modes").withStyle(ChatFormatting.GOLD)
+            ), mouseX, mouseY);
+        }
     }
 
     @Override

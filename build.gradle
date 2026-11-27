@@ -191,13 +191,18 @@ idea {
 // Extract the current version section from CHANGELOG.md for publish platforms
 def extractChangelogSection() {
     def changelogFile = new File('CHANGELOG.md')
+    if (!changelogFile.isFile()) {
+        throw new GradleException("CHANGELOG.md was not found; refusing to publish without release notes.")
+    }
+
     def lines = changelogFile.readLines()
     def version = project.version.toString()
     def startLine = -1
+    def versionHeader = ~/^## \[${java.util.regex.Pattern.quote(version)}\](?:\s+-\s+.*)?\s*$/
 
-    // Find the start: prefer the exact version section (e.g., "## [0.1.3]"), fall back to "## [Unreleased]"
+    // Prefer the exact version section, allowing an optional date after the version.
     for (int i = 0; i < lines.size(); i++) {
-        if (lines[i] ==~ /## \[.*${version}.*\]/) {
+        if (lines[i] ==~ versionHeader) {
             startLine = i
             break
         }
@@ -213,8 +218,7 @@ def extractChangelogSection() {
     }
 
     if (startLine < 0) {
-        // Fallback: return entire file if no matching section is found
-        return changelogFile.text
+        throw new GradleException("No CHANGELOG.md section found for version '${version}' or [Unreleased]; refusing to publish.")
     }
 
     // Find the end of the section (next "## [" header)
@@ -231,11 +235,16 @@ def extractChangelogSection() {
     while (!content.isEmpty() && content[0].trim().isEmpty()) {
         content = content.subList(1, content.size())
     }
-    return content.join('\n')
+    def sectionBody = content.join('\n').trim()
+    if (sectionBody.isEmpty()) {
+        throw new GradleException("CHANGELOG.md section for '${version}' is empty; refusing to publish.")
+    }
+    return sectionBody
 }
 
 publishMods {
     file = tasks.named("jar").flatMap { it.archiveFile }
+    displayName = "${mod_id}-${project.version}"
     changelog = extractChangelogSection()
     type = BETA
 
@@ -254,4 +263,46 @@ publishMods {
         minecraftVersions.add("1.21.1")
         modLoaders.add("neoforge")
     }
+}
+
+// ======================
+// Clean up old .log.gz files from run/logs/ and run-gametest/logs/
+// Keeps the 10 most recent .log.gz files, deletes the rest
+// ======================
+def runLogsDirs = [file('run/logs'), file('run-gametest/logs')]
+
+tasks.register('cleanRunLogs') {
+    doLast {
+        runLogsDirs.each { logsDir ->
+            if (!logsDir.exists()) return
+
+            // All .log.gz files matching the rolling log pattern (e.g., debug-1.log.gz, 2026-11-20-1.log.gz)
+            def allLogGz = logsDir.listFiles({ f -> f.name.matches('.*-\\d+\\.log\\.gz') } as java.io.FileFilter)
+            if (allLogGz == null || allLogGz.length == 0) return
+
+            // Sort by last modified, newest first
+            allLogGz.sort { a, b -> b.lastModified() <=> a.lastModified() }
+
+            // Keep the 10 most recent in this directory, delete the rest
+            def keepCount = 10
+            if (allLogGz.length > keepCount) {
+                allLogGz[keepCount..-1].each { fileToDelete ->
+                    fileToDelete.delete()
+                    println "Deleted old log: ${fileToDelete.name}"
+                }
+                println "Cleaned up ${allLogGz.length - keepCount} old .log.gz files, kept ${keepCount} most recent in ${logsDir}."
+            }
+        }
+    }
+}
+
+// Run cleanup after each client/server/gametest run
+tasks.named('runClient').configure {
+    finalizedBy 'cleanRunLogs'
+}
+tasks.named('runServer').configure {
+    finalizedBy 'cleanRunLogs'
+}
+tasks.named('runGameTestServer').configure {
+    finalizedBy 'cleanRunLogs'
 }

@@ -122,6 +122,25 @@ public class Config {
                 .translation("text.autoconfig.praeteritum_futurum.option.machine.enableDebugLogging")
                 .define("enableDebugLogging", false);
 
+        /**
+         * Tick interval for Redstone Module circuit evaluation.
+         * <p>
+         * Controls how often the Redstone Module evaluates its circuit logic.
+         * A value of 1 means every tick. The default of 5 means the circuit
+         * is evaluated every 5 ticks (4 times per second).
+         * <p>
+         * Higher values reduce server load but slow down redstone response time.
+         */
+        public static final ModConfigSpec.IntValue REDSTONE_EVALUATION_TICK_RATE = BUILDER
+                .comment(
+                        "How many ticks between Redstone Module circuit evaluations",
+                        "Higher values = slower redstone response but less server load",
+                        "Default: 5 (evaluates every 5 ticks, 4 times per second)",
+                        "Range: 1-100"
+                )
+                .translation("text.autoconfig.praeteritum_futurum.option.machine.redstoneEvaluationTickRate")
+                .defineInRange("redstoneEvaluationTickRate", 5, 1, 100);
+
         static {
             BUILDER.pop();
         }
@@ -222,10 +241,8 @@ public class Config {
          * - 0.5 = half as many structures (spacing 68)
          * - 0.0 = effectively disables structure spawning (spacing becomes very large)
          * <p>
-         * Note: This config value is defined but not yet wired to runtime code.
-         * NeoForge 1.21.1 requires a custom StructurePlacement type registered via
-         * the datapack registry system to modify structure spacing at load time.
-         * See README.md todo list for implementation details.
+         * The custom structure placement reads this multiplier when calculating
+         * effective spacing.
          */
         public static final ModConfigSpec.DoubleValue STRUCTURE_SPAWN_RATE = BUILDER
                 .comment(
@@ -255,6 +272,7 @@ public class Config {
         ignore = Machine.IO_TRANSFER_TICK_RATE;
         ignore = Machine.ANVIL_MAX_REPAIR_COST;
         ignore = Machine.ENABLE_DEBUG_LOGGING;
+        ignore = Machine.REDSTONE_EVALUATION_TICK_RATE;
         ignore = Loot.ENABLE_HUSK_SAND_DROP;
         ignore = Loot.HUSK_SAND_DROP_CHANCE;
         ignore = Loot.HUSK_SAND_DROP_MIN;
@@ -273,122 +291,76 @@ public class Config {
     }
 
     // ========================================================================
-    // Safe accessors — these return the default value if called before the spec
-    // is built (e.g., during early world loading before mod construction completes).
-    // This prevents NullPointerException crashes when block entities tick early.
+    // Accessors keep callers independent of the nested config categories.
     // ========================================================================
 
     /**
-     * Safely gets the IO transfer tick rate config value.
-     * Returns the config default value (8 ticks) if the config spec hasn't been built yet.
+     * Gets the configured I/O transfer tick rate.
      */
     public static int getIoTransferTickRate() {
-        try {
-            return Machine.IO_TRANSFER_TICK_RATE.get();
-        } catch (NullPointerException e) {
-            // Spec not built yet — match the configured default of 8 ticks
-            return 8;
-        }
+        return Machine.IO_TRANSFER_TICK_RATE.get();
     }
 
     /**
-     * Safely gets the Yool rotation enabled flag.
-     * Returns the default value (true) if the config spec hasn't been built yet.
+     * Gets whether Yool rotation is enabled.
      */
     public static boolean isYoolRotationEnabled() {
-        try {
-            return General.ENABLE_YOOL_ROTATION.get();
-        } catch (NullPointerException e) {
-            // Spec not built yet — return the default value
-            return true;
-        }
+        return General.ENABLE_YOOL_ROTATION.get();
     }
 
     /**
-     * Safely gets the structure spawn rate multiplier.
-     * Returns the default value (1.0) if the config spec hasn't been built yet.
-     * Used by ConfigDrivenRandomSpreadPlacement to adjust structure spacing at runtime.
+     * Gets the structure spawn rate multiplier used by the custom placement type.
      */
     public static double getStructureSpawnRate() {
-        try {
-            return WorldGen.STRUCTURE_SPAWN_RATE.get();
-        } catch (NullPointerException e) {
-            // Spec not built yet — return the default value
-            return 1.0;
-        }
+        return WorldGen.STRUCTURE_SPAWN_RATE.get();
     }
 
     /**
-     * Safely gets the Anvil module max repair cost config value.
-     * Returns the default value (0 = no limit) if the config spec hasn't been built yet.
+     * Gets the configured Anvil module maximum repair cost.
      */
     public static int getAnvilMaxRepairCost() {
-        try {
-            return Machine.ANVIL_MAX_REPAIR_COST.get();
-        } catch (NullPointerException e) {
-            // Spec not built yet — return the default value (no limit)
-            return 0;
-        }
+        return Machine.ANVIL_MAX_REPAIR_COST.get();
     }
 
     /**
-     * Safely gets the debug logging enabled flag.
-     * Returns the default value (false) if the config spec hasn't been built yet.
+     * Gets whether debug logging is enabled.
      */
     public static boolean isDebugLoggingEnabled() {
-        try {
-            return Machine.ENABLE_DEBUG_LOGGING.get();
-        } catch (NullPointerException e) {
-            // Spec not built yet — return the default value (disabled)
-            return false;
-        }
+        return Machine.ENABLE_DEBUG_LOGGING.get();
     }
 
     /**
-     * Safely gets the Husk sand drop enabled flag.
-     * Returns the default value (true) if the config spec hasn't been built yet.
+     * Gets whether Husk sand drops are enabled.
      */
     public static boolean isHuskSandDropEnabled() {
-        try {
-            return Loot.ENABLE_HUSK_SAND_DROP.get();
-        } catch (NullPointerException e) {
-            return true;
-        }
+        return Loot.ENABLE_HUSK_SAND_DROP.get();
     }
 
     /**
-     * Safely gets the Husk sand drop chance.
-     * Returns the default value (0.025) if the config spec hasn't been built yet.
+     * Gets the configured Husk sand drop chance.
      */
     public static double getHuskSandDropChance() {
-        try {
-            return Loot.HUSK_SAND_DROP_CHANCE.get();
-        } catch (NullPointerException e) {
-            return 0.025;
-        }
+        return Loot.HUSK_SAND_DROP_CHANCE.get();
     }
 
     /**
-     * Safely gets the Husk sand drop minimum count.
-     * Returns the default value (0) if the config spec hasn't been built yet.
+     * Gets the minimum number of sand items Husk can drop.
      */
     public static int getHuskSandDropMin() {
-        try {
-            return Loot.HUSK_SAND_DROP_MIN.get();
-        } catch (NullPointerException e) {
-            return 0;
-        }
+        return Loot.HUSK_SAND_DROP_MIN.get();
     }
 
     /**
-     * Safely gets the Husk sand drop maximum count.
-     * Returns the default value (1) if the config spec hasn't been built yet.
+     * Gets the maximum number of sand items Husk can drop.
      */
     public static int getHuskSandDropMax() {
-        try {
-            return Loot.HUSK_SAND_DROP_MAX.get();
-        } catch (NullPointerException e) {
-            return 1;
-        }
+        return Loot.HUSK_SAND_DROP_MAX.get();
+    }
+
+    /**
+     * Gets the Redstone Module evaluation tick rate.
+     */
+    public static int getRedstoneEvaluationTickRate() {
+        return Machine.REDSTONE_EVALUATION_TICK_RATE.get();
     }
 }

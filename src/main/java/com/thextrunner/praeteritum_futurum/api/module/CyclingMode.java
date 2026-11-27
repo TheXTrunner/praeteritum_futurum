@@ -25,8 +25,9 @@ package com.thextrunner.praeteritum_futurum.api.module;
  * }
  * }</pre>
  * <p>
- * All built-in mode enums implement this: {@code SlotMode}, {@code JukeboxMode},
- * {@code InventoryMode}, {@code IoMode}, and {@code FaceMode}.
+ * Built-in jukebox, inventory, and IO mode enums implement this. Processing modules
+ * instead define their supported modes locally and expose them through
+ * {@link ProcessingMode}.
  * </p>
  *
  * @param <T> The enum type implementing this interface

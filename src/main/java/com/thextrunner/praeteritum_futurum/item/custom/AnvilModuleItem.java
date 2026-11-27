@@ -1,5 +1,6 @@
 package com.thextrunner.praeteritum_futurum.item.custom;
 
+import com.thextrunner.praeteritum_futurum.api.module.ProcessingMode;
 import com.thextrunner.praeteritum_futurum.Config;
 import com.thextrunner.praeteritum_futurum.PraeteritumFuturumMod;
 import com.thextrunner.praeteritum_futurum.api.module.IConfigurableModule;
@@ -10,6 +11,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
@@ -32,6 +34,29 @@ import java.util.List;
 import java.util.Map;
 
 public class AnvilModuleItem extends ProcessingModuleItem implements IConfigurableModule, ITextInputModule {
+
+    public enum SlotMode implements ProcessingMode {
+        DISABLED("D", 0xFF555555, "No items are transferred through this side.", Role.DISABLED),
+        INPUT("I", 0xFF3366CC, "Pull items from the adjacent inventory for processing.", Role.INPUT),
+        OUTPUT("O", 0xFFCC3333, "Send processed items to the adjacent inventory.", Role.OUTPUT);
+
+        private final String labelChar;
+        private final int color;
+        private final String description;
+        private final Role role;
+
+        SlotMode(String labelChar, int color, String description, Role role) {
+            this.labelChar = labelChar;
+            this.color = color;
+            this.description = description;
+            this.role = role;
+        }
+
+        @Override public String getLabelChar() { return labelChar; }
+        @Override public int getColor() { return color; }
+        @Override public String getDescription() { return description; }
+        @Override public Role getRole() { return role; }
+    }
 
     private static final String NBT_KEY = "AnvilModes";
 
@@ -83,7 +108,7 @@ public class AnvilModuleItem extends ProcessingModuleItem implements IConfigurab
 
     @Override
     public void renderCustomOverlay(GuiGraphics graphics, int slotX, int slotY, ItemStack stack, MachineFrameworkBlockEntity blockEntity, net.minecraft.client.gui.Font font) {
-        Map<GridDirection, SlotMode> modes = getSlotModes(stack, getModuleConfigKey());
+        Map<GridDirection, ProcessingMode> modes = getSlotModes(stack, getModuleConfigKey());
         drawDirectionButtons(graphics, font, slotX, slotY, blockEntity, modes);
 
         // Center slot — renders as a button that opens the name input panel
@@ -103,6 +128,22 @@ public class AnvilModuleItem extends ProcessingModuleItem implements IConfigurab
         graphics.drawCenteredString(font, "A", slotX + 8, slotY + 4, 0xFFFFFF);
 
         drawCloseButton(graphics, font, slotX, slotY);
+    }
+
+    @Override
+    public List<Component> getCustomOverlayTooltip(double mouseX, double mouseY, int slotX, int slotY,
+                                                   ItemStack stack, MachineFrameworkBlockEntity blockEntity,
+                                                   int slotIndex) {
+        if (mouseX >= slotX && mouseX < slotX + 16 && mouseY >= slotY && mouseY < slotY + 16) {
+            String name = getExistingText(stack);
+            return List.of(
+                    Component.literal("Anvil custom name").withStyle(ChatFormatting.AQUA),
+                    tooltipValue("Current: ", name.isEmpty() ? "Not set" : name,
+                            name.isEmpty() ? 0xFF888888 : 0xFF88AAFF),
+                    tooltipHint("Click the center button to edit the name")
+            );
+        }
+        return super.getCustomOverlayTooltip(mouseX, mouseY, slotX, slotY, stack, blockEntity, slotIndex);
     }
 
     @Override
@@ -181,7 +222,7 @@ public class AnvilModuleItem extends ProcessingModuleItem implements IConfigurab
 
     @Override
     protected void processModule(Level level, BlockPos pos, MachineFrameworkBlockEntity blockEntity, int slotIndex, ItemStack stack) {
-        Map<GridDirection, SlotMode> modes = getSlotModes(stack, NBT_KEY);
+        Map<GridDirection, ProcessingMode> modes = getSlotModes(stack, NBT_KEY);
         ResolvedIoSlots resolved = ProcessingModuleItem.resolveAdjacentIoSlots(blockEntity, slotIndex, modes);
 
         List<Integer> inputSlots = resolved.inputs();

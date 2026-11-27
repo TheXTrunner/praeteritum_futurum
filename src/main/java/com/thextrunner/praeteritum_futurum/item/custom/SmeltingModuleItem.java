@@ -1,5 +1,6 @@
 package com.thextrunner.praeteritum_futurum.item.custom;
 
+import com.thextrunner.praeteritum_futurum.api.module.ProcessingMode;
 import com.thextrunner.praeteritum_futurum.block.GridDirection;
 import com.thextrunner.praeteritum_futurum.item.ModItems;
 import com.thextrunner.praeteritum_futurum.PraeteritumFuturumMod;
@@ -20,7 +21,48 @@ import net.neoforged.neoforge.items.ItemStackHandler;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Smelting Module — adds furnace smelting capability to the Machine Framework.
+ * <p>
+ * Extends ProcessingModuleItem to provide standard furnace-style smelting: takes an
+ * input item and fuel, smelts over 200 ticks, and outputs the result. Supports three
+ * slot modes: INPUT for items to smelt, FUEL for fuel items, and OUTPUT for results.
+ * <p>
+ * Renders a custom overlay showing burn time (orange bar) and cook progress (cyan bar).
+ */
 public class SmeltingModuleItem extends ProcessingModuleItem {
+    public enum SlotMode implements ProcessingMode {
+        DISABLED("D", 0xFF555555, "No items are transferred through this side.", Role.DISABLED),
+        INPUT("I", 0xFF3366CC, "Pull items from the adjacent inventory for processing.", Role.INPUT),
+        FUEL("F", 0xFFCC9933, "Use items from the adjacent inventory as fuel.", Role.OTHER),
+        OUTPUT("O", 0xFFCC3333, "Send processed items to the adjacent inventory.", Role.OUTPUT);
+
+        private final String labelChar;
+        private final int color;
+        private final String description;
+        private final Role role;
+
+        SlotMode(String labelChar, int color, String description, Role role) {
+            this.labelChar = labelChar;
+            this.color = color;
+            this.description = description;
+            this.role = role;
+        }
+
+        @Override public String getLabelChar() { return labelChar; }
+        @Override public int getColor() { return color; }
+        @Override public String getDescription() { return description; }
+        @Override public Role getRole() { return role; }
+    }
+
+    /** NBT key for storing the module's slot mode configuration. */
+    private static final String NBT_KEY = "SmeltingModes";
+
+    /**
+     * Constructs the Smelting Module with the given properties.
+     *
+     * @param properties The item properties
+     */
     public SmeltingModuleItem(Properties properties) {
         super(properties);
     }
@@ -54,8 +96,6 @@ public class SmeltingModuleItem extends ProcessingModuleItem {
         }
     }
 
-    private static final String NBT_KEY = "SmeltingModes";
-
     @Override
     public String getModuleConfigKey() {
         return NBT_KEY;
@@ -73,7 +113,7 @@ public class SmeltingModuleItem extends ProcessingModuleItem {
 
     @Override
     protected void processModule(Level level, BlockPos pos, MachineFrameworkBlockEntity blockEntity, int slotIndex, ItemStack stack) {
-        Map<GridDirection, SlotMode> modes = getSlotModes(stack, NBT_KEY);
+        Map<GridDirection, ProcessingMode> modes = getSlotModes(stack, NBT_KEY);
         ItemStackHandler moduleHandler = blockEntity.getModuleHandler();
         ItemStackHandler itemHandler = blockEntity.getInventoryHandler();
 
@@ -90,7 +130,7 @@ public class SmeltingModuleItem extends ProcessingModuleItem {
                 continue;
             }
 
-            SlotMode mode = modes.get(dir);
+            ProcessingMode mode = modes.get(dir);
             if (mode == SlotMode.INPUT && inputSlot == -1) {
                 inputSlot = adjSlot;
             } else if (mode == SlotMode.FUEL && fuelSlot == -1) {
@@ -176,8 +216,9 @@ public class SmeltingModuleItem extends ProcessingModuleItem {
     }
 
     @Override
-    protected int getMaxForMode(SlotMode mode) {
+    protected int getMaxForMode(ProcessingMode mode) {
         if (mode == SlotMode.FUEL) return 1;
         return super.getMaxForMode(mode);
     }
+
 }

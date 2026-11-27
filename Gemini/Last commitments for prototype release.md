@@ -4088,7 +4088,7 @@ That error happens because your project is stored on a secondary drive or partit
 To fix it instantly, run the exact command Git suggested right there in your terminal:
 
 ```powershell
-git config --global --add safe.directory E:/Projects/praeteritum_futurum
+git config --global --add safe.directory PROJECT_ROOT
 ```
 
 After running that, execute the sequence again:

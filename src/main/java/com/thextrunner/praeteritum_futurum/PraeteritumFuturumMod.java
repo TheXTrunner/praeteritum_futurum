@@ -4,11 +4,18 @@ import com.mojang.logging.LogUtils;
 import com.thextrunner.praeteritum_futurum.block.ModBlocks;
 import com.thextrunner.praeteritum_futurum.block.entity.MachineFrameworkBlockEntity;
 import com.thextrunner.praeteritum_futurum.block.entity.ModBlockEntities;
+import com.thextrunner.praeteritum_futurum.gametest.BlueprintItemGameTests;
+import com.thextrunner.praeteritum_futurum.gametest.EjectionModuleGameTests;
+import com.thextrunner.praeteritum_futurum.gametest.MachineFrameworkBlockEntityGameTests;
+import com.thextrunner.praeteritum_futurum.gametest.ModuleMenuProviderGameTests;
+import com.thextrunner.praeteritum_futurum.gametest.ProcessingModuleGameTests;
+import com.thextrunner.praeteritum_futurum.gametest.RedstoneCircuitGameTests;
 import com.thextrunner.praeteritum_futurum.item.ModItems;
 import com.thextrunner.praeteritum_futurum.loot.ModLootModifiers;
 import com.thextrunner.praeteritum_futurum.network.*;
-import com.thextrunner.praeteritum_futurum.screen.ModMenuTypes;
+import com.thextrunner.praeteritum_futurum.recipe.DataCleaningRecipe;
 import com.thextrunner.praeteritum_futurum.recipe.ModRecipeSerializers;
+import com.thextrunner.praeteritum_futurum.screen.ModMenuTypes;
 import com.thextrunner.praeteritum_futurum.worldgen.ModStructurePlacements;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -16,6 +23,8 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import org.slf4j.Logger;
@@ -67,6 +76,8 @@ public class PraeteritumFuturumMod {
         // Register capabilities — this tells NeoForge how block entities expose
         // their functionality (e.g., item handler for pipe compatibility).
         modEventBus.addListener(this::registerCapabilities);
+        modEventBus.addListener(this::registerGameTests);
+        NeoForge.EVENT_BUS.addListener(DataCleaningRecipe::returnRedstoneComponents);
 
         // Register the custom structure placement type so it can be referenced
         // in structure_set JSON files. This allows the config-driven spawn rate
@@ -94,8 +105,8 @@ public class PraeteritumFuturumMod {
         // server versions don't match, the connection is rejected.
         // IMPORTANT: Increment this version whenever packet structure changes are made
         // (adding/removing fields, changing field types, or adding/removing packets).
-        // Current version "1" — established at initial network setup.
-        final PayloadRegistrar registrar = event.registrar("1");
+        // Current version "2" — includes the redstone-control configuration payload.
+        final PayloadRegistrar registrar = event.registrar("2");
 
         // Toggle which face of the machine is set as input/output
         registrar.playToServer(
@@ -139,6 +150,12 @@ public class PraeteritumFuturumMod {
                 ServerboundToggleFilterModePacket::handle
         );
 
+        registrar.playToServer(
+                ServerboundCycleRedstoneControlPacket.TYPE,
+                ServerboundCycleRedstoneControlPacket.STREAM_CODEC,
+                ServerboundCycleRedstoneControlPacket::handle
+        );
+
         // Set text on a module implementing ITextInputModule (generic, used by Anvil and others)
         registrar.playToServer(
                 ServerboundSetModuleTextPacket.TYPE,
@@ -159,6 +176,29 @@ public class PraeteritumFuturumMod {
                 ServerboundResetModuleDirectionPacket.STREAM_CODEC,
                 ServerboundResetModuleDirectionPacket::handle
         );
+
+        // Send computed redstone circuit state from server to client for rendering
+        registrar.playToClient(
+                ClientboundRedstoneCircuitStatePacket.TYPE,
+                ClientboundRedstoneCircuitStatePacket.STREAM_CODEC,
+                ClientboundRedstoneCircuitStatePacket::handle
+        );
+
+        // Configure redstone component (toggle lever, rotate, cycle attachment) in Edit Mode
+        registrar.playToServer(
+                ServerboundRedstoneConfigPacket.TYPE,
+                ServerboundRedstoneConfigPacket.STREAM_CODEC,
+                ServerboundRedstoneConfigPacket::handle
+        );
+    }
+
+    private void registerGameTests(RegisterGameTestsEvent event) {
+        event.register(BlueprintItemGameTests.class);
+        event.register(RedstoneCircuitGameTests.class);
+        event.register(ProcessingModuleGameTests.class);
+        event.register(EjectionModuleGameTests.class);
+        event.register(MachineFrameworkBlockEntityGameTests.class);
+        event.register(ModuleMenuProviderGameTests.class);
     }
 
     /**

@@ -1,6 +1,5 @@
 package com.thextrunner.praeteritum_futurum.screen;
 
-import com.thextrunner.praeteritum_futurum.PraeteritumFuturumMod;
 import com.thextrunner.praeteritum_futurum.api.module.IModuleMenuProvider;
 import com.thextrunner.praeteritum_futurum.block.entity.MachineFrameworkBlockEntity;
 import net.minecraft.core.BlockPos;
@@ -14,8 +13,18 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Container menu for configuring a single module's settings.
+ * <p>
+ * Used by modules that implement IModuleMenuProvider (Filter, Redstone, etc.).
+ * Provides the module's custom slots plus the player's inventory. Handles
+ * click events and item transfer between the module's slots and the player's inventory.
+ */
 public class GenericModuleConfigMenu extends BaseMachineContainerMenu {
+    /** The module item stack being configured. */
     private final ItemStack moduleStack;
+
+    /** The slot index of the module in the machine's grid. */
     private final int slotIndexInMachine;
 
     public GenericModuleConfigMenu(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf extraData) {
@@ -93,6 +102,48 @@ public class GenericModuleConfigMenu extends BaseMachineContainerMenu {
         super.clicked(slotId, button, clickType, player);
     }
 
+    /**
+     * Returns the number of module-specific slots (before player inventory slots).
+     * Override this in subclasses to specify the module slot count.
+     */
+    protected int getModuleSlotCount() {
+        // Default: single-chest layout (27 slots, for Filter module)
+        return 27;
+    }
+
+    /**
+     * Implements vanilla-like shift-click behavior using {@link AbstractContainerMenu#moveItemStackTo}.
+     * This respects {@link Slot#mayPlace()} and {@link Slot#getMaxStackSize()} overrides,
+     * so it works like a normal double chest.
+     */
+    public ItemStack superQuickMoveStack(Player player, int index) {
+        ItemStack result = ItemStack.EMPTY;
+        Slot slot = this.slots.get(index);
+        if (slot.hasItem()) {
+            ItemStack slotStack = slot.getItem();
+            result = slotStack;
+            int moduleSlotCount = getModuleSlotCount();
+            // If clicked on player inventory slot, move to module slots
+            if (index >= moduleSlotCount) {
+                if (!this.moveItemStackTo(slotStack, 0, moduleSlotCount, true)) {
+                    return ItemStack.EMPTY;
+                }
+            }
+            // If clicked on module slot, move to player inventory
+            else {
+                if (!this.moveItemStackTo(slotStack, moduleSlotCount, this.slots.size(), false)) {
+                    return ItemStack.EMPTY;
+                }
+            }
+            if (slotStack.isEmpty()) {
+                slot.set(ItemStack.EMPTY);
+            } else {
+                slot.setChanged();
+            }
+        }
+        return result;
+    }
+
     @Override
     public @NotNull ItemStack quickMoveStack(@NotNull Player player, int index) {
         if (moduleStack.getItem() instanceof IModuleMenuProvider provider) {
@@ -109,26 +160,11 @@ public class GenericModuleConfigMenu extends BaseMachineContainerMenu {
         return slotIndexInMachine;
     }
 
-    /**
-     * Sets the carried (cursor) stack. Used by custom click handlers to update
-     * the cursor when picking up or swapping items. Uses reflection to access
-     * the private field in AbstractContainerMenu.
-     */
-    public void setCarried(ItemStack stack) {
-        try {
-            java.lang.reflect.Field field = AbstractContainerMenu.class.getDeclaredField("carried");
-            field.setAccessible(true);
-            field.set(this, stack);
-        } catch (Exception e) {
-            PraeteritumFuturumMod.LOGGER.error("Failed to set carried stack", e);
-        }
-    }
-
     @Override
     public void removed(@NotNull Player player) {
         // Save any pending inventory data from the module slots back to the module stack
         if (moduleStack.getItem() instanceof IModuleMenuProvider provider) {
-            saveModuleInventory(provider, player);
+            provider.saveMenuData(this, player.registryAccess());
         }
         // Save the module stack back to the machine's module handler when the menu closes
         if (player.level().getBlockEntity(blockPos) instanceof MachineFrameworkBlockEntity be) {
@@ -137,15 +173,4 @@ public class GenericModuleConfigMenu extends BaseMachineContainerMenu {
         super.removed(player);
     }
 
-    /**
-     * Saves the inventory data from module slots back to the module stack.
-     * This ensures that items placed in the module's slots are persisted to NBT.
-     */
-    private void saveModuleInventory(IModuleMenuProvider provider, Player player) {
-        // Import the specific implementations that need save on close
-        if (provider instanceof com.thextrunner.praeteritum_futurum.item.custom.FilterModuleItem) {
-            com.thextrunner.praeteritum_futurum.item.custom.FilterModuleItem.saveFilterInventory(
-                    moduleStack, com.thextrunner.praeteritum_futurum.item.custom.FilterModuleItem.getFilterInventory(moduleStack, player.registryAccess()), player.registryAccess());
-        }
-    }
 }

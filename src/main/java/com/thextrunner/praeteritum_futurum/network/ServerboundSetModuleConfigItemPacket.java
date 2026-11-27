@@ -1,6 +1,5 @@
 package com.thextrunner.praeteritum_futurum.network;
 
-import com.thextrunner.praeteritum_futurum.PraeteritumFuturumMod;
 import com.thextrunner.praeteritum_futurum.block.entity.MachineFrameworkBlockEntity;
 import com.thextrunner.praeteritum_futurum.item.custom.ProcessingModuleItem;
 import net.minecraft.core.BlockPos;
@@ -8,7 +7,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
@@ -40,22 +39,21 @@ public record ServerboundSetModuleConfigItemPacket(int slotIndex, ItemStack targ
 
     public static void handle(ServerboundSetModuleConfigItemPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
-            Player player = context.player();
-            if (player.distanceToSqr(packet.blockPos().getX() + 0.5, packet.blockPos().getY() + 0.5, packet.blockPos().getZ() + 0.5) > 64.0) {
-                PraeteritumFuturumMod.LOGGER.warn("Player {} tried to set module config from too far away at {}", player.getName().getString(), packet.blockPos());
-                return;
-            }
+            ServerPlayer player = (ServerPlayer) context.player();
+            ModulePacketHandler.handleAtBlock(player, packet.blockPos(), packet.slotIndex,
+                    ProcessingModuleItem.class::isInstance,
+                    stack -> {
+                        ProcessingModuleItem procModule = (ProcessingModuleItem) stack.getItem();
+                        // Validate that the module accepts this item for its config slot
+                        if (!packet.targetItem().isEmpty() && !procModule.acceptsConfigSlotItem(packet.targetItem())) {
+                            return;
+                        }
+                        procModule.setConfigSlotItem(stack, packet.targetItem, player.level().registryAccess());
+                    },
+                    "set module config item");
+            // Refresh the block state so clients see updated config
             if (player.level().getBlockEntity(packet.blockPos()) instanceof MachineFrameworkBlockEntity blockEntity) {
-                ItemStack moduleStack = blockEntity.getModuleHandler().getStackInSlot(packet.slotIndex);
-                if (moduleStack.getItem() instanceof ProcessingModuleItem procModule) {
-                    // Validate that the module accepts this item for its config slot
-                    if (!packet.targetItem().isEmpty() && !procModule.acceptsConfigSlotItem(packet.targetItem())) {
-                        return;
-                    }
-                    procModule.setConfigSlotItem(moduleStack, packet.targetItem, player.level().registryAccess());
-                    blockEntity.setChanged();
-                    player.level().sendBlockUpdated(packet.blockPos(), blockEntity.getBlockState(), blockEntity.getBlockState(), 3);
-                }
+                player.level().sendBlockUpdated(packet.blockPos(), blockEntity.getBlockState(), blockEntity.getBlockState(), 3);
             }
         });
     }

@@ -11,11 +11,15 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextColor;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
@@ -53,7 +57,38 @@ public class BaseModuleItem extends Item implements IItemHandlerModule {
 
     // Default overlay bounds cover the central slot. Subclasses expand this for their buttons.
     public boolean isInsideOverlay(double mouseX, double mouseY, int slotX, int slotY) {
-        return mouseX >= slotX && mouseX < slotX + 16 && mouseY >= slotY && mouseY < slotY + 16;
+        return isWithinBounds(mouseX, mouseY, slotX, slotY, 16, 16);
+    }
+
+    /**
+     * Shared hit test for overlay controls, including common buttons even when a subclass
+     * supplies its own overlay bounds.
+     */
+    public boolean isPointInOverlay(double mouseX, double mouseY, int slotX, int slotY) {
+        return isInsideOverlay(mouseX, mouseY, slotX, slotY)
+                || isRedstoneControlButton(mouseX, mouseY, slotX, slotY);
+    }
+
+    /**
+     * Tests a point against a half-open rectangle, matching the GUI's rendered bounds.
+     */
+    protected static boolean isWithinBounds(double mouseX, double mouseY, int x, int y, int width, int height) {
+        return mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height;
+    }
+
+    /**
+     * Returns whether any part of an inventory slot is covered by this module's interactive
+     * overlay. Covered slots can then be hidden and prevented from receiving underlying clicks.
+     */
+    public boolean doesOverlayCoverSlot(int overlayX, int overlayY, int targetSlotX, int targetSlotY) {
+        for (int x = targetSlotX; x < targetSlotX + 16; x++) {
+            for (int y = targetSlotY; y < targetSlotY + 16; y++) {
+                if (isPointInOverlay(x, y, overlayX, overlayY)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public boolean opensInlineOverlay() {
@@ -63,6 +98,31 @@ public class BaseModuleItem extends Item implements IItemHandlerModule {
     @SuppressWarnings("unused")
     public void handleCustomClick(double mouseX, double mouseY, int slotX, int slotY, ItemStack stack, MachineFrameworkBlockEntity blockEntity, int slotIndex, Minecraft minecraft) {
         // Default implementation does nothing
+    }
+
+    /**
+     * Returns the tooltip for an inline module-configuration control under the cursor.
+     */
+    public List<Component> getCustomOverlayTooltip(double mouseX, double mouseY, int slotX, int slotY,
+                                                   ItemStack stack, MachineFrameworkBlockEntity blockEntity,
+                                                   int slotIndex) {
+        if (isRedstoneControlButton(mouseX, mouseY, slotX, slotY)) {
+            return getRedstoneControlTooltip(stack);
+        }
+        if (isCloseButton(mouseX, mouseY, slotX, slotY)) {
+            return List.of(Component.literal("Close configuration").withStyle(ChatFormatting.RED));
+        }
+        return List.of();
+    }
+
+    protected static Component tooltipValue(String label, String value, int color) {
+        return Component.literal(label).withStyle(ChatFormatting.GRAY)
+                .append(Component.literal(value).withStyle(style ->
+                        style.withColor(TextColor.fromRgb(color & 0xFFFFFF))));
+    }
+
+    protected static Component tooltipHint(String text) {
+        return Component.literal(text).withStyle(ChatFormatting.GOLD);
     }
 
     /**
@@ -82,7 +142,68 @@ public class BaseModuleItem extends Item implements IItemHandlerModule {
     // Returns true if the click is on the module's close (X) button.
     // Checks the standard position above the center slot — all modules use this same position.
     public boolean isCloseButton(double mouseX, double mouseY, int slotX, int slotY) {
-        return mouseX >= slotX - 18 && mouseX <= slotX - 2 && mouseY >= slotY - 18 && mouseY <= slotY - 2;
+        return isWithinBounds(mouseX, mouseY, slotX - 18, slotY - 18, 16, 16);
+    }
+
+    public boolean isRedstoneControlButton(double mouseX, double mouseY, int slotX, int slotY) {
+        return supportsRedstoneControl()
+                && isWithinBounds(mouseX, mouseY, slotX + 18, slotY + 18, 16, 16);
+    }
+
+    public void renderRedstoneControlButton(GuiGraphics graphics, int slotX, int slotY, ItemStack stack,
+                                            MachineFrameworkBlockEntity blockEntity, int slotIndex) {
+        if (!supportsRedstoneControl()) return;
+
+        RedstoneControlMode mode = getRedstoneControlMode(stack);
+        int x = slotX + 18;
+        int y = slotY + 18;
+        boolean enabled = mode != RedstoneControlMode.IGNORE;
+        boolean controlAllowsRun = enabled
+                && mode.allowsSignal(getRedstoneControlSignal(blockEntity, slotIndex));
+        int faceColor = !enabled ? 0xFF666666
+                : mode == RedstoneControlMode.PULSE ? 0xFFFFB6B6
+                : controlAllowsRun ? 0xFFFF5555 : 0xFF180808;
+        int highlightColor = !enabled ? 0xFF999999
+                : mode == RedstoneControlMode.PULSE ? 0xFFFFE0E0
+                : controlAllowsRun ? 0xFFFFAAAA : 0xFF301010;
+        int shadowColor = !enabled ? 0xFF444444
+                : mode == RedstoneControlMode.PULSE ? 0xFFE08080
+                : controlAllowsRun ? 0xFFCC2020 : 0xFF100505;
+
+        graphics.fill(x, y, x + 15, y + 15, faceColor);
+        graphics.fill(x, y, x + 15, y + 1, highlightColor);
+        graphics.fill(x, y, x + 1, y + 15, highlightColor);
+        graphics.fill(x, y + 15, x + 16, y + 16, shadowColor);
+        graphics.fill(x + 15, y, x + 16, y + 16, shadowColor);
+
+        Item icon = enabled ? Items.REDSTONE : Items.GUNPOWDER;
+        graphics.renderItem(new ItemStack(icon), x, y);
+    }
+
+    public List<Component> getRedstoneControlTooltip(ItemStack stack) {
+        RedstoneControlMode mode = getRedstoneControlMode(stack);
+        String label = switch (mode) {
+            case IGNORE -> "Always run";
+            case HIGH -> "Run when powered";
+            case LOW -> "Run when unpowered";
+            case PULSE -> "Eject on pulse";
+        };
+        ChatFormatting color = switch (mode) {
+            case IGNORE -> ChatFormatting.YELLOW;
+            case HIGH -> ChatFormatting.GREEN;
+            case LOW -> ChatFormatting.RED;
+            case PULSE -> ChatFormatting.LIGHT_PURPLE;
+        };
+        return List.of(
+                Component.literal("Redstone control").withStyle(ChatFormatting.AQUA),
+                Component.literal(label).withStyle(color),
+                Component.literal(mode == RedstoneControlMode.PULSE
+                                ? "Runs one ejection pass when the signal changes from off to on."
+                                : "Uses the strongest enabled I/O input or adjacent redstone-module border.")
+                        .withStyle(ChatFormatting.GRAY),
+                Component.literal("Click to cycle; Shift-click to cycle backward")
+                        .withStyle(ChatFormatting.GOLD)
+        );
     }
 
     /**
@@ -206,6 +327,148 @@ public class BaseModuleItem extends Item implements IItemHandlerModule {
     }
 
     public void renderCustomOverlay(GuiGraphics graphics, int slotX, int slotY, ItemStack stack, MachineFrameworkBlockEntity blockEntity, Font font) {}
+
+    /**
+     * Whether this module opts into redstone-controlled operation. Modules that do not
+     * override this remain unaffected by the shared redstone-control infrastructure.
+     */
+    public boolean supportsRedstoneControl() {
+        return false;
+    }
+
+    /**
+     * Redstone behavior for modules that opt into redstone control.
+     */
+    public enum RedstoneControlMode {
+        /** Redstone has no effect; the module may run whenever it otherwise can. */
+        IGNORE(0),
+        /** The module may run only while its control signal is present. */
+        HIGH(1),
+        /** The module may run only while its control signal is absent. */
+        LOW(2),
+        /**
+         * The module reacts to a rising edge. Opt-in modules must track signal transitions and
+         * implement their pulse behavior; {@link #allowsSignal(int)} alone only reports the
+         * current powered level.
+         */
+        PULSE(3);
+
+        private final int id;
+
+        RedstoneControlMode(int id) {
+            this.id = id;
+        }
+
+        /**
+         * Checks the current signal level against this mode. This is not sufficient to implement
+         * {@link #PULSE}, which requires module-specific rising-edge tracking.
+         */
+        public boolean allowsSignal(int signalStrength) {
+            return switch (this) {
+                case IGNORE -> true;
+                case HIGH -> signalStrength > 0;
+                case LOW -> signalStrength == 0;
+                case PULSE -> signalStrength > 0;
+            };
+        }
+
+        private static RedstoneControlMode fromId(int id) {
+            for (RedstoneControlMode mode : values()) {
+                if (mode.id == id) return mode;
+            }
+            return IGNORE;
+        }
+    }
+
+    /**
+     * Reads the strongest signal from enabled world-input faces and any adjacent redstone module's
+     * border facing this module. The individual circuit-grid slot is intentionally not exposed.
+     */
+    public int getRedstoneControlSignal(MachineFrameworkBlockEntity blockEntity, int slotIndex) {
+        if (blockEntity == null || slotIndex < 0 || slotIndex >= MachineFrameworkBlockEntity.GRID_SIZE) {
+            return 0;
+        }
+
+        int strongestSignal = blockEntity.getRedstoneInputSignal();
+        for (GridDirection direction : GridDirection.VALUES) {
+            int adjacentSlot = getAdjacentSlotIndex(slotIndex, direction);
+            if (adjacentSlot < 0) continue;
+
+            ItemStack adjacentStack = blockEntity.getModuleHandler().getStackInSlot(adjacentSlot);
+            if (!(adjacentStack.getItem() instanceof RedstoneModuleItem)) continue;
+
+            // moduleData channels for a redstone module are [top, bottom, left, right].
+            // Read only the neighboring module's edge facing the controlled module.
+            int facingEdgeChannel = switch (direction) {
+                case UP -> 1;
+                case DOWN -> 0;
+                case LEFT -> 3;
+                case RIGHT -> 2;
+            };
+            strongestSignal = Math.max(strongestSignal, blockEntity.getModuleData(adjacentSlot, facingEdgeChannel));
+        }
+
+        return Math.clamp(strongestSignal, 0, 15);
+    }
+
+    public RedstoneControlMode getRedstoneControlMode(ItemStack stack) {
+        if (!supportsRedstoneControl() || stack.isEmpty()) return RedstoneControlMode.IGNORE;
+        CompoundTag redstoneControl = getCustomTag(stack, "RedstoneControl");
+        RedstoneControlMode mode = RedstoneControlMode.fromId(redstoneControl.getInt("Mode"));
+        return isRedstoneControlModeSupported(mode) ? mode : RedstoneControlMode.IGNORE;
+    }
+
+    public void setRedstoneControlMode(ItemStack stack, RedstoneControlMode mode) {
+        if (!supportsRedstoneControl() || stack.isEmpty() || mode == null
+                || !isRedstoneControlModeSupported(mode)) return;
+        modifyCustomData(stack, "RedstoneControl", tag -> tag.putInt("Mode", mode.id));
+    }
+
+    /**
+     * Redstone policies available to this module. Subclasses may expose specialized policies
+     * without changing the controls available to other module types.
+     */
+    public RedstoneControlMode[] getSupportedRedstoneControlModes() {
+        return new RedstoneControlMode[]{
+                RedstoneControlMode.IGNORE,
+                RedstoneControlMode.HIGH,
+                RedstoneControlMode.LOW
+        };
+    }
+
+    private boolean isRedstoneControlModeSupported(RedstoneControlMode mode) {
+        for (RedstoneControlMode supportedMode : getSupportedRedstoneControlModes()) {
+            if (supportedMode == mode) return true;
+        }
+        return false;
+    }
+
+    public void cycleRedstoneControlMode(ItemStack stack, boolean reverse) {
+        if (!supportsRedstoneControl() || stack.isEmpty()) return;
+        RedstoneControlMode[] modes = getSupportedRedstoneControlModes();
+        if (modes.length == 0) return;
+
+        int currentIndex = 0;
+        for (int i = 0; i < modes.length; i++) {
+            if (modes[i] == getRedstoneControlMode(stack)) {
+                currentIndex = i;
+                break;
+            }
+        }
+        int step = reverse ? modes.length - 1 : 1;
+        setRedstoneControlMode(stack, modes[(currentIndex + step) % modes.length]);
+    }
+
+    /**
+     * Returns whether the module's normal processing tick is allowed under its configured
+     * redstone policy. Subclasses opt in through {@link #supportsRedstoneControl()}.
+     */
+    public boolean isRedstoneControlSatisfied(ItemStack stack, MachineFrameworkBlockEntity blockEntity,
+                                              int slotIndex) {
+        if (!supportsRedstoneControl()) return true;
+        int signalStrength = getRedstoneControlSignal(blockEntity, slotIndex);
+        return getRedstoneControlMode(stack).allowsSignal(signalStrength);
+    }
 
     public void tickModule(Level level, BlockPos pos, MachineFrameworkBlockEntity blockEntity, int slotIndex, ItemStack stack) {
     }
