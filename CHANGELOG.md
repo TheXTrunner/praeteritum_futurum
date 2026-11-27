@@ -5,6 +5,11 @@ All notable changes to Praeteritum Futurum will be documented in this file.
 
 [Project README](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/README.md) | [Documentation index](https://github.com/TheXTrunner/praeteritum_futurum/blob/main/docs/README.md)
 
+## [0.2.1] - 2026-11-27
+
+### Fixed
+- Release builds now run data generation before packaging, ensuring generated models, block states, translations, tags, and recipes are included in the mod jar.
+
 ## [0.2.0] - 2026-11-27
 
 ### Added
